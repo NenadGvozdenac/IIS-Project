@@ -1,0 +1,47 @@
+# Visual Studio / .NET
+
+## Build Folders
+bin/
+obj/
+Debug/
+Release/
+*.log
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+
+## Rider IDE files
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+
+## NuGet
+*.nupkg
+packages/
+.nuget/
+
+# ASP.NET / Web
+wwwroot/node_modules/
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Mac
+.DS_Store
+
+# Others
+*.pidb
+*.svclog
+*.pdb
+*.cache
