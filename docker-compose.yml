@@ -1,6 +1,13 @@
 version: '3.4'
 
 services:
+  auth_service:
+    build:
+      context: .
+      dockerfile: backend/auth_service/Dockerfile
+    ports:
+      - "8080:8080" # Web UI
+      
   match_service:
     image: ${DOCKER_REGISTRY-}matchservice
     build:
@@ -8,7 +15,7 @@ services:
       dockerfile: backend/match_service/Dockerfile
     ports:
       - "5000:5000"
-      - "5001:5001"
+      - "5001:5001" # Web UI
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -17,7 +24,7 @@ services:
       dockerfile: backend/scouting_service/Dockerfile
     ports:
       - "5002:5002"
-      - "5003:5003"
+      - "5003:5003" # Web UI
 
   ticket_service:
     image: ${DOCKER_REGISTRY-}ticketservice
@@ -26,7 +33,7 @@ services:
       dockerfile: backend/ticket_service/Dockerfile
     ports:
       - "5004:5004"
-      - "5005:5005"
+      - "5005:5005" # Web UI
 
   travel_service:
     image: ${DOCKER_REGISTRY-}travelservice
@@ -35,7 +42,7 @@ services:
       dockerfile: backend/travel_service/Dockerfile
     ports:
       - "5006:5006"
-      - "5007:5007"
+      - "5007:5007" # Web UI
 
   postgres_db:
     image: postgres:16
