@@ -1,0 +1,52 @@
+version: '3.4'
+
+services:
+  match_service:
+    image: ${DOCKER_REGISTRY-}matchservice
+    build:
+      context: .
+      dockerfile: backend/match_service/Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+
+  scouting_service:
+    image: ${DOCKER_REGISTRY-}scoutingservice
+    build:
+      context: .
+      dockerfile: backend/scouting_service/Dockerfile
+    ports:
+      - "5002:5002"
+      - "5003:5003"
+
+  ticket_service:
+    image: ${DOCKER_REGISTRY-}ticketservice
+    build:
+      context: .
+      dockerfile: backend/ticket_service/Dockerfile
+    ports:
+      - "5004:5004"
+      - "5005:5005"
+
+  travel_service:
+    image: ${DOCKER_REGISTRY-}travelservice
+    build:
+      context: .
+      dockerfile: backend/travel_service/Dockerfile
+    ports:
+      - "5006:5006"
+      - "5007:5007"
+
+  postgres_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sportsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
