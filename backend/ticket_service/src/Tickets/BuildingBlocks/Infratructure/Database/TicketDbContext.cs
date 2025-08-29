@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ticket_service.src.Tickets.Core.Domain.Entities;
 
 namespace ticket_service.src.Tickets.BuildingBlocks.Infratructure.Database;
 
@@ -7,6 +8,8 @@ public class TicketDbContext : DbContext
     public TicketDbContext(DbContextOptions<TicketDbContext> options) : base(options)
     {
     }
+
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

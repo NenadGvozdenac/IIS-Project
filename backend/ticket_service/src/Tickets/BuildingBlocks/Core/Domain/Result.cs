@@ -15,7 +15,7 @@ public class Result<T> : Result
     }
 
     public static Result<T> Success(T value) => new(value, true, string.Empty, 200);
-    public new static Result<T> Failure(string error) => new(default, false, error, 500);
+    public new static Result<T> Failure(string error) => new(default(T)!, false, error, 500);
     public new Result<T> WithCode(int code)
     {
         Code = Enum.TryParse<ResultCode>(code.ToString(), out var resultCode) ? resultCode : ResultCode.InternalServerError;

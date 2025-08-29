@@ -10,6 +10,13 @@
     <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="src\Tickets\Application\**" />
+    <Content Remove="src\Tickets\Application\**" />
+    <EmbeddedResource Remove="src\Tickets\Application\**" />
+    <None Remove="src\Tickets\Application\**" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.20">
 			<PrivateAssets>all</PrivateAssets>
@@ -22,12 +29,17 @@
 		<PackageReference Include="System.ServiceModel.Syndication" Version="9.0.2" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.20" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.18" />
+		<PackageReference Include="MediatR" Version="11.1.0" />
+		<PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
 	</ItemGroup>
 
   <ItemGroup>
-    <Folder Include="src\Tickets\Application\Features\" />
     <Folder Include="src\Tickets\BuildingBlocks\Core\UseCases\" />
     <Folder Include="src\Tickets\BuildingBlocks\Infratructure\Database\" />
+    <Folder Include="src\Tickets\Core\Application\Features\Users\GetUserById\" />
+    <Folder Include="src\Tickets\Core\Application\Interfaces\" />
+    <Folder Include="src\Tickets\Core\Domain\Entities\" />
+    <Folder Include="src\Tickets\Core\Infrastructure\Repositories\" />
   </ItemGroup>
 
 </Project>

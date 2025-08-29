@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using scouting_service.src.Scoutings.Core.Domain.Entities;
 
 namespace scouting_service.src.Scoutings.BuildingBlocks.Infratructure.Database;
 
@@ -7,6 +8,8 @@ public class ScoutingDbContext : DbContext
     public ScoutingDbContext(DbContextOptions<ScoutingDbContext> options) : base(options)
     {
     }
+
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

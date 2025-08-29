@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using match_service.src.Matches.Core.Domain.Entities;
 
 namespace match_service.src.Matches.BuildingBlocks.Infratructure.Database;
 
@@ -7,6 +8,8 @@ public class MatchDbContext : DbContext
     public MatchDbContext(DbContextOptions<MatchDbContext> options) : base(options)
     {
     }
+
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MediatR;
 using scouting_service.src.Scoutings.BuildingBlocks.Infratructure.Database;
+using scouting_service.src.Scoutings.Core.Application.Features.Users.GetUserById;
+using scouting_service.src.Scoutings.Core.Application.Interfaces;
+using scouting_service.src.Scoutings.Core.Infrastructure.Repositories;
 
 namespace scouting_service.src.Scoutings.API.Startup;
 
@@ -8,6 +12,8 @@ public static class ApplicationStartup
     public static IServiceCollection ConfigureApplication(this IServiceCollection services, IConfiguration configuration)
     {
         SetupDatabases(services, configuration);
+        SetupRepositories(services);
+        SetupMediatR(services);
 
         return services;
     }
@@ -19,5 +25,16 @@ public static class ApplicationStartup
         
         services.AddDbContext<ScoutingDbContext>(options =>
             options.UseNpgsql(connectionString));
+    }
+
+    private static void SetupRepositories(IServiceCollection services)
+    {
+        services.AddScoped<IUserRepository, UserRepository>();
+    }
+
+    private static void SetupMediatR(IServiceCollection services)
+    {
+        // Register MediatR for version 11.x
+        services.AddMediatR(typeof(GetUserByIdHandler).Assembly);
     }
 }

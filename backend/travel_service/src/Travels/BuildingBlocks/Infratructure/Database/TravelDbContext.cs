@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using travel_service.src.Travels.Core.Domain.Entities;
 
 namespace travel_service.src.Travels.BuildingBlocks.Infratructure.Database;
 
@@ -7,6 +8,8 @@ public class TravelDbContext : DbContext
     public TravelDbContext(DbContextOptions<TravelDbContext> options) : base(options)
     {
     }
+
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
