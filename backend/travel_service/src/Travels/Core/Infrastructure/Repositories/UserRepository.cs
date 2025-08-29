@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using travel_service.src.Travels.BuildingBlocks.Infratructure.Database;
 using travel_service.src.Travels.Core.Application.Interfaces;
 using travel_service.src.Travels.Core.Domain.Entities;
@@ -14,25 +13,20 @@ public class UserRepository : IUserRepository
         _travelDbContext = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public User? GetById(int id)
     {
-        return await _travelDbContext.Users.FindAsync(id);
+        return _travelDbContext.Users.Find(id);
     }
 
-    public User CreateAsync(User user)
+    public User Create(User user)
     {
         _travelDbContext.Users.Add(user);
+        _travelDbContext.SaveChanges();
         return user;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public User? GetByEmail(string email)
     {
-        return await _travelDbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await _travelDbContext.SaveChangesAsync();
+        return _travelDbContext.Users.FirstOrDefault(u => u.Email == email);
     }
 }

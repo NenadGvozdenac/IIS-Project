@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using scouting_service.src.Scoutings.BuildingBlocks.Infratructure.Database;
 using scouting_service.src.Scoutings.Core.Application.Interfaces;
 using scouting_service.src.Scoutings.Core.Domain.Entities;
@@ -14,25 +13,20 @@ public class UserRepository : IUserRepository
         _scoutingDbContext = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public User? GetById(int id)
     {
-        return await _scoutingDbContext.Users.FindAsync(id);
+        return _scoutingDbContext.Users.Find(id);
     }
 
-    public User CreateAsync(User user)
+    public User Create(User user)
     {
         _scoutingDbContext.Users.Add(user);
+        _scoutingDbContext.SaveChanges();
         return user;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public User? GetByEmail(string email)
     {
-        return await _scoutingDbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await _scoutingDbContext.SaveChangesAsync();
+        return _scoutingDbContext.Users.FirstOrDefault(u => u.Email == email);
     }
 }

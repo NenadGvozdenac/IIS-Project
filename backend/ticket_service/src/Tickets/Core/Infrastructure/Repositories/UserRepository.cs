@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using ticket_service.src.Tickets.BuildingBlocks.Infratructure.Database;
 using ticket_service.src.Tickets.Core.Application.Interfaces;
 using ticket_service.src.Tickets.Core.Domain.Entities;
@@ -14,25 +13,20 @@ public class UserRepository : IUserRepository
         _ticketDbContext = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public User? GetById(int id)
     {
-        return await _ticketDbContext.Users.FindAsync(id);
+        return _ticketDbContext.Users.Find(id);
     }
 
-    public User CreateAsync(User user)
+    public User Create(User user)
     {
         _ticketDbContext.Users.Add(user);
+        _ticketDbContext.SaveChanges();
         return user;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public User? GetByEmail(string email)
     {
-        return await _ticketDbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await _ticketDbContext.SaveChangesAsync();
+        return _ticketDbContext.Users.FirstOrDefault(u => u.Email == email);
     }
 }

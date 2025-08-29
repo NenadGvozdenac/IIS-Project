@@ -17,7 +17,7 @@ public class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, Result<GetUs
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(request.Id);
+            var user = _userRepository.GetById(request.Id);
 
             if (user == null)
             {

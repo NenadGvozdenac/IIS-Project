@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using match_service.src.Matches.BuildingBlocks.Infratructure.Database;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Domain.Entities;
@@ -14,25 +13,20 @@ public class UserRepository : IUserRepository
         _matchDbContext = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public User? GetById(int id)
     {
-        return await _matchDbContext.Users.FindAsync(id);
+        return _matchDbContext.Users.Find(id);
     }
 
-    public User CreateAsync(User user)
+    public User Create(User user)
     {
         _matchDbContext.Users.Add(user);
+        _matchDbContext.SaveChanges();
         return user;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public User? GetByEmail(string email)
     {
-        return await _matchDbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await _matchDbContext.SaveChangesAsync();
+        return _matchDbContext.Users.FirstOrDefault(u => u.Email == email);
     }
 }
