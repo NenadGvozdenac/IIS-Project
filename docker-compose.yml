@@ -7,6 +7,8 @@ services:
       dockerfile: backend/auth_service/Dockerfile
     ports:
       - "8080:8080" # Web UI
+    depends_on:
+      - postgres_db
       
   match_service:
     image: ${DOCKER_REGISTRY-}matchservice
@@ -16,6 +18,8 @@ services:
     ports:
       - "5000:5000"
       - "5001:5001" # Web UI
+    depends_on:
+      - postgres_db
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -25,6 +29,8 @@ services:
     ports:
       - "5002:5002"
       - "5003:5003" # Web UI
+    depends_on:
+      - postgres_db
 
   ticket_service:
     image: ${DOCKER_REGISTRY-}ticketservice
@@ -34,6 +40,8 @@ services:
     ports:
       - "5004:5004"
       - "5005:5005" # Web UI
+    depends_on:
+      - postgres_db
 
   travel_service:
     image: ${DOCKER_REGISTRY-}travelservice
@@ -43,6 +51,8 @@ services:
     ports:
       - "5006:5006"
       - "5007:5007" # Web UI
+    depends_on:
+      - postgres_db
 
   postgres_db:
     image: postgres:16
