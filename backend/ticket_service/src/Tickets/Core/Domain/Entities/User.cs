@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ticket_service.src.Tickets.Core.Domain.Entities;
 
-[Table("User")]
+[Table("users")]
 public class User
 {
     [Key]

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace match_service.src.Matches.Core.Domain.Entities;
 
-[Table("User")]
+[Table("users")]
 public class User
 {
     [Key]

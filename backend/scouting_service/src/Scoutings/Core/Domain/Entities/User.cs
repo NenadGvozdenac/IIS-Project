@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace scouting_service.src.Scoutings.Core.Domain.Entities;
 
-[Table("User")]
+[Table("users")]
 public class User
 {
     [Key]

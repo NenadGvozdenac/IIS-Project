@@ -726,7 +726,7 @@ CREATE UNIQUE INDEX trip__idxv2 ON
 ALTER TABLE trip ADD CONSTRAINT trip_pk PRIMARY KEY ( id_trip );
 
 CREATE TABLE "users" (
-    id_user  INTEGER NOT NULL,
+    id_user  SERIAL NOT NULL,
     name     VARCHAR(50),
     surname  VARCHAR(50),
     email    VARCHAR(50),
