@@ -16,7 +16,7 @@ func NewUserRepository(db *sql.DB) interfaces.UserRepositoryInterface {
 
 func (r *UserRepository) Create(user *models.User) (*models.User, error) {
 	query := `
-		INSERT INTO "User" (name, surname, email, phone, password, type)
+		INSERT INTO "users" (name, surname, email, phone, password, type)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id_user
 	`
@@ -37,7 +37,7 @@ func (r *UserRepository) Create(user *models.User) (*models.User, error) {
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	query := `
 		SELECT id_user, name, surname, email, phone, password, type
-		FROM "User" 
+		FROM "users" 
 		WHERE email = $1
 	`
 
