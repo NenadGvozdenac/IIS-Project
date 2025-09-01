@@ -148,7 +148,7 @@ CREATE TABLE cart_item (
     id_cart           INTEGER NOT NULL,
     id_purchase_offer INTEGER NOT NULL,
     added_at          DATE NOT NULL,
-    quantity          INTEGER NOT NULL,
+    price   NUMERIC(10,2) NOT NULL,
     PRIMARY KEY (id_cart, id_purchase_offer)
 );
 
@@ -367,7 +367,7 @@ CREATE TABLE seat (
     "number"  INTEGER NOT NULL,
     type      VARCHAR(255) NOT NULL,
     direction VARCHAR(255) NOT NULL,
-    status    VARCHAR(255) NOT NULL,
+    status    VARCHAR(255) NOT NULL CHECK (status in ('enabled', 'disabled', 'empty')),
     id_zone   INTEGER,
     PRIMARY KEY (id_seat)
 );
@@ -531,7 +531,7 @@ CREATE TABLE users (
     email    VARCHAR(50) NOT NULL,
     phone    VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    type     VARCHAR(50) NOT NULL,
+    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analytic', 'scouting manager')),
     PRIMARY KEY (id_user)
 );
 
@@ -549,7 +549,7 @@ CREATE TABLE zone (
     name             VARCHAR(255) NOT NULL,
     rank             INTEGER NOT NULL,
     maximum_capacity INTEGER NOT NULL,
-    status           VARCHAR(255) NOT NULL,
+    status           VARCHAR(255) NOT NULL CHECK (status in ('enabled', 'disabled')),
     PRIMARY KEY (id_zone)
 );
 

@@ -11,7 +11,7 @@ public partial class CartItem
 
     public DateOnly AddedAt { get; set; }
 
-    public int Quantity { get; set; }
+    public decimal Price { get; set; }
 
     public virtual Cart IdCartNavigation { get; set; } = null!;
 

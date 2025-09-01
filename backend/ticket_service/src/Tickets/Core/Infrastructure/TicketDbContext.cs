@@ -45,12 +45,7 @@ public partial class TicketDbContext : DbContext
     public virtual DbSet<Zone> Zones { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
-        }
-    }
+        => optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -88,7 +83,9 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdCart).HasColumnName("id_cart");
             entity.Property(e => e.IdPurchaseOffer).HasColumnName("id_purchase_offer");
             entity.Property(e => e.AddedAt).HasColumnName("added_at");
-            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.Price)
+                .HasPrecision(10, 2)
+                .HasColumnName("price");
 
             entity.HasOne(d => d.IdCartNavigation).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.IdCart)
