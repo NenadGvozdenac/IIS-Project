@@ -155,7 +155,9 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdPurchaseOffer)
                 .ValueGeneratedNever()
                 .HasColumnName("id_purchase_offer");
-            entity.Property(e => e.IdIndividualTicket).HasColumnName("id_individual_ticket");
+            entity.Property(e => e.IdIndividualTicket)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("id_individual_ticket");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
 
             entity.HasOne(d => d.IdMatchNavigation).WithMany(p => p.IndividualTickets)
@@ -262,8 +264,8 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdPurchaseOffer)
                 .ValueGeneratedNever()
                 .HasColumnName("id_purchase_offer");
-            entity.Property(e => e.FixedPromotionalTicketPrice).HasColumnName("fixed_promotional_ticket_price");
             entity.Property(e => e.IdSeason).HasColumnName("id_season");
+            entity.Property(e => e.TicketPrice).HasColumnName("ticket_price");
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.SeasonTickets)
                 .HasForeignKey(d => d.IdSeason)

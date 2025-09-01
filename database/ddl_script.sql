@@ -185,7 +185,7 @@ CREATE TABLE general_event (
 CREATE TABLE individual_ticket (
     id_purchase_offer    INTEGER NOT NULL,
     id_match             INTEGER NOT NULL,
-    id_individual_ticket INTEGER NOT NULL,
+    id_individual_ticket SERIAL NOT NULL,
     PRIMARY KEY (id_purchase_offer),
     UNIQUE (id_individual_ticket)
 );
@@ -355,9 +355,9 @@ CREATE TABLE season_metrics (
 );
 
 CREATE TABLE season_ticket (
-    id_purchase_offer              INTEGER NOT NULL,
-    id_season                      INTEGER NOT NULL,
-    fixed_promotional_ticket_price INTEGER NOT NULL,
+    id_purchase_offer   INTEGER NOT NULL,
+    id_season           INTEGER NOT NULL,
+    ticket_price        INTEGER NOT NULL,
     PRIMARY KEY (id_purchase_offer)
 );
 
