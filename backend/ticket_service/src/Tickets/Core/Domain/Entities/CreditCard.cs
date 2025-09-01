@@ -11,9 +11,11 @@ public partial class CreditCard
 
     public string? Number { get; set; }
 
-    public int? Cvv { get; set; }
+    public string? Cvv { get; set; }
 
     public string? Name { get; set; }
+
+    public DateOnly? ExpirationDate { get; set; }
 
     public int IdUser { get; set; }
 

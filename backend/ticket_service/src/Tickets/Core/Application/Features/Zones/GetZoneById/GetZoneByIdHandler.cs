@@ -13,7 +13,7 @@ public class GetZoneByIdHandler : IRequestHandler<GetZoneByIdQuery, Result<GetZo
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<GetZoneByIdResponse>> Handle(GetZoneByIdQuery request, CancellationToken cancellationToken)
+    public Task<Result<GetZoneByIdResponse>> Handle(GetZoneByIdQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -21,8 +21,8 @@ public class GetZoneByIdHandler : IRequestHandler<GetZoneByIdQuery, Result<GetZo
 
             if (zone == null)
             {
-                return Result<GetZoneByIdResponse>.Failure($"Zone with ID {request.Id} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<GetZoneByIdResponse>.Failure($"Zone with ID {request.Id} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             var response = new GetZoneByIdResponse
@@ -34,12 +34,12 @@ public class GetZoneByIdHandler : IRequestHandler<GetZoneByIdQuery, Result<GetZo
                 Status = zone.Status
             };
 
-            return Result<GetZoneByIdResponse>.Success(response);
+            return Task.FromResult(Result<GetZoneByIdResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<GetZoneByIdResponse>.Failure($"An error occurred while retrieving the zone: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<GetZoneByIdResponse>.Failure($"An error occurred while retrieving the zone: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

@@ -15,15 +15,15 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<UpdateSeatResponse>> Handle(UpdateSeatCommand request, CancellationToken cancellationToken)
+    public Task<Result<UpdateSeatResponse>> Handle(UpdateSeatCommand request, CancellationToken cancellationToken)
     {
         try
         {
             var existingSeat = _seatRepository.GetById(request.IdSeat);
             if (existingSeat == null)
             {
-                return Result<UpdateSeatResponse>.Failure($"Seat with ID {request.IdSeat} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure($"Seat with ID {request.IdSeat} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             // Validate zone exists if provided
@@ -32,8 +32,8 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
                 var zone = _zoneRepository.GetById(request.IdZone.Value);
                 if (zone == null)
                 {
-                    return Result<UpdateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
-                        .WithCode((int)ResultCode.BadRequest);
+                    return Task.FromResult(Result<UpdateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
+                        .WithCode((int)ResultCode.BadRequest));
                 }
             }
 
@@ -57,12 +57,12 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
                 IdZone = updatedSeat.IdZone
             };
 
-            return Result<UpdateSeatResponse>.Success(response);
+            return Task.FromResult(Result<UpdateSeatResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<UpdateSeatResponse>.Failure($"An error occurred while updating the seat: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<UpdateSeatResponse>.Failure($"An error occurred while updating the seat: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

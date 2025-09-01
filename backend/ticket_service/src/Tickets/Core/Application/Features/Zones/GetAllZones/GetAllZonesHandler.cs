@@ -13,7 +13,7 @@ public class GetAllZonesHandler : IRequestHandler<GetAllZonesQuery, Result<GetAl
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<GetAllZonesResponse>> Handle(GetAllZonesQuery request, CancellationToken cancellationToken)
+    public Task<Result<GetAllZonesResponse>> Handle(GetAllZonesQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -31,12 +31,12 @@ public class GetAllZonesHandler : IRequestHandler<GetAllZonesQuery, Result<GetAl
                 }).ToList()
             };
 
-            return Result<GetAllZonesResponse>.Success(response);
+            return Task.FromResult(Result<GetAllZonesResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<GetAllZonesResponse>.Failure($"An error occurred while retrieving zones: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<GetAllZonesResponse>.Failure($"An error occurred while retrieving zones: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

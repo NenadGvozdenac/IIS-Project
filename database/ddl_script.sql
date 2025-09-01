@@ -164,9 +164,10 @@ CREATE TABLE competition (
 CREATE TABLE credit_card (
     id_credit_card SERIAL NOT NULL,
     created_at     DATE,
-    number         VARCHAR(16),
-    cvv            INTEGER,
+    number         VARCHAR(255),
+    cvv            VARCHAR(255),
     name           VARCHAR(50),
+    expiration_date DATE,
     id_user        INTEGER NOT NULL,
     PRIMARY KEY (id_credit_card)
 );

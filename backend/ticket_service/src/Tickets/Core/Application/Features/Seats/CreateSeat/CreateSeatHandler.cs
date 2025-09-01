@@ -16,7 +16,7 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<CreateSeatResponse>> Handle(CreateSeatCommand request, CancellationToken cancellationToken)
+    public Task<Result<CreateSeatResponse>> Handle(CreateSeatCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -26,8 +26,8 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
                 var zone = _zoneRepository.GetById(request.IdZone.Value);
                 if (zone == null)
                 {
-                    return Result<CreateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
-                        .WithCode((int)ResultCode.BadRequest);
+                    return Task.FromResult(Result<CreateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
+                        .WithCode((int)ResultCode.BadRequest));
                 }
             }
 
@@ -54,12 +54,12 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
                 IdZone = createdSeat.IdZone
             };
 
-            return Result<CreateSeatResponse>.Success(response);
+            return Task.FromResult(Result<CreateSeatResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<CreateSeatResponse>.Failure($"An error occurred while creating the seat: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<CreateSeatResponse>.Failure($"An error occurred while creating the seat: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

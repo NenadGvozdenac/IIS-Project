@@ -48,7 +48,7 @@ public partial class TicketDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            // This will be overridden by DI configuration
+            optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
         }
     }
 
@@ -60,9 +60,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("cart");
 
-            entity.Property(e => e.IdCart)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_cart");
+            entity.Property(e => e.IdCart).HasColumnName("id_cart");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.IdCreditCard).HasColumnName("id_credit_card");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
@@ -109,9 +107,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("competition");
 
-            entity.Property(e => e.IdCompetition)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_competition");
+            entity.Property(e => e.IdCompetition).HasColumnName("id_competition");
             entity.Property(e => e.EndedAt).HasColumnName("ended_at");
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
@@ -126,17 +122,18 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("credit_card");
 
-            entity.Property(e => e.IdCreditCard)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_credit_card");
+            entity.Property(e => e.IdCreditCard).HasColumnName("id_credit_card");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.Cvv).HasColumnName("cvv");
+            entity.Property(e => e.Cvv)
+                .HasMaxLength(255)
+                .HasColumnName("cvv");
+            entity.Property(e => e.ExpirationDate).HasColumnName("expiration_date");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .HasColumnName("name");
             entity.Property(e => e.Number)
-                .HasMaxLength(16)
+                .HasMaxLength(255)
                 .HasColumnName("number");
 
             entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.CreditCards)
@@ -171,9 +168,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("match");
 
-            entity.Property(e => e.IdMatch)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_match");
+            entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");
             entity.Property(e => e.City)
                 .HasMaxLength(255)
@@ -218,9 +213,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("purchase_offer");
 
-            entity.Property(e => e.IdPurchaseOffer)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_purchase_offer");
+            entity.Property(e => e.IdPurchaseOffer).HasColumnName("id_purchase_offer");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Description)
                 .HasMaxLength(255)
@@ -250,9 +243,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("season");
 
-            entity.Property(e => e.IdSeason)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_season");
+            entity.Property(e => e.IdSeason).HasColumnName("id_season");
             entity.Property(e => e.EndedAt).HasColumnName("ended_at");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
@@ -284,9 +275,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("seat");
 
-            entity.Property(e => e.IdSeat)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_seat");
+            entity.Property(e => e.IdSeat).HasColumnName("id_seat");
             entity.Property(e => e.Direction)
                 .HasMaxLength(255)
                 .HasColumnName("direction");
@@ -311,9 +300,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("team");
 
-            entity.Property(e => e.IdTeam)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_team");
+            entity.Property(e => e.IdTeam).HasColumnName("id_team");
             entity.Property(e => e.City)
                 .HasMaxLength(255)
                 .HasColumnName("city");
@@ -344,9 +331,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("ticket_price_parameter");
 
-            entity.Property(e => e.IdTicketPriceParameter)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_ticket_price_parameter");
+            entity.Property(e => e.IdTicketPriceParameter).HasColumnName("id_ticket_price_parameter");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
             entity.Property(e => e.IdZone).HasColumnName("id_zone");
@@ -404,9 +389,7 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("zone");
 
-            entity.Property(e => e.IdZone)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_zone");
+            entity.Property(e => e.IdZone).HasColumnName("id_zone");
             entity.Property(e => e.MaximumCapacity).HasColumnName("maximum_capacity");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)

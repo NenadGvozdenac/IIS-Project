@@ -13,7 +13,7 @@ public class GetAllSeatsHandler : IRequestHandler<GetAllSeatsQuery, Result<List<
         _seatRepository = seatRepository;
     }
 
-    public async Task<Result<List<GetAllSeatsResponse>>> Handle(GetAllSeatsQuery request, CancellationToken cancellationToken)
+    public Task<Result<List<GetAllSeatsResponse>>> Handle(GetAllSeatsQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -31,12 +31,12 @@ public class GetAllSeatsHandler : IRequestHandler<GetAllSeatsQuery, Result<List<
                 ZoneName = seat.IdZoneNavigation?.Name
             }).ToList();
 
-            return Result<List<GetAllSeatsResponse>>.Success(response);
+            return Task.FromResult(Result<List<GetAllSeatsResponse>>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<List<GetAllSeatsResponse>>.Failure($"An error occurred while retrieving seats: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<List<GetAllSeatsResponse>>.Failure($"An error occurred while retrieving seats: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }
