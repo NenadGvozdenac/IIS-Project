@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace travel_service.src.Travels.Core.Domain.Entities;
 
-[Table("User")]
+[Table("users")]
 public class User
 {
     [Key]

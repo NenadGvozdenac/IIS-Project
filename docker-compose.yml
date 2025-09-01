@@ -5,6 +5,12 @@ services:
       dockerfile: backend/auth_service/Dockerfile
     ports:
       - "8080:8080" # Web UI
+    environment:
+      - DB_HOST=postgres_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=sportsdb
+      - DB_PORT=5432
     depends_on:
       - postgres_db
       

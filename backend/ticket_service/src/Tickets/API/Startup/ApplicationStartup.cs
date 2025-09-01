@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using ticket_service.src.Tickets.BuildingBlocks.Infratructure.Database;
 using ticket_service.src.Tickets.Core.Application.Interfaces;
 using ticket_service.src.Tickets.Core.Infrastructure.Repositories;
+using ticket_service.src.Tickets.Core.Infrastructure;
 
 namespace ticket_service.src.Tickets.API.Startup;
 
@@ -21,6 +21,8 @@ public static class ApplicationStartup
     private static void SetupRepositories(IServiceCollection services)
     {
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IZoneRepository, ZoneRepository>();
+        services.AddScoped<ISeatRepository, SeatRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

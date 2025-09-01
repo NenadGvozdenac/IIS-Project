@@ -27,7 +27,7 @@ public class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, Result<GetUs
 
             var response = new GetUserByIdResponse
             {
-                Id_User = user.Id_User,
+                Id_User = user.IdUser,
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email,
