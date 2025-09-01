@@ -45,7 +45,12 @@ public partial class TicketDbContext : DbContext
     public virtual DbSet<Zone> Zones { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
