@@ -1,4 +1,4 @@
-using ticket_service.src.Tickets.BuildingBlocks.Infratructure.Database;
+using ticket_service.src.Tickets.Core.Infrastructure;
 using ticket_service.src.Tickets.Core.Application.Interfaces;
 using ticket_service.src.Tickets.Core.Domain.Entities;
 
