@@ -15,15 +15,15 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<UpdateSeatResponse>> Handle(UpdateSeatCommand request, CancellationToken cancellationToken)
+    public Task<Result<UpdateSeatResponse>> Handle(UpdateSeatCommand request, CancellationToken cancellationToken)
     {
         try
         {
             var existingSeat = _seatRepository.GetById(request.IdSeat);
             if (existingSeat == null)
             {
-                return Result<UpdateSeatResponse>.Failure($"Seat with ID {request.IdSeat} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure($"Seat with ID {request.IdSeat} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             // Validate zone exists if provided
@@ -32,13 +32,44 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
                 var zone = _zoneRepository.GetById(request.IdZone.Value);
                 if (zone == null)
                 {
-                    return Result<UpdateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
-                        .WithCode((int)ResultCode.BadRequest);
+                    return Task.FromResult(Result<UpdateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
+                        .WithCode((int)ResultCode.BadRequest));
                 }
             }
 
-            existingSeat.Row = request.Row;
-            existingSeat.Number = request.Number;
+            // Validate required fields
+            if (!request.Row.HasValue)
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat row is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (!request.Number.HasValue)
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat number is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Type))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat type is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Direction))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat direction is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Status))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat status is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            existingSeat.Row = request.Row.Value;
+            existingSeat.Number = request.Number.Value;
             existingSeat.Type = request.Type;
             existingSeat.Direction = request.Direction;
             existingSeat.Status = request.Status;
@@ -57,12 +88,12 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
                 IdZone = updatedSeat.IdZone
             };
 
-            return Result<UpdateSeatResponse>.Success(response);
+            return Task.FromResult(Result<UpdateSeatResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<UpdateSeatResponse>.Failure($"An error occurred while updating the seat: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<UpdateSeatResponse>.Failure($"An error occurred while updating the seat: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

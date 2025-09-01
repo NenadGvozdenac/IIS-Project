@@ -4,6 +4,7 @@ using System.Reflection;
 using ticket_service.src.Tickets.Core.Application.Interfaces;
 using ticket_service.src.Tickets.Core.Infrastructure.Repositories;
 using ticket_service.src.Tickets.Core.Infrastructure;
+using ticket_service.src.Tickets.Core.Infrastructure.Services;
 
 namespace ticket_service.src.Tickets.API.Startup;
 
@@ -13,6 +14,7 @@ public static class ApplicationStartup
     {
         SetupDatabases(services, configuration);
         SetupRepositories(services);
+        SetupServices(services);
         SetupMediatR(services);
 
         return services;
@@ -23,6 +25,12 @@ public static class ApplicationStartup
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IZoneRepository, ZoneRepository>();
         services.AddScoped<ISeatRepository, SeatRepository>();
+        services.AddScoped<ICreditCardRepository, CreditCardRepository>();
+    }
+
+    private static void SetupServices(IServiceCollection services)
+    {
+        services.AddScoped<ICreditCardEncryptionService, CreditCardEncryptionService>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

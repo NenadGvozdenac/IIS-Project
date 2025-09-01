@@ -13,33 +13,39 @@ public class UpdateZoneHandler : IRequestHandler<UpdateZoneCommand, Result<Updat
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<UpdateZoneResponse>> Handle(UpdateZoneCommand request, CancellationToken cancellationToken)
+    public Task<Result<UpdateZoneResponse>> Handle(UpdateZoneCommand request, CancellationToken cancellationToken)
     {
         try
         {
             var existingZone = _zoneRepository.GetById(request.IdZone);
             if (existingZone == null)
             {
-                return Result<UpdateZoneResponse>.Failure($"Zone with ID {request.IdZone} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure($"Zone with ID {request.IdZone} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                return Result<UpdateZoneResponse>.Failure("Zone name is required")
-                    .WithCode((int)ResultCode.BadRequest);
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Zone name is required")
+                    .WithCode((int)ResultCode.BadRequest));
             }
 
-            if (request.MaximumCapacity.HasValue && request.MaximumCapacity.Value <= 0)
+            if (!request.Rank.HasValue)
             {
-                return Result<UpdateZoneResponse>.Failure("Maximum capacity must be greater than 0")
-                    .WithCode((int)ResultCode.BadRequest);
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Zone rank is required")
+                    .WithCode((int)ResultCode.BadRequest));
             }
 
-            existingZone.Name = request.Name;
-            existingZone.Rank = request.Rank;
-            existingZone.MaximumCapacity = request.MaximumCapacity;
-            existingZone.Status = request.Status;
+            if (!request.MaximumCapacity.HasValue || request.MaximumCapacity.Value <= 0)
+            {
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Maximum capacity is required and must be greater than 0")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            existingZone.Name = request.Name ?? existingZone.Name;
+            existingZone.Rank = request.Rank.Value;
+            existingZone.MaximumCapacity = request.MaximumCapacity.Value;
+            existingZone.Status = request.Status ?? existingZone.Status;
 
             var updatedZone = _zoneRepository.Update(existingZone);
 
@@ -52,12 +58,12 @@ public class UpdateZoneHandler : IRequestHandler<UpdateZoneCommand, Result<Updat
                 Status = updatedZone.Status
             };
 
-            return Result<UpdateZoneResponse>.Success(response);
+            return Task.FromResult(Result<UpdateZoneResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<UpdateZoneResponse>.Failure($"An error occurred while updating the zone: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<UpdateZoneResponse>.Failure($"An error occurred while updating the zone: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

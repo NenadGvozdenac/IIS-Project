@@ -9,9 +9,9 @@ public partial class CartItem
 
     public int IdPurchaseOffer { get; set; }
 
-    public DateOnly? AddedAt { get; set; }
+    public DateOnly AddedAt { get; set; }
 
-    public int? Quantity { get; set; }
+    public int Quantity { get; set; }
 
     public virtual Cart IdCartNavigation { get; set; } = null!;
 

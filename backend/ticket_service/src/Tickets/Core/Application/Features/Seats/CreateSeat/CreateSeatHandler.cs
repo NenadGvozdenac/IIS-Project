@@ -16,7 +16,7 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<CreateSeatResponse>> Handle(CreateSeatCommand request, CancellationToken cancellationToken)
+    public Task<Result<CreateSeatResponse>> Handle(CreateSeatCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -26,15 +26,46 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
                 var zone = _zoneRepository.GetById(request.IdZone.Value);
                 if (zone == null)
                 {
-                    return Result<CreateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
-                        .WithCode((int)ResultCode.BadRequest);
+                    return Task.FromResult(Result<CreateSeatResponse>.Failure($"Zone with ID {request.IdZone.Value} not found")
+                        .WithCode((int)ResultCode.BadRequest));
                 }
+            }
+
+            // Additional validation for required fields
+            if (!request.Row.HasValue)
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat row is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (!request.Number.HasValue)
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat number is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Type))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat type is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Direction))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat direction is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Status))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat status is required")
+                    .WithCode((int)ResultCode.BadRequest));
             }
 
             var seat = new Seat
             {
-                Row = request.Row,
-                Number = request.Number,
+                Row = request.Row.Value,
+                Number = request.Number.Value,
                 Type = request.Type,
                 Direction = request.Direction,
                 Status = request.Status,
@@ -54,12 +85,12 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
                 IdZone = createdSeat.IdZone
             };
 
-            return Result<CreateSeatResponse>.Success(response);
+            return Task.FromResult(Result<CreateSeatResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<CreateSeatResponse>.Failure($"An error occurred while creating the seat: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<CreateSeatResponse>.Failure($"An error occurred while creating the seat: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

@@ -13,15 +13,15 @@ public class GetSeatByIdHandler : IRequestHandler<GetSeatByIdQuery, Result<GetSe
         _seatRepository = seatRepository;
     }
 
-    public async Task<Result<GetSeatByIdResponse>> Handle(GetSeatByIdQuery request, CancellationToken cancellationToken)
+    public Task<Result<GetSeatByIdResponse>> Handle(GetSeatByIdQuery request, CancellationToken cancellationToken)
     {
         try
         {
             var seat = _seatRepository.GetById(request.IdSeat);
             if (seat == null)
             {
-                return Result<GetSeatByIdResponse>.Failure($"Seat with ID {request.IdSeat} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<GetSeatByIdResponse>.Failure($"Seat with ID {request.IdSeat} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             var response = new GetSeatByIdResponse
@@ -36,12 +36,12 @@ public class GetSeatByIdHandler : IRequestHandler<GetSeatByIdQuery, Result<GetSe
                 ZoneName = seat.IdZoneNavigation?.Name
             };
 
-            return Result<GetSeatByIdResponse>.Success(response);
+            return Task.FromResult(Result<GetSeatByIdResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<GetSeatByIdResponse>.Failure($"An error occurred while retrieving the seat: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<GetSeatByIdResponse>.Failure($"An error occurred while retrieving the seat: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }

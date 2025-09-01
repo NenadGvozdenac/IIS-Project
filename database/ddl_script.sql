@@ -136,9 +136,9 @@ CREATE TABLE automatic_recommendations (
 
 CREATE TABLE cart (
     id_cart        SERIAL NOT NULL,
-    created_at     DATE,
-    items_number   INTEGER,
-    status         VARCHAR(255),
+    created_at     DATE NOT NULL,
+    items_number   INTEGER NOT NULL,
+    status         VARCHAR(255) NOT NULL,
     id_credit_card INTEGER,
     id_user        INTEGER NOT NULL,
     PRIMARY KEY (id_cart)
@@ -147,26 +147,27 @@ CREATE TABLE cart (
 CREATE TABLE cart_item (
     id_cart           INTEGER NOT NULL,
     id_purchase_offer INTEGER NOT NULL,
-    added_at          DATE,
-    quantity          INTEGER,
+    added_at          DATE NOT NULL,
+    quantity          INTEGER NOT NULL,
     PRIMARY KEY (id_cart, id_purchase_offer)
 );
 
 CREATE TABLE competition (
     id_competition    SERIAL NOT NULL,
-    name              VARCHAR(50),
-    started_at        DATE,
+    name              VARCHAR(50) NOT NULL,
+    started_at        DATE NOT NULL,
     ended_at          DATE,
-    number_of_matches INTEGER,
+    number_of_matches INTEGER NOT NULL,
     PRIMARY KEY (id_competition)
 );
 
 CREATE TABLE credit_card (
     id_credit_card SERIAL NOT NULL,
-    created_at     DATE,
-    number         VARCHAR(16),
-    cvv            INTEGER,
-    name           VARCHAR(50),
+    created_at     DATE NOT NULL,
+    number         VARCHAR(255) NOT NULL,
+    cvv            VARCHAR(255) NOT NULL,
+    name           VARCHAR(50) NOT NULL,
+    expiration_date DATE NOT NULL,
     id_user        INTEGER NOT NULL,
     PRIMARY KEY (id_credit_card)
 );
@@ -205,15 +206,15 @@ CREATE TABLE management_member_request (
 
 CREATE TABLE match (
     id_match                SERIAL NOT NULL,
-    name                    VARCHAR(255),
-    created_at              DATE,
-    type                    VARCHAR(20) CHECK (type IN ('away', 'home')),
-    state                   VARCHAR(255),
-    city                    VARCHAR(255),
-    hall                    VARCHAR(255),
-    is_in_our_hall          INTEGER,
-    transportation_required INTEGER,
-    accommodation_required  INTEGER,
+    name                    VARCHAR(255) NOT NULL,
+    created_at              DATE NOT NULL,
+    type                    VARCHAR(20) NOT NULL CHECK (type IN ('away', 'home')),
+    state                   VARCHAR(255) NOT NULL,
+    city                    VARCHAR(255) NOT NULL,
+    hall                    VARCHAR(255) NOT NULL,
+    is_in_our_hall          INTEGER NOT NULL,
+    transportation_required INTEGER NOT NULL,
+    accommodation_required  INTEGER NOT NULL,
     id_competition          INTEGER,
     id_season               INTEGER NOT NULL,
     id_team                 INTEGER NOT NULL,
@@ -317,12 +318,12 @@ CREATE TABLE position (
 
 CREATE TABLE purchase_offer (
     id_purchase_offer SERIAL NOT NULL,
-    name              VARCHAR(255),
-    description       VARCHAR(255),
-    type              VARCHAR(50) CHECK (type IN ('individual ticket', 'season ticket')),
-    status            VARCHAR(255),
-    released_at       DATE,
-    created_at        DATE,
+    name              VARCHAR(255) NOT NULL,
+    description       VARCHAR(255) NOT NULL,
+    type              VARCHAR(50) NOT NULL CHECK (type IN ('individual ticket', 'season ticket')),
+    status            VARCHAR(255) NOT NULL,
+    released_at       DATE NOT NULL,
+    created_at        DATE NOT NULL,
     expires_at        DATE,
     id_seat           INTEGER NOT NULL,
     PRIMARY KEY (id_purchase_offer)
@@ -341,9 +342,9 @@ CREATE TABLE request (
 
 CREATE TABLE season (
     id_season  SERIAL NOT NULL,
-    started_at DATE,
+    started_at DATE NOT NULL,
     ended_at   DATE,
-    name       VARCHAR(255),
+    name       VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_season)
 );
 
@@ -356,17 +357,17 @@ CREATE TABLE season_metrics (
 CREATE TABLE season_ticket (
     id_purchase_offer              INTEGER NOT NULL,
     id_season                      INTEGER NOT NULL,
-    fixed_promotional_ticket_price INTEGER,
+    fixed_promotional_ticket_price INTEGER NOT NULL,
     PRIMARY KEY (id_purchase_offer)
 );
 
 CREATE TABLE seat (
     id_seat   SERIAL NOT NULL,
-    "row"     INTEGER,
-    "number"  INTEGER,
-    type      VARCHAR(255),
-    direction VARCHAR(255),
-    status    VARCHAR(255),
+    "row"     INTEGER NOT NULL,
+    "number"  INTEGER NOT NULL,
+    type      VARCHAR(255) NOT NULL,
+    direction VARCHAR(255) NOT NULL,
+    status    VARCHAR(255) NOT NULL,
     id_zone   INTEGER,
     PRIMARY KEY (id_seat)
 );
@@ -409,10 +410,10 @@ CREATE TABLE session_type (
 
 CREATE TABLE team (
     id_team        SERIAL NOT NULL,
-    name           VARCHAR(255),
-    state          VARCHAR(255),
-    city           VARCHAR(255),
-    hall           VARCHAR(255),
+    name           VARCHAR(255) NOT NULL,
+    state          VARCHAR(255) NOT NULL,
+    city           VARCHAR(255) NOT NULL,
+    hall           VARCHAR(255) NOT NULL,
     founded_date   DATE,
     coach          VARCHAR(255),
     key_strenghts  VARCHAR(255),
@@ -458,10 +459,10 @@ CREATE TABLE team_member_request (
 
 CREATE TABLE ticket_price_parameter (
     id_ticket_price_parameter SERIAL NOT NULL,
-    price_factor              INTEGER,
-    time_factor               INTEGER,
-    minimum_seat_price        INTEGER,
-    maximum_seat_price        INTEGER,
+    price_factor              INTEGER NOT NULL,
+    time_factor               INTEGER NOT NULL,
+    minimum_seat_price        INTEGER NOT NULL,
+    maximum_seat_price        INTEGER NOT NULL,
     id_user                   INTEGER NOT NULL,
     id_zone                   INTEGER NOT NULL,
     id_match                  INTEGER NOT NULL,
@@ -525,12 +526,12 @@ CREATE TABLE trip (
 
 CREATE TABLE users (
     id_user  SERIAL NOT NULL,
-    name     VARCHAR(50),
-    surname  VARCHAR(50),
-    email    VARCHAR(50),
+    name     VARCHAR(50) NOT NULL,
+    surname  VARCHAR(50) NOT NULL,
+    email    VARCHAR(50) NOT NULL,
     phone    VARCHAR(20),
-    password VARCHAR(255),
-    type     VARCHAR(50),
+    password VARCHAR(255) NOT NULL,
+    type     VARCHAR(50) NOT NULL,
     PRIMARY KEY (id_user)
 );
 
@@ -545,10 +546,10 @@ CREATE TABLE visa (
 
 CREATE TABLE zone (
     id_zone          SERIAL NOT NULL,
-    name             VARCHAR(255),
-    rank             INTEGER,
-    maximum_capacity INTEGER,
-    status           VARCHAR(255),
+    name             VARCHAR(255) NOT NULL,
+    rank             INTEGER NOT NULL,
+    maximum_capacity INTEGER NOT NULL,
+    status           VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_zone)
 );
 

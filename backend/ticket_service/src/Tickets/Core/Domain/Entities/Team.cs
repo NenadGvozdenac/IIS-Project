@@ -7,13 +7,13 @@ public partial class Team
 {
     public int IdTeam { get; set; }
 
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
 
-    public string? State { get; set; }
+    public string State { get; set; } = null!;
 
-    public string? City { get; set; }
+    public string City { get; set; } = null!;
 
-    public string? Hall { get; set; }
+    public string Hall { get; set; } = null!;
 
     public DateOnly? FoundedDate { get; set; }
 

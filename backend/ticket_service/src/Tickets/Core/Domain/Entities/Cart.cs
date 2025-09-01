@@ -7,11 +7,11 @@ public partial class Cart
 {
     public int IdCart { get; set; }
 
-    public DateOnly? CreatedAt { get; set; }
+    public DateOnly CreatedAt { get; set; }
 
-    public int? ItemsNumber { get; set; }
+    public int ItemsNumber { get; set; }
 
-    public string? Status { get; set; }
+    public string Status { get; set; } = null!;
 
     public int? IdCreditCard { get; set; }
 

@@ -7,23 +7,23 @@ public partial class Match
 {
     public int IdMatch { get; set; }
 
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
 
-    public DateOnly? CreatedAt { get; set; }
+    public DateOnly CreatedAt { get; set; }
 
-    public string? Type { get; set; }
+    public string Type { get; set; } = null!;
 
-    public string? State { get; set; }
+    public string State { get; set; } = null!;
 
-    public string? City { get; set; }
+    public string City { get; set; } = null!;
 
-    public string? Hall { get; set; }
+    public string Hall { get; set; } = null!;
 
-    public int? IsInOurHall { get; set; }
+    public int IsInOurHall { get; set; }
 
-    public int? TransportationRequired { get; set; }
+    public int TransportationRequired { get; set; }
 
-    public int? AccommodationRequired { get; set; }
+    public int AccommodationRequired { get; set; }
 
     public int? IdCompetition { get; set; }
 
