@@ -52,6 +52,12 @@ public class CreateCreditCardHandler : IRequestHandler<CreateCreditCardCommand, 
                     .WithCode((int)ResultCode.BadRequest));
             }
 
+            if (!request.ExpirationDate.HasValue)
+            {
+                return Task.FromResult(Result<CreateCreditCardResponse>.Failure("Expiration date is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
             // Validate credit card number format (basic validation)
             var cleanNumber = request.Number.Replace(" ", "").Replace("-", "");
             if (cleanNumber.Length < 13 || cleanNumber.Length > 19 || !cleanNumber.All(char.IsDigit))
@@ -65,7 +71,7 @@ public class CreateCreditCardHandler : IRequestHandler<CreateCreditCardCommand, 
                 Number = _encryptionService.EncryptCardNumber(cleanNumber),
                 Cvv = _encryptionService.EncryptCvv(request.Cvv.Value.ToString()),
                 Name = request.Name,
-                ExpirationDate = request.ExpirationDate,
+                ExpirationDate = request.ExpirationDate.Value,
                 IdUser = request.IdUser,
                 CreatedAt = DateOnly.FromDateTime(DateTime.UtcNow)
             };

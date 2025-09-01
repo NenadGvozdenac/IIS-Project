@@ -7,15 +7,15 @@ public partial class CreditCard
 {
     public int IdCreditCard { get; set; }
 
-    public DateOnly? CreatedAt { get; set; }
+    public DateOnly CreatedAt { get; set; }
 
-    public string? Number { get; set; }
+    public string Number { get; set; } = null!;
 
-    public string? Cvv { get; set; }
+    public string Cvv { get; set; } = null!;
 
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
 
-    public DateOnly? ExpirationDate { get; set; }
+    public DateOnly ExpirationDate { get; set; }
 
     public int IdUser { get; set; }
 

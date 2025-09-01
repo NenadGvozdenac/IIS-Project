@@ -7,13 +7,13 @@ public partial class TicketPriceParameter
 {
     public int IdTicketPriceParameter { get; set; }
 
-    public int? PriceFactor { get; set; }
+    public int PriceFactor { get; set; }
 
-    public int? TimeFactor { get; set; }
+    public int TimeFactor { get; set; }
 
-    public int? MinimumSeatPrice { get; set; }
+    public int MinimumSeatPrice { get; set; }
 
-    public int? MaximumSeatPrice { get; set; }
+    public int MaximumSeatPrice { get; set; }
 
     public int IdUser { get; set; }
 

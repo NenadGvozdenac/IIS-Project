@@ -7,13 +7,13 @@ public partial class Zone
 {
     public int IdZone { get; set; }
 
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
 
-    public int? Rank { get; set; }
+    public int Rank { get; set; }
 
-    public int? MaximumCapacity { get; set; }
+    public int MaximumCapacity { get; set; }
 
-    public string? Status { get; set; }
+    public string Status { get; set; } = null!;
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
 

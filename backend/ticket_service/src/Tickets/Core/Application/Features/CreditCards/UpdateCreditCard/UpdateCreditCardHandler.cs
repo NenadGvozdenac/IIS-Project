@@ -51,9 +51,15 @@ public class UpdateCreditCardHandler : IRequestHandler<UpdateCreditCardCommand, 
                 existingCreditCard.Number = _encryptionService.EncryptCardNumber(cleanNumber);
             }
 
+            if (!request.ExpirationDate.HasValue)
+            {
+                return Task.FromResult(Result<UpdateCreditCardResponse>.Failure("Expiration date is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
             existingCreditCard.Cvv = _encryptionService.EncryptCvv(request.Cvv.Value.ToString());
-            existingCreditCard.Name = request.Name;
-            existingCreditCard.ExpirationDate = request.ExpirationDate;
+            existingCreditCard.Name = request.Name ?? existingCreditCard.Name;
+            existingCreditCard.ExpirationDate = request.ExpirationDate.Value;
 
             var updatedCreditCard = _creditCardRepository.Update(existingCreditCard);
 

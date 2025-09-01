@@ -30,16 +30,22 @@ public class UpdateZoneHandler : IRequestHandler<UpdateZoneCommand, Result<Updat
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            if (request.MaximumCapacity.HasValue && request.MaximumCapacity.Value <= 0)
+            if (!request.Rank.HasValue)
             {
-                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Maximum capacity must be greater than 0")
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Zone rank is required")
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            existingZone.Name = request.Name;
-            existingZone.Rank = request.Rank;
-            existingZone.MaximumCapacity = request.MaximumCapacity;
-            existingZone.Status = request.Status;
+            if (!request.MaximumCapacity.HasValue || request.MaximumCapacity.Value <= 0)
+            {
+                return Task.FromResult(Result<UpdateZoneResponse>.Failure("Maximum capacity is required and must be greater than 0")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            existingZone.Name = request.Name ?? existingZone.Name;
+            existingZone.Rank = request.Rank.Value;
+            existingZone.MaximumCapacity = request.MaximumCapacity.Value;
+            existingZone.Status = request.Status ?? existingZone.Status;
 
             var updatedZone = _zoneRepository.Update(existingZone);
 

@@ -37,8 +37,39 @@ public class UpdateSeatHandler : IRequestHandler<UpdateSeatCommand, Result<Updat
                 }
             }
 
-            existingSeat.Row = request.Row;
-            existingSeat.Number = request.Number;
+            // Validate required fields
+            if (!request.Row.HasValue)
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat row is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (!request.Number.HasValue)
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat number is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Type))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat type is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Direction))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat direction is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Status))
+            {
+                return Task.FromResult(Result<UpdateSeatResponse>.Failure("Seat status is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            existingSeat.Row = request.Row.Value;
+            existingSeat.Number = request.Number.Value;
             existingSeat.Type = request.Type;
             existingSeat.Direction = request.Direction;
             existingSeat.Status = request.Status;

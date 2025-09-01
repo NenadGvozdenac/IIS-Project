@@ -7,15 +7,15 @@ public partial class Seat
 {
     public int IdSeat { get; set; }
 
-    public int? Row { get; set; }
+    public int Row { get; set; }
 
-    public int? Number { get; set; }
+    public int Number { get; set; }
 
-    public string? Type { get; set; }
+    public string Type { get; set; } = null!;
 
-    public string? Direction { get; set; }
+    public string Direction { get; set; } = null!;
 
-    public string? Status { get; set; }
+    public string Status { get; set; } = null!;
 
     public int? IdZone { get; set; }
 

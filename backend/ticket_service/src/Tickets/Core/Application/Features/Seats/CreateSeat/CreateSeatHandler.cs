@@ -31,10 +31,41 @@ public class CreateSeatHandler : IRequestHandler<CreateSeatCommand, Result<Creat
                 }
             }
 
+            // Additional validation for required fields
+            if (!request.Row.HasValue)
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat row is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (!request.Number.HasValue)
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat number is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Type))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat type is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Direction))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat direction is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Status))
+            {
+                return Task.FromResult(Result<CreateSeatResponse>.Failure("Seat status is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
             var seat = new Seat
             {
-                Row = request.Row,
-                Number = request.Number,
+                Row = request.Row.Value,
+                Number = request.Number.Value,
                 Type = request.Type,
                 Direction = request.Direction,
                 Status = request.Status,

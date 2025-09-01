@@ -24,17 +24,23 @@ public class CreateZoneHandler : IRequestHandler<CreateZoneCommand, Result<Creat
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            if (request.MaximumCapacity.HasValue && request.MaximumCapacity.Value <= 0)
+            if (!request.Rank.HasValue)
             {
-                return Task.FromResult(Result<CreateZoneResponse>.Failure("Maximum capacity must be greater than 0")
+                return Task.FromResult(Result<CreateZoneResponse>.Failure("Zone rank is required")
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            if (!request.MaximumCapacity.HasValue || request.MaximumCapacity.Value <= 0)
+            {
+                return Task.FromResult(Result<CreateZoneResponse>.Failure("Maximum capacity is required and must be greater than 0")
                     .WithCode((int)ResultCode.BadRequest));
             }
 
             var zone = new Zone
             {
                 Name = request.Name,
-                Rank = request.Rank,
-                MaximumCapacity = request.MaximumCapacity,
+                Rank = request.Rank.Value,
+                MaximumCapacity = request.MaximumCapacity.Value,
                 Status = request.Status ?? "Active"
             };
 
