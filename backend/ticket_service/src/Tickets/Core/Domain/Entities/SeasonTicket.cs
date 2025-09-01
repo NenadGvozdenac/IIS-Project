@@ -9,7 +9,7 @@ public partial class SeasonTicket
 
     public int IdSeason { get; set; }
 
-    public int FixedPromotionalTicketPrice { get; set; }
+    public int TicketPrice { get; set; }
 
     public virtual Season IdSeasonNavigation { get; set; } = null!;
 }

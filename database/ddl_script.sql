@@ -138,7 +138,7 @@ CREATE TABLE cart (
     id_cart        SERIAL NOT NULL,
     created_at     DATE NOT NULL,
     items_number   INTEGER NOT NULL,
-    status         VARCHAR(255) NOT NULL,
+    status         VARCHAR(255) NOT NULL CHECK(status in ('created', 'bought')),
     id_credit_card INTEGER,
     id_user        INTEGER NOT NULL,
     PRIMARY KEY (id_cart)
@@ -148,7 +148,7 @@ CREATE TABLE cart_item (
     id_cart           INTEGER NOT NULL,
     id_purchase_offer INTEGER NOT NULL,
     added_at          DATE NOT NULL,
-    quantity          INTEGER NOT NULL,
+    price   NUMERIC(10,2) NOT NULL,
     PRIMARY KEY (id_cart, id_purchase_offer)
 );
 
@@ -185,7 +185,7 @@ CREATE TABLE general_event (
 CREATE TABLE individual_ticket (
     id_purchase_offer    INTEGER NOT NULL,
     id_match             INTEGER NOT NULL,
-    id_individual_ticket INTEGER NOT NULL,
+    id_individual_ticket SERIAL NOT NULL,
     PRIMARY KEY (id_purchase_offer),
     UNIQUE (id_individual_ticket)
 );
@@ -321,7 +321,7 @@ CREATE TABLE purchase_offer (
     name              VARCHAR(255) NOT NULL,
     description       VARCHAR(255) NOT NULL,
     type              VARCHAR(50) NOT NULL CHECK (type IN ('individual ticket', 'season ticket')),
-    status            VARCHAR(255) NOT NULL,
+    status            VARCHAR(25) NOT NULL CHECK (status IN ('enabled', 'disabled')),
     released_at       DATE NOT NULL,
     created_at        DATE NOT NULL,
     expires_at        DATE,
@@ -355,9 +355,9 @@ CREATE TABLE season_metrics (
 );
 
 CREATE TABLE season_ticket (
-    id_purchase_offer              INTEGER NOT NULL,
-    id_season                      INTEGER NOT NULL,
-    fixed_promotional_ticket_price INTEGER NOT NULL,
+    id_purchase_offer   INTEGER NOT NULL,
+    id_season           INTEGER NOT NULL,
+    ticket_price        INTEGER NOT NULL,
     PRIMARY KEY (id_purchase_offer)
 );
 
@@ -367,7 +367,7 @@ CREATE TABLE seat (
     "number"  INTEGER NOT NULL,
     type      VARCHAR(255) NOT NULL,
     direction VARCHAR(255) NOT NULL,
-    status    VARCHAR(255) NOT NULL,
+    status    VARCHAR(255) NOT NULL CHECK (status in ('enabled', 'disabled', 'empty')),
     id_zone   INTEGER,
     PRIMARY KEY (id_seat)
 );
@@ -531,7 +531,7 @@ CREATE TABLE users (
     email    VARCHAR(50) NOT NULL,
     phone    VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    type     VARCHAR(50) NOT NULL,
+    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analytic', 'scouting manager')),
     PRIMARY KEY (id_user)
 );
 
@@ -549,7 +549,7 @@ CREATE TABLE zone (
     name             VARCHAR(255) NOT NULL,
     rank             INTEGER NOT NULL,
     maximum_capacity INTEGER NOT NULL,
-    status           VARCHAR(255) NOT NULL,
+    status           VARCHAR(255) NOT NULL CHECK (status in ('enabled', 'disabled')),
     PRIMARY KEY (id_zone)
 );
 
@@ -853,3 +853,23 @@ ALTER TABLE visa
     ADD CONSTRAINT fk_visa_travel_information 
         FOREIGN KEY (id_travel_information)
         REFERENCES travel_information (id_travel_information);
+
+-- NENAD GVOZDENAC TRIGGER #1 - Kada se kreira kupac, kreira se i korpa
+CREATE OR REPLACE FUNCTION create_cart_for_customer()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.type = 'customer' THEN
+        INSERT INTO cart (created_at, items_number, status, id_user)
+        VALUES (CURRENT_DATE, 0, 'created', NEW.id_user);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_cart_for_customer
+    AFTER INSERT ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION create_cart_for_customer();
+
+-- KRAJ TRIGGERA NENAD GVOZDENAC #1

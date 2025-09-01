@@ -88,7 +88,9 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdCart).HasColumnName("id_cart");
             entity.Property(e => e.IdPurchaseOffer).HasColumnName("id_purchase_offer");
             entity.Property(e => e.AddedAt).HasColumnName("added_at");
-            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.Price)
+                .HasPrecision(10, 2)
+                .HasColumnName("price");
 
             entity.HasOne(d => d.IdCartNavigation).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.IdCart)
@@ -153,7 +155,9 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdPurchaseOffer)
                 .ValueGeneratedNever()
                 .HasColumnName("id_purchase_offer");
-            entity.Property(e => e.IdIndividualTicket).HasColumnName("id_individual_ticket");
+            entity.Property(e => e.IdIndividualTicket)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("id_individual_ticket");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
 
             entity.HasOne(d => d.IdMatchNavigation).WithMany(p => p.IndividualTickets)
@@ -225,7 +229,7 @@ public partial class TicketDbContext : DbContext
                 .HasColumnName("name");
             entity.Property(e => e.ReleasedAt).HasColumnName("released_at");
             entity.Property(e => e.Status)
-                .HasMaxLength(255)
+                .HasMaxLength(25)
                 .HasColumnName("status");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
@@ -260,8 +264,8 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdPurchaseOffer)
                 .ValueGeneratedNever()
                 .HasColumnName("id_purchase_offer");
-            entity.Property(e => e.FixedPromotionalTicketPrice).HasColumnName("fixed_promotional_ticket_price");
             entity.Property(e => e.IdSeason).HasColumnName("id_season");
+            entity.Property(e => e.TicketPrice).HasColumnName("ticket_price");
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.SeasonTickets)
                 .HasForeignKey(d => d.IdSeason)
