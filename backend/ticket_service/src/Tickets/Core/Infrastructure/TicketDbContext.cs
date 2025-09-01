@@ -227,7 +227,7 @@ public partial class TicketDbContext : DbContext
                 .HasColumnName("name");
             entity.Property(e => e.ReleasedAt).HasColumnName("released_at");
             entity.Property(e => e.Status)
-                .HasMaxLength(255)
+                .HasMaxLength(25)
                 .HasColumnName("status");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
