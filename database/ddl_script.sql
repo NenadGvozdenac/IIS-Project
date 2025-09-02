@@ -213,9 +213,9 @@ CREATE TABLE match (
     state                   VARCHAR(255) NOT NULL,
     city                    VARCHAR(255) NOT NULL,
     hall                    VARCHAR(255) NOT NULL,
-    is_in_our_hall          INTEGER NOT NULL,
-    transportation_required INTEGER NOT NULL,
-    accommodation_required  INTEGER NOT NULL,
+    is_in_our_hall          BOOLEAN NOT NULL,
+    transportation_required BOOLEAN NOT NULL,
+    accommodation_required  BOOLEAN NOT NULL,
     id_competition          INTEGER,
     id_season               INTEGER NOT NULL,
     id_team                 INTEGER NOT NULL,
@@ -970,9 +970,9 @@ INSERT INTO zone (name, rank, maximum_capacity, status) VALUES
 
 -- Insert 3 Partizan matches
 INSERT INTO match (name, created_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
-    ('Partizan vs Crvena Zvezda', '2024-09-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 2),
-    ('Partizan vs FMP', '2024-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 3),
-    ('Partizan vs Mega', '2024-10-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 4);
+    ('Partizan vs Crvena Zvezda', '2024-09-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
+    ('Partizan vs FMP', '2024-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
+    ('Partizan vs Mega', '2024-10-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
 
 -- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 

@@ -38,7 +38,7 @@ public class MatchRepository : IMatchRepository
             .Include(m => m.IdCompetitionNavigation)
             .Include(m => m.IdSeasonNavigation)
             .Include(m => m.IdTeamNavigation)
-            .Where(m => m.IsInOurHall == 1)
+            .Where(m => m.IsInOurHall)
             .ToList();
     }
 }

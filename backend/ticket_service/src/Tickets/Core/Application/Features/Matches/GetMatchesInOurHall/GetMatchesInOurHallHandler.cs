@@ -28,9 +28,9 @@ public class GetMatchesInOurHallHandler : IRequestHandler<GetMatchesInOurHallQue
                 State = match.State,
                 City = match.City,
                 Hall = match.Hall,
-                IsInOurHall = match.IsInOurHall == 1,
-                TransportationRequired = match.TransportationRequired == 1,
-                AccommodationRequired = match.AccommodationRequired == 1,
+                IsInOurHall = match.IsInOurHall,
+                TransportationRequired = match.TransportationRequired,
+                AccommodationRequired = match.AccommodationRequired,
                 CompetitionName = match.IdCompetitionNavigation?.Name,
                 SeasonName = match.IdSeasonNavigation.Name,
                 TeamName = match.IdTeamNavigation.Name
