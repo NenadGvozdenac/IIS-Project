@@ -97,14 +97,14 @@ CREATE TABLE accommodation_offer (
     type           VARCHAR(20) CHECK (type IN ('hotel', 'house', 'villa')),
     id_agency      INTEGER NOT NULL,
     id_request     INTEGER NOT NULL,
-    double_room    INTEGER,
-    triple_room    INTEGER,
-    quadruple_room INTEGER,
-    breakfast      INTEGER,
-    fitness_center INTEGER,
-    pool           INTEGER,
-    wifi           INTEGER,
-    spa            INTEGER,
+    double_room    BOOLEAN NOT NULL,
+    triple_room    BOOLEAN NOT NULL,
+    quadruple_room BOOLEAN NOT NULL,
+    breakfast      BOOLEAN NOT NULL,
+    fitness_center BOOLEAN NOT NULL,
+    pool           BOOLEAN NOT NULL,
+    wifi           BOOLEAN NOT NULL,
+    spa            BOOLEAN NOT NULL,
     PRIMARY KEY (id_offer, id_agency, id_request)
 );
 
@@ -236,7 +236,7 @@ CREATE TABLE match_tracking (
     last_update_time           DATE,
     our_points                 INTEGER,
     opponent_points            INTEGER,
-    id_user                    INTEGER UNIQUE,
+    id_user                    INTEGER,
     id_match                   INTEGER NOT NULL,
     PRIMARY KEY (id_match)
 );
@@ -435,7 +435,6 @@ CREATE TABLE team_event (
 
 CREATE TABLE team_member (
     jersey_number INTEGER,
-    captain       INTEGER,
     status        VARCHAR(20) CHECK (status IN ('active', 'injured', 'suspended')),
     id_player     INTEGER NOT NULL,
     id_team       INTEGER NOT NULL,
@@ -443,8 +442,8 @@ CREATE TABLE team_member (
 );
 
 CREATE TABLE team_member_match (
-    starting_lineup INTEGER,
-    in_game         INTEGER,
+    starting_lineup BOOLEAN NOT NULL,
+    in_game         BOOLEAN NOT NULL,
     id_team         INTEGER NOT NULL,
     id_player       INTEGER NOT NULL,
     id_match        INTEGER NOT NULL,
@@ -477,11 +476,11 @@ CREATE TABLE transportation_offer (
     type             VARCHAR(20) CHECK (type IN ('autobus', 'plane', 'train', 'van')),
     id_agency        INTEGER NOT NULL,
     id_request       INTEGER NOT NULL,
-    equipment_space  INTEGER,
-    air_conditioning INTEGER,
-    tv               INTEGER,
-    wifi             INTEGER,
-    restroom         INTEGER,
+    equipment_space  BOOLEAN NOT NULL,
+    air_conditioning BOOLEAN NOT NULL,
+    tv               BOOLEAN NOT NULL,
+    wifi             BOOLEAN NOT NULL,
+    restroom         BOOLEAN NOT NULL,
     PRIMARY KEY (id_offer, id_agency, id_request)
 );
 
@@ -498,7 +497,6 @@ CREATE TABLE travel_information (
     id_travel_information    SERIAL NOT NULL,
     passport_number          VARCHAR(30),
     passport_expiration_date DATE,
-    nationality              VARCHAR(255),
     phone                    VARCHAR(20),
     email                    VARCHAR(50),
     role                     VARCHAR(20) CHECK (role IN ('management', 'player')),
@@ -532,7 +530,7 @@ CREATE TABLE users (
     email    VARCHAR(50) NOT NULL,
     phone    VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analytic', 'scouting manager')),
+    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analyst', 'scouting manager', 'team manager')),
     PRIMARY KEY (id_user)
 );
 
