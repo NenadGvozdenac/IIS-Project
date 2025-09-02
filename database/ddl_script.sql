@@ -135,12 +135,13 @@ CREATE TABLE automatic_recommendations (
 );
 
 CREATE TABLE cart (
-    id_cart        SERIAL NOT NULL,
-    created_at     DATE NOT NULL,
-    items_number   INTEGER NOT NULL,
-    status         VARCHAR(255) NOT NULL CHECK(status in ('created', 'bought')),
-    id_credit_card INTEGER,
-    id_user        INTEGER NOT NULL,
+    id_cart         SERIAL NOT NULL,
+    created_at      DATE NOT NULL,
+    items_number    INTEGER NOT NULL,
+    status          VARCHAR(255) NOT NULL CHECK(status in ('created', 'bought')),
+    is_current      BOOLEAN NOT NULL,
+    id_credit_card  INTEGER,
+    id_user         INTEGER NOT NULL,
     PRIMARY KEY (id_cart)
 );
 
@@ -859,8 +860,8 @@ CREATE OR REPLACE FUNCTION create_cart_for_customer()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.type = 'customer' THEN
-        INSERT INTO cart (created_at, items_number, status, id_user)
-        VALUES (CURRENT_DATE, 0, 'created', NEW.id_user);
+        INSERT INTO cart (created_at, items_number, status, is_current, id_user)
+        VALUES (CURRENT_DATE, 0, 'created', TRUE, NEW.id_user);
     END IF;
     
     RETURN NEW;
@@ -873,3 +874,61 @@ CREATE TRIGGER trigger_create_cart_for_customer
     EXECUTE FUNCTION create_cart_for_customer();
 
 -- KRAJ TRIGGERA NENAD GVOZDENAC #1
+
+-- NENAD GVOZDENAC TRIGGER #2 - Kada se status korpe postane 'bought', kreira se nova korpa za korisnika
+CREATE OR REPLACE FUNCTION create_new_cart_on_purchase()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status != 'bought' AND NEW.status = 'bought' THEN
+        UPDATE cart 
+        SET is_current = FALSE 
+        WHERE id_cart = NEW.id_cart;
+        
+        INSERT INTO cart (created_at, items_number, status, is_current, id_user)
+        VALUES (CURRENT_DATE, 0, 'created', TRUE, NEW.id_user);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_new_cart_on_purchase
+    AFTER UPDATE ON cart
+    FOR EACH ROW
+    EXECUTE FUNCTION create_new_cart_on_purchase();
+
+-- KRAJ TRIGGERA NENAD GVOZDENAC #2
+
+-- NENAD GVOZDENAC TRIGGER #3 - Kada se doda ili obrise novi element u korpi, poveca se item count.
+CREATE OR REPLACE FUNCTION update_cart_items_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE cart 
+        SET items_number = items_number + 1 
+        WHERE id_cart = NEW.id_cart;
+        
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE cart 
+        SET items_number = items_number - 1 
+        WHERE id_cart = OLD.id_cart;
+        
+        RETURN OLD;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_cart_item_insert
+    AFTER INSERT ON cart_item
+    FOR EACH ROW
+    EXECUTE FUNCTION update_cart_items_count();
+
+CREATE TRIGGER trigger_cart_item_delete
+    AFTER DELETE ON cart_item
+    FOR EACH ROW
+    EXECUTE FUNCTION update_cart_items_count();
+
+-- KRAJ TRIGGERA NENAD GVOZDENAC #3

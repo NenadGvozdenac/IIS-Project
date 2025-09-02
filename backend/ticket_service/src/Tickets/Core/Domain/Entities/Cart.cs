@@ -13,6 +13,8 @@ public partial class Cart
 
     public string Status { get; set; } = null!;
 
+    public bool IsCurrent { get; set; }
+
     public int? IdCreditCard { get; set; }
 
     public int IdUser { get; set; }
