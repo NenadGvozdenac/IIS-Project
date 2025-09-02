@@ -1,4 +1,4 @@
-using match_service.src.Matches.BuildingBlocks.Infratructure.Database;
+using match_service.src.Matches.Core.Infrastructure;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Domain.Entities;
 
