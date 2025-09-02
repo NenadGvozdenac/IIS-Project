@@ -19,11 +19,11 @@ public partial class Match
 
     public string Hall { get; set; } = null!;
 
-    public int IsInOurHall { get; set; }
+    public bool IsInOurHall { get; set; }
 
-    public int TransportationRequired { get; set; }
+    public bool TransportationRequired { get; set; }
 
-    public int AccommodationRequired { get; set; }
+    public bool AccommodationRequired { get; set; }
 
     public int? IdCompetition { get; set; }
 

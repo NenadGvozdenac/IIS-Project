@@ -28,6 +28,7 @@ public static class ApplicationStartup
         services.AddScoped<ICreditCardRepository, CreditCardRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<IMatchRepository, MatchRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
