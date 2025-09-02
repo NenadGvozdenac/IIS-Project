@@ -51,7 +51,6 @@ public partial class TicketDbContext : DbContext
             optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
         }
     }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
@@ -64,6 +63,7 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.IdCreditCard).HasColumnName("id_credit_card");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
+            entity.Property(e => e.IsCurrent).HasColumnName("is_current");
             entity.Property(e => e.ItemsNumber).HasColumnName("items_number");
             entity.Property(e => e.Status)
                 .HasMaxLength(255)
