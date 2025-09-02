@@ -932,3 +932,106 @@ CREATE TRIGGER trigger_cart_item_delete
     EXECUTE FUNCTION update_cart_items_count();
 
 -- KRAJ TRIGGERA NENAD GVOZDENAC #3
+
+-- DML DATA INSERTION
+
+-- Insert Nationality for Serbian players
+INSERT INTO nationality (state) VALUES ('Serbia');
+
+-- Insert Position data
+INSERT INTO position (name) VALUES 
+    ('Point Guard'),
+    ('Shooting Guard'),
+    ('Small Forward'),
+    ('Power Forward'),
+    ('Center');
+
+-- Insert current season (2024/25)
+INSERT INTO season (started_at, name) VALUES 
+    ('2024-09-01', '2024/25 Season');
+
+-- Insert Partizan team
+INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, key_weaknesses) VALUES 
+    ('KK Partizan', 'Serbia', 'Belgrade', 'Stark Arena', '1945-10-04', 'Zeljko Obradovic', 'Strong defense, experienced players', 'Young bench, inconsistent offense');
+
+-- Insert opponent teams
+INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, key_weaknesses) VALUES 
+    ('KK Crvena Zvezda', 'Serbia', 'Belgrade', 'Aleksandar Nikolic Hall', '1945-03-03', 'Ioannis Sfairopoulos', 'Fast tempo, good shooters', 'Weak rebounding'),
+    ('KK FMP', 'Serbia', 'Belgrade', 'FMP Hall', '1991-01-01', 'Marko Jaric', 'Young talent, energy', 'Lack of experience'),
+    ('KK Mega', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'Athletic players', 'Poor defense');
+
+-- Insert competition
+INSERT INTO competition (name, started_at, number_of_matches) VALUES 
+    ('ABA Liga 2024/25', '2024-09-15', 30);
+
+-- Insert Zone 400
+INSERT INTO zone (name, rank, maximum_capacity, status) VALUES 
+    ('Zone 400', 400, 60, 'enabled');
+
+-- Insert 3 Partizan matches
+INSERT INTO match (name, created_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
+    ('Partizan vs Crvena Zvezda', '2024-09-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 2),
+    ('Partizan vs FMP', '2024-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 3),
+    ('Partizan vs Mega', '2024-10-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', 1, 0, 0, 1, 1, 4);
+
+-- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
+INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
+SELECT 
+    row_num,
+    seat_num,
+    'standard',
+    'north',
+    'enabled',
+    1
+FROM generate_series(1, 10) AS row_num,
+     generate_series(1, 6) AS seat_num;
+
+-- Insert season tickets for all seats in zone 400
+INSERT INTO purchase_offer (name, description, type, status, released_at, created_at, expires_at, id_seat)
+SELECT 
+    'Season Ticket - Zone 400 Row ' || s."row" || ' Seat ' || s."number",
+    'Full season access to Zone 400, Row ' || s."row" || ', Seat ' || s."number",
+    'season ticket',
+    'enabled',
+    '2024-08-01',
+    '2024-08-01',
+    '2025-06-30',
+    s.id_seat
+FROM seat s 
+WHERE s.id_zone = 1;
+
+-- Insert season ticket pricing
+INSERT INTO season_ticket (id_purchase_offer, id_season, ticket_price)
+SELECT 
+    po.id_purchase_offer,
+    1,
+    15000  -- Price in dinars
+FROM purchase_offer po
+WHERE po.type = 'season ticket';
+
+-- Insert individual tickets for all seats for all 3 matches
+INSERT INTO purchase_offer (name, description, type, status, released_at, created_at, expires_at, id_seat)
+SELECT 
+    'Individual Ticket - ' || m.name || ' - Zone 400 Row ' || s."row" || ' Seat ' || s."number",
+    'Single match ticket for ' || m.name || ' in Zone 400, Row ' || s."row" || ', Seat ' || s."number",
+    'individual ticket',
+    'enabled',
+    '2024-08-15',
+    '2024-08-15',
+    m.created_at + INTERVAL '30 days',
+    s.id_seat
+FROM seat s 
+CROSS JOIN match m
+WHERE s.id_zone = 1 AND m.id_match IN (1, 2, 3);
+
+-- Insert individual ticket details linking to matches
+INSERT INTO individual_ticket (id_purchase_offer, id_match)
+SELECT 
+    po.id_purchase_offer,
+    CASE 
+        WHEN po.name LIKE '%Partizan vs Crvena Zvezda%' THEN 1
+        WHEN po.name LIKE '%Partizan vs FMP%' THEN 2
+        WHEN po.name LIKE '%Partizan vs Mega%' THEN 3
+    END
+FROM purchase_offer po
+WHERE po.type = 'individual ticket';
