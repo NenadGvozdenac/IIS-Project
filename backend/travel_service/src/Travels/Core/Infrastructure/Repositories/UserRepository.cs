@@ -1,4 +1,3 @@
-using travel_service.src.Travels.BuildingBlocks.Infratructure.Database;
 using travel_service.src.Travels.Core.Application.Interfaces;
 using travel_service.src.Travels.Core.Domain.Entities;
 
