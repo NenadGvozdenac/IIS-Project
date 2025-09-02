@@ -11,4 +11,6 @@ public interface ICartRepository
     Cart Create(Cart cart);
     Cart Update(Cart cart);
     bool Delete(int id);
+    CartItem AddItemToCart(CartItem cartItem);
+    bool RemoveItemFromCart(int cartId, int purchaseOfferId);
 }

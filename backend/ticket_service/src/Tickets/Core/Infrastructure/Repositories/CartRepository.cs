@@ -78,4 +78,23 @@ public class CartRepository : ICartRepository
         _ticketDbContext.SaveChanges();
         return true;
     }
+
+    public CartItem AddItemToCart(CartItem cartItem)
+    {
+        _ticketDbContext.CartItems.Add(cartItem);
+        _ticketDbContext.SaveChanges();
+        return cartItem;
+    }
+
+    public bool RemoveItemFromCart(int cartId, int purchaseOfferId)
+    {
+        var cartItem = _ticketDbContext.CartItems
+            .FirstOrDefault(ci => ci.IdCart == cartId && ci.IdPurchaseOffer == purchaseOfferId);
+        
+        if (cartItem == null) return false;
+
+        _ticketDbContext.CartItems.Remove(cartItem);
+        _ticketDbContext.SaveChanges();
+        return true;
+    }
 }

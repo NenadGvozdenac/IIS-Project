@@ -29,6 +29,9 @@ public static class ApplicationStartup
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IMatchRepository, MatchRepository>();
+        services.AddScoped<IPurchaseOfferRepository, PurchaseOfferRepository>();
+        services.AddScoped<ISeasonTicketRepository, SeasonTicketRepository>();
+        services.AddScoped<IIndividualTicketRepository, IndividualTicketRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
