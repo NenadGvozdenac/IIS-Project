@@ -11,17 +11,20 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
     private readonly ICartRepository _cartRepository;
     private readonly ISeasonTicketRepository _seasonTicketRepository;
     private readonly IIndividualTicketRepository _individualTicketRepository;
+    private readonly ITicketPriceCalculationService _priceCalculationService;
 
     public AddToCartHandler(
         IPurchaseOfferRepository purchaseOfferRepository,
         ICartRepository cartRepository,
         ISeasonTicketRepository seasonTicketRepository,
-        IIndividualTicketRepository individualTicketRepository)
+        IIndividualTicketRepository individualTicketRepository,
+        ITicketPriceCalculationService priceCalculationService)
     {
         _purchaseOfferRepository = purchaseOfferRepository;
         _cartRepository = cartRepository;
         _seasonTicketRepository = seasonTicketRepository;
         _individualTicketRepository = individualTicketRepository;
+        _priceCalculationService = priceCalculationService;
     }
 
     public Task<Result<AddToCartResponse>> Handle(AddToCartCommand request, CancellationToken cancellationToken)
@@ -77,8 +80,19 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
             }
             else if (purchaseOffer.Type == "individual ticket")
             {
-                // Cena za individualnu kartu se računa dinamički - za sada je 0
-                price = 0;
+                // Pozovi PL/SQL funkciju za dinamičko izračunavanje cene individualne karte
+                var individualTicket = _individualTicketRepository.GetByPurchaseOfferId(request.PurchaseOfferId);
+                if (individualTicket != null)
+                {
+                    // Dohvati zonu iz sedišta
+                    var seat = purchaseOffer.IdSeatNavigation;
+                    if (seat?.IdZone != null)
+                    {
+                        price = _priceCalculationService.CalculateTicketPrice(
+                            individualTicket.IdMatch, 
+                            seat.IdZone.Value);
+                    }
+                }
             }
 
             // 5. Dodaj u korpu
