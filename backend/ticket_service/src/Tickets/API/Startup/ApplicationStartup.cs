@@ -32,6 +32,7 @@ public static class ApplicationStartup
         services.AddScoped<IPurchaseOfferRepository, PurchaseOfferRepository>();
         services.AddScoped<ISeasonTicketRepository, SeasonTicketRepository>();
         services.AddScoped<IIndividualTicketRepository, IndividualTicketRepository>();
+        services.AddScoped<ICompetitionRepository, CompetitionRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)

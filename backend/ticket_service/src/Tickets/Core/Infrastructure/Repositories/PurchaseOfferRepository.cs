@@ -111,7 +111,7 @@ public class PurchaseOfferRepository : IPurchaseOfferRepository
             .ThenInclude(s => s.IdZoneNavigation)
             .Include(po => po.CartItems)
             .ThenInclude(ci => ci.IdCartNavigation)
-            .Where(po => po.CartItems.Any(ci => ci.IdCartNavigation.IdUser == userId) && po.Status == "disabled")
+            .Where(po => po.CartItems.Any(ci => ci.IdCartNavigation.IdUser == userId) && po.Status == "bought")
             .ToList();
     }
 }

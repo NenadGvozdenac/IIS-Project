@@ -8,11 +8,13 @@ public class PurchaseCartHandler : IRequestHandler<PurchaseCartCommand, Result<P
 {
     private readonly ICartRepository _cartRepository;
     private readonly ICreditCardRepository _creditCardRepository;
+    private readonly IPurchaseOfferRepository _purchaseOfferRepository;
 
-    public PurchaseCartHandler(ICartRepository cartRepository, ICreditCardRepository creditCardRepository)
+    public PurchaseCartHandler(ICartRepository cartRepository, ICreditCardRepository creditCardRepository, IPurchaseOfferRepository purchaseOfferRepository)
     {
         _cartRepository = cartRepository;
         _creditCardRepository = creditCardRepository;
+        _purchaseOfferRepository = purchaseOfferRepository;
     }
 
     public Task<Result<PurchaseCartResponse>> Handle(PurchaseCartCommand request, CancellationToken cancellationToken)
@@ -63,6 +65,12 @@ public class PurchaseCartHandler : IRequestHandler<PurchaseCartCommand, Result<P
             cart.Status = "bought";
             cart.IdCreditCard = request.IdCreditCard;
             cart.IsCurrent = false; // Set to false since it's now purchased
+
+            // Update status of all purchase offers in the cart to "bought"
+            foreach (var cartItem in cart.CartItems)
+            {
+                _purchaseOfferRepository.UpdateStatus(cartItem.IdPurchaseOffer, "bought");
+            }
 
             _cartRepository.Update(cart);
 

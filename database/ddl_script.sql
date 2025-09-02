@@ -322,7 +322,7 @@ CREATE TABLE purchase_offer (
     name              VARCHAR(255) NOT NULL,
     description       VARCHAR(255) NOT NULL,
     type              VARCHAR(50) NOT NULL CHECK (type IN ('individual ticket', 'season ticket')),
-    status            VARCHAR(25) NOT NULL CHECK (status IN ('enabled', 'disabled')),
+    status            VARCHAR(25) NOT NULL CHECK (status IN ('enabled', 'disabled', 'bought')),
     released_at       DATE NOT NULL,
     created_at        DATE NOT NULL,
     expires_at        DATE,

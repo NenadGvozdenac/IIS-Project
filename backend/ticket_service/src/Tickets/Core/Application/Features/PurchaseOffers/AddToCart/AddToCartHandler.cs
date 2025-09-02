@@ -38,8 +38,16 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
 
             if (purchaseOffer.Status != "enabled")
             {
-                return Task.FromResult(Result<AddToCartResponse>.Failure("This ticket is no longer available for purchase")
-                    .WithCode((int)ResultCode.BadRequest));
+                if (purchaseOffer.Status == "bought")
+                {
+                    return Task.FromResult(Result<AddToCartResponse>.Failure("This ticket has already been purchased")
+                        .WithCode((int)ResultCode.BadRequest));
+                }
+                else
+                {
+                    return Task.FromResult(Result<AddToCartResponse>.Failure("This ticket is no longer available for purchase")
+                        .WithCode((int)ResultCode.BadRequest));
+                }
             }
 
             // 2. Pronađi trenutnu korpu korisnika
