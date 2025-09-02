@@ -146,10 +146,10 @@ CREATE TABLE cart (
 );
 
 CREATE TABLE cart_item (
-    id_cart           INTEGER NOT NULL,
-    id_purchase_offer INTEGER NOT NULL,
-    added_at          DATE NOT NULL,
-    price   NUMERIC(10,2) NOT NULL,
+    id_cart             INTEGER NOT NULL,
+    id_purchase_offer   INTEGER NOT NULL,
+    added_at            DATE NOT NULL,
+    price               NUMERIC(10,2) NOT NULL,
     PRIMARY KEY (id_cart, id_purchase_offer)
 );
 

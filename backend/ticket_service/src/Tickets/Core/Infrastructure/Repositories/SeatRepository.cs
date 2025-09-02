@@ -36,6 +36,13 @@ public class SeatRepository : ISeatRepository
             .ToList();
     }
 
+    public Seat? GetByZoneAndPosition(int zoneId, int row, int number)
+    {
+        return _ticketDbContext.Seats
+            .Include(s => s.IdZoneNavigation)
+            .FirstOrDefault(s => s.IdZone == zoneId && s.Row == row && s.Number == number);
+    }
+
     public Seat Create(Seat seat)
     {
         _ticketDbContext.Seats.Add(seat);

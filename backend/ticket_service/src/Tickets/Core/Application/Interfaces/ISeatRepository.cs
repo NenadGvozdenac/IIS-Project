@@ -7,6 +7,7 @@ public interface ISeatRepository
     Seat? GetById(int id);
     IEnumerable<Seat> GetAll();
     IEnumerable<Seat> GetByZoneId(int zoneId);
+    Seat? GetByZoneAndPosition(int zoneId, int row, int number);
     Seat Create(Seat seat);
     Seat Update(Seat seat);
     bool Delete(int id);
