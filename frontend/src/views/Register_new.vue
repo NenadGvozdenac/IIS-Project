@@ -79,14 +79,13 @@
                 class="form-select"
                 :class="{ 'error': errors.userType }"
                 required
-                >
-              <option value="">Select account type</option>
-              <option value="customer">Customer</option>
-              <option value="club manager">Club Manager</option>
-              <option value="club owner">Club Owner</option>
-              <option value="analyst">Analyst</option>
-              <option value="scouting manager">Scouting Manager</option>
-              <option value="team manager">Team Manager</option>
+              >
+                <option value="">Select account type</option>
+                <option value="fan">Sports Fan</option>
+                <option value="athlete">Athlete</option>
+                <option value="scout">Scout</option>
+                <option value="organizer">Event Organizer</option>
+                <option value="agent">Agent</option>
               </select>
               <span v-if="errors.userType" class="error-text">{{ errors.userType }}</span>
             </div>
