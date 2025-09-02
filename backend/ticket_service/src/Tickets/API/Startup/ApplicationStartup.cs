@@ -27,6 +27,7 @@ public static class ApplicationStartup
         services.AddScoped<ISeatRepository, SeatRepository>();
         services.AddScoped<ICreditCardRepository, CreditCardRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<ISeasonRepository, SeasonRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
