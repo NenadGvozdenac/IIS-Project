@@ -1,50 +1,62 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <h2>Login</h2>
-      <p>Welcome back! Please sign in to your account.</p>
-      
-      <form @submit.prevent="handleLogin" class="auth-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            v-model="form.email"
-            required
-            :class="{ 'error': errors.email }"
-            placeholder="Enter your email"
-          />
-          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+  <div class="login-page">
+    <div class="container">
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to your Sports Hub account</p>
+          </div>
+
+          <form @submit.prevent="handleLogin" class="login-form">
+            <div v-if="errorMessage" class="alert alert-error">
+              {{ errorMessage }}
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">Email Address</label>
+              <input
+                id="email"
+                v-model="form.email"
+                type="email"
+                class="form-input"
+                :class="{ 'error': errors.email }"
+                placeholder="Enter your email"
+                required
+              />
+              <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <input
+                id="password"
+                v-model="form.password"
+                type="password"
+                class="form-input"
+                :class="{ 'error': errors.password }"
+                placeholder="Enter your password"
+                required
+              />
+              <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-primary w-full"
+              :disabled="loading"
+            >
+              {{ loading ? 'Signing in...' : 'Sign In' }}
+            </button>
+          </form>
+
+          <div class="login-footer">
+            <p>
+              Don't have an account? 
+              <router-link to="/register" class="link-primary">Sign up here</router-link>
+            </p>
+          </div>
         </div>
-
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            required
-            :class="{ 'error': errors.password }"
-            placeholder="Enter your password"
-          />
-          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-        </div>
-
-        <div v-if="errorMessage" class="alert alert-error">
-          {{ errorMessage }}
-        </div>
-
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          <span v-if="loading">Logging in...</span>
-          <span v-else>Login</span>
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        <p>Don't have an account? 
-          <router-link to="/register" class="link">Sign up here</router-link>
-        </p>
       </div>
     </div>
   </div>
@@ -116,135 +128,101 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.auth-container {
-  min-height: 100vh;
+.login-page {
+  min-height: calc(100vh - 4rem);
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem;
+  background-color: var(--color-surface);
+  padding: var(--spacing-xl) 0;
 }
 
-.auth-card {
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.login-card {
   background: white;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 400px;
 }
 
-.auth-card h2 {
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.login-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
-.auth-card p {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 2rem;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #374151;
-}
-
-.form-group input {
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #4f46e5;
-}
-
-.form-group input.error {
-  border-color: #ef4444;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.alert {
-  padding: 0.75rem;
-  border-radius: 8px;
+.login-header p {
+  color: var(--color-text-light);
   font-size: 0.875rem;
 }
 
-.alert-error {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+.login-form {
+  margin-bottom: var(--spacing-xl);
 }
 
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.form-input.error {
+  border-color: var(--color-error);
 }
 
-.btn-primary {
-  background-color: #4f46e5;
-  color: white;
+.error-text {
+  color: var(--color-error);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+  display: block;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #4338ca;
-  transform: translateY(-1px);
+.w-full {
+  width: 100%;
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.auth-footer {
+.login-footer {
   text-align: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
 }
 
-.auth-footer p {
-  color: #6b7280;
-  margin: 0;
+.login-footer p {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
 }
 
-.link {
-  color: #4f46e5;
+.link-primary {
+  color: var(--color-primary);
+  font-weight: 500;
   text-decoration: none;
-  font-weight: 600;
 }
 
-.link:hover {
+.link-primary:hover {
+  color: var(--color-primary-hover);
   text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-page {
+    padding: var(--spacing-md) 0;
+  }
+  
+  .login-card {
+    margin: 0 var(--spacing-md);
+    padding: var(--spacing-xl);
+  }
+  
+  .login-header h1 {
+    font-size: 1.75rem;
+  }
 }
 </style>

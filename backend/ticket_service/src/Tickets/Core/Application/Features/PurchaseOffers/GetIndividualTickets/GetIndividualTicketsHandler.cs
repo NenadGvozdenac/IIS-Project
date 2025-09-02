@@ -8,11 +8,16 @@ public class GetIndividualTicketsHandler : IRequestHandler<GetIndividualTicketsQ
 {
     private readonly IIndividualTicketRepository _individualTicketRepository;
     private readonly IPurchaseOfferRepository _purchaseOfferRepository;
+    private readonly ITicketPriceCalculationService _priceCalculationService;
 
-    public GetIndividualTicketsHandler(IIndividualTicketRepository individualTicketRepository, IPurchaseOfferRepository purchaseOfferRepository)
+    public GetIndividualTicketsHandler(
+        IIndividualTicketRepository individualTicketRepository, 
+        IPurchaseOfferRepository purchaseOfferRepository,
+        ITicketPriceCalculationService priceCalculationService)
     {
         _individualTicketRepository = individualTicketRepository;
         _purchaseOfferRepository = purchaseOfferRepository;
+        _priceCalculationService = priceCalculationService;
     }
 
     public Task<Result<IEnumerable<GetIndividualTicketsResponse>>> Handle(GetIndividualTicketsQuery request, CancellationToken cancellationToken)
@@ -24,6 +29,14 @@ public class GetIndividualTicketsHandler : IRequestHandler<GetIndividualTicketsQ
             var response = individualTickets.Select(it =>
             {
                 var purchaseOffer = _purchaseOfferRepository.GetById(it.IdPurchaseOffer);
+                
+                // Calculate dynamic price for individual ticket
+                decimal price = 0;
+                if (purchaseOffer?.IdSeatNavigation?.IdZone != null)
+                {
+                    price = _priceCalculationService.CalculateTicketPrice(it.IdMatch, purchaseOffer.IdSeatNavigation.IdZone.Value);
+                }
+                
                 return new GetIndividualTicketsResponse
                 {
                     IdPurchaseOffer = it.IdPurchaseOffer,
@@ -35,7 +48,7 @@ public class GetIndividualTicketsHandler : IRequestHandler<GetIndividualTicketsQ
                     ExpiresAt = purchaseOffer.ExpiresAt,
                     IdSeat = purchaseOffer.IdSeat,
                     IdMatch = it.IdMatch,
-                    Price = 0, // Individualne karte imaju cenu 0 za sada
+                    Price = price,
                     SeatRow = purchaseOffer.IdSeatNavigation.Row,
                     SeatNumber = purchaseOffer.IdSeatNavigation.Number,
                     SeatType = purchaseOffer.IdSeatNavigation.Type,

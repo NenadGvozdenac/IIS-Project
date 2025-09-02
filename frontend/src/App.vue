@@ -1,10 +1,13 @@
 <script setup>
-// Main App component with router
+import Navbar from './components/Navbar.vue'
 </script>
 
 <template>
   <div id="app">
-    <router-view />
+    <Navbar />
+    <main class="main-content">
+      <router-view />
+    </main>
   </div>
 </template>
 
@@ -19,9 +22,16 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
   color: #333;
+  background-color: var(--color-background);
 }
 
 #app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
 }
 </style>

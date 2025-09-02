@@ -9,15 +9,18 @@ public class GetIndividualTicketBySeatHandler : IRequestHandler<GetIndividualTic
     private readonly ISeatRepository _seatRepository;
     private readonly IPurchaseOfferRepository _purchaseOfferRepository;
     private readonly IIndividualTicketRepository _individualTicketRepository;
+    private readonly ITicketPriceCalculationService _priceCalculationService;
 
     public GetIndividualTicketBySeatHandler(
         ISeatRepository seatRepository,
         IPurchaseOfferRepository purchaseOfferRepository,
-        IIndividualTicketRepository individualTicketRepository)
+        IIndividualTicketRepository individualTicketRepository,
+        ITicketPriceCalculationService priceCalculationService)
     {
         _seatRepository = seatRepository;
         _purchaseOfferRepository = purchaseOfferRepository;
         _individualTicketRepository = individualTicketRepository;
+        _priceCalculationService = priceCalculationService;
     }
 
     public Task<Result<GetIndividualTicketBySeatResponse>> Handle(GetIndividualTicketBySeatQuery request, CancellationToken cancellationToken)
@@ -57,6 +60,13 @@ public class GetIndividualTicketBySeatHandler : IRequestHandler<GetIndividualTic
                     .WithCode((int)ResultCode.NotFound));
             }
 
+            // 4. Calculate dynamic price for the ticket
+            decimal price = 0;
+            if (seat.IdZone != null)
+            {
+                price = _priceCalculationService.CalculateTicketPrice(individualTicket.IdMatch, seat.IdZone.Value);
+            }
+
             var response = new GetIndividualTicketBySeatResponse
             {
                 IdPurchaseOffer = matchingOffer.IdPurchaseOffer,
@@ -68,7 +78,7 @@ public class GetIndividualTicketBySeatHandler : IRequestHandler<GetIndividualTic
                 ExpiresAt = matchingOffer.ExpiresAt,
                 IdSeat = matchingOffer.IdSeat,
                 IdMatch = individualTicket.IdMatch,
-                Price = 0, // Individualne karte imaju cenu 0 za sada
+                Price = price, // Dinamički izračunata cena
                 SeatRow = seat.Row,
                 SeatNumber = seat.Number,
                 SeatType = seat.Type,

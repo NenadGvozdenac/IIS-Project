@@ -1,120 +1,140 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <h2>Create Account</h2>
-      <p>Join us today! Please fill in your information to get started.</p>
-      
-      <form @submit.prevent="handleRegister" class="auth-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="name">First Name</label>
-            <input
-              id="name"
-              type="text"
-              v-model="form.name"
-              required
-              :class="{ 'error': errors.name }"
-              placeholder="Enter your first name"
-            />
-            <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
+  <div class="register-page">
+    <div class="container">
+      <div class="register-container">
+        <div class="register-card">
+          <div class="register-header">
+            <h1>Create Account</h1>
+            <p>Join Sports Hub and start your journey</p>
           </div>
 
-          <div class="form-group">
-            <label for="surname">Last Name</label>
-            <input
-              id="surname"
-              type="text"
-              v-model="form.surname"
-              required
-              :class="{ 'error': errors.surname }"
-              placeholder="Enter your last name"
-            />
-            <span v-if="errors.surname" class="error-message">{{ errors.surname }}</span>
+          <form @submit.prevent="handleRegister" class="register-form">
+            <div v-if="errorMessage" class="alert alert-error">
+              {{ errorMessage }}
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="name" class="form-label">First Name</label>
+                <input
+                  id="name"
+                  v-model="form.name"
+                  type="text"
+                  class="form-input"
+                  :class="{ 'error': errors.name }"
+                  placeholder="Enter your first name"
+                  required
+                />
+                <span v-if="errors.name" class="error-text">{{ errors.name }}</span>
+              </div>
+
+              <div class="form-group">
+                <label for="surname" class="form-label">Last Name</label>
+                <input
+                  id="surname"
+                  v-model="form.surname"
+                  type="text"
+                  class="form-input"
+                  :class="{ 'error': errors.surname }"
+                  placeholder="Enter your last name"
+                  required
+                />
+                <span v-if="errors.surname" class="error-text">{{ errors.surname }}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">Email Address</label>
+              <input
+                id="email"
+                v-model="form.email"
+                type="email"
+                class="form-input"
+                :class="{ 'error': errors.email }"
+                placeholder="Enter your email"
+                required
+              />
+              <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="phone" class="form-label">Phone Number</label>
+              <input
+                id="phone"
+                v-model="form.phone"
+                type="tel"
+                class="form-input"
+                :class="{ 'error': errors.phone }"
+                placeholder="Enter your phone number"
+                required
+              />
+              <span v-if="errors.phone" class="error-text">{{ errors.phone }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="userType" class="form-label">Account Type</label>
+              <select
+                id="userType"
+                v-model="form.user_type"
+                class="form-select"
+                :class="{ 'error': errors.userType }"
+                required
+                >
+              <option value="">Select account type</option>
+              <option value="customer">Customer</option>
+              <option value="club manager">Club Manager</option>
+              <option value="club owner">Club Owner</option>
+              <option value="analyst">Analyst</option>
+              <option value="scouting manager">Scouting Manager</option>
+              <option value="team manager">Team Manager</option>
+              </select>
+              <span v-if="errors.userType" class="error-text">{{ errors.userType }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <input
+                id="password"
+                v-model="form.password"
+                type="password"
+                class="form-input"
+                :class="{ 'error': errors.password }"
+                placeholder="Create a password"
+                required
+              />
+              <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword" class="form-label">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                v-model="form.confirm_password"
+                type="password"
+                class="form-input"
+                :class="{ 'error': errors.confirmPassword }"
+                placeholder="Confirm your password"
+                required
+              />
+              <span v-if="errors.confirmPassword" class="error-text">{{ errors.confirmPassword }}</span>
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-primary w-full"
+              :disabled="loading"
+            >
+              {{ loading ? 'Creating Account...' : 'Create Account' }}
+            </button>
+          </form>
+
+          <div class="register-footer">
+            <p>
+              Already have an account? 
+              <router-link to="/login" class="link-primary">Sign in here</router-link>
+            </p>
           </div>
         </div>
-
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            v-model="form.email"
-            required
-            :class="{ 'error': errors.email }"
-            placeholder="Enter your email"
-          />
-          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <input
-            id="phone"
-            type="tel"
-            v-model="form.phone"
-            required
-            :class="{ 'error': errors.phone }"
-            placeholder="Enter your phone number"
-          />
-          <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
-        </div>
-
-        <div class="form-group">
-          <label for="userType">User Type</label>
-          <select
-            id="userType"
-            v-model="form.user_type"
-            required
-            :class="{ 'error': errors.userType }"
-          >
-            <option value="">Select user type</option>
-            <option value="regular">Regular User</option>
-            <option value="admin">Administrator</option>
-            <option value="moderator">Moderator</option>
-          </select>
-          <span v-if="errors.userType" class="error-message">{{ errors.userType }}</span>
-        </div>
-
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            required
-            :class="{ 'error': errors.password }"
-            placeholder="Create a password"
-          />
-          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-        </div>
-
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            v-model="form.confirm_password"
-            required
-            :class="{ 'error': errors.confirmPassword }"
-            placeholder="Confirm your password"
-          />
-          <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
-        </div>
-
-        <div v-if="errorMessage" class="alert alert-error">
-          {{ errorMessage }}
-        </div>
-
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          <span v-if="loading">Creating Account...</span>
-          <span v-else>Create Account</span>
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        <p>Already have an account? 
-          <router-link to="/login" class="link">Sign in here</router-link>
-        </p>
       </div>
     </div>
   </div>
@@ -167,10 +187,10 @@ const validateForm = () => {
     isValid = false
   }
   
-  if (!form.email) {
+  if (!form.email.trim()) {
     errors.email = 'Email is required'
     isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+  } else if (!/\S+@\S+\.\S+/.test(form.email)) {
     errors.email = 'Please enter a valid email'
     isValid = false
   }
@@ -181,7 +201,7 @@ const validateForm = () => {
   }
   
   if (!form.user_type) {
-    errors.userType = 'Please select a user type'
+    errors.userType = 'Please select an account type'
     isValid = false
   }
   
@@ -227,154 +247,112 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.auth-container {
-  min-height: 100vh;
+.register-page {
+  min-height: calc(100vh - 4rem);
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem;
+  background-color: var(--color-surface);
+  padding: var(--spacing-xl) 0;
 }
 
-.auth-card {
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.register-card {
   background: white;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 500px;
 }
 
-.auth-card h2 {
+.register-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.register-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
-.auth-card p {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 2rem;
+.register-header p {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.register-form {
+  margin-bottom: var(--spacing-xl);
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.form-input.error,
+.form-select.error {
+  border-color: var(--color-error);
 }
 
-.form-group label {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #374151;
+.error-text {
+  color: var(--color-error);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+  display: block;
 }
 
-.form-group input,
-.form-group select {
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+.w-full {
+  width: 100%;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4f46e5;
-}
-
-.form-group input.error,
-.form-group select.error {
-  border-color: #ef4444;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.alert {
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.alert-error {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background-color: #4f46e5;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #4338ca;
-  transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.auth-footer {
+.register-footer {
   text-align: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
 }
 
-.auth-footer p {
-  color: #6b7280;
-  margin: 0;
+.register-footer p {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
 }
 
-.link {
-  color: #4f46e5;
+.link-primary {
+  color: var(--color-primary);
+  font-weight: 500;
   text-decoration: none;
-  font-weight: 600;
 }
 
-.link:hover {
+.link-primary:hover {
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
-@media (max-width: 640px) {
-  .form-row {
-    grid-template-columns: 1fr;
+/* Responsive */
+@media (max-width: 768px) {
+  .register-page {
+    padding: var(--spacing-md) 0;
   }
   
-  .auth-card {
-    padding: 1.5rem;
+  .register-card {
+    margin: 0 var(--spacing-md);
+    padding: var(--spacing-xl);
+  }
+  
+  .register-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

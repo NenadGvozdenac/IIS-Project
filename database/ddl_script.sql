@@ -322,7 +322,7 @@ CREATE TABLE purchase_offer (
     name              VARCHAR(255) NOT NULL,
     description       VARCHAR(255) NOT NULL,
     type              VARCHAR(50) NOT NULL CHECK (type IN ('individual ticket', 'season ticket')),
-    status            VARCHAR(25) NOT NULL CHECK (status IN ('enabled', 'disabled')),
+    status            VARCHAR(25) NOT NULL CHECK (status IN ('enabled', 'disabled', 'bought')),
     released_at       DATE NOT NULL,
     created_at        DATE NOT NULL,
     expires_at        DATE,
@@ -936,6 +936,21 @@ CREATE TRIGGER trigger_cart_item_delete
 -- Insert Nationality for Serbian players
 INSERT INTO nationality (state) VALUES ('Serbia');
 
+-- Insert Users with different roles (no customers)
+-- ID 1: Admin User - admin@partizan.rs
+-- ID 2: Milos Stojanovic - club manager  
+-- ID 3: Aleksandar Milic - club owner (can create ticket price parameters)
+-- ID 4: Nikola Radovic - analyst
+-- ID 5: Marija Jankovic - scouting manager
+-- ID 6: Petar Miletic - team manager
+INSERT INTO users (name, surname, email, phone, password, type) VALUES 
+    ('Admin', 'User', 'admin@partizan.rs', '+381601234567', 'admin123', 'admin'),
+    ('Milos', 'Stojanovic', 'manager@partizan.rs', '+381601234571', 'manager123', 'club manager'),
+    ('Aleksandar', 'Milic', 'owner@partizan.rs', '+381601234572', 'owner123', 'club owner'),
+    ('Nikola', 'Radovic', 'analyst@partizan.rs', '+381601234573', 'analyst123', 'analyst'),
+    ('Marija', 'Jankovic', 'scouting@partizan.rs', '+381601234574', 'scouting123', 'scouting manager'),
+    ('Petar', 'Miletic', 'teammanager@partizan.rs', '+381601234575', 'team123', 'team manager');
+
 -- Insert Position data
 INSERT INTO position (name) VALUES 
     ('Point Guard'),
@@ -944,9 +959,9 @@ INSERT INTO position (name) VALUES
     ('Power Forward'),
     ('Center');
 
--- Insert current season (2024/25)
+-- Insert current season (2025/26)
 INSERT INTO season (started_at, name) VALUES 
-    ('2024-09-01', '2024/25 Season');
+    ('2025-09-01', '2025/26 Season');
 
 -- Insert Partizan team
 INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, key_weaknesses) VALUES 
@@ -960,17 +975,17 @@ INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, k
 
 -- Insert competition
 INSERT INTO competition (name, started_at, number_of_matches) VALUES 
-    ('ABA Liga 2024/25', '2024-09-15', 30);
+    ('ABA Liga 2025/26', '2025-09-01', 30);
 
 -- Insert Zone 400
 INSERT INTO zone (name, rank, maximum_capacity, status) VALUES 
     ('Zone 400', 400, 60, 'enabled');
 
--- Insert 3 Partizan matches
+-- Insert 3 Partizan matches in the coming days (September 2025)
 INSERT INTO match (name, created_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
-    ('Partizan vs Crvena Zvezda', '2024-09-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
-    ('Partizan vs FMP', '2024-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
-    ('Partizan vs Mega', '2024-10-01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
+    ('Partizan vs Crvena Zvezda', '2025-09-05', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
+    ('Partizan vs FMP', '2025-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
+    ('Partizan vs Mega', '2025-09-25', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
 
 -- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
@@ -991,9 +1006,9 @@ SELECT
     'Full season access to Zone 400, Row ' || s."row" || ', Seat ' || s."number",
     'season ticket',
     'enabled',
-    '2024-08-01',
-    '2024-08-01',
-    '2025-06-30',
+    '2025-08-01',
+    '2025-08-01',
+    '2026-06-30',
     s.id_seat
 FROM seat s 
 WHERE s.id_zone = 1;
@@ -1014,8 +1029,8 @@ SELECT
     'Single match ticket for ' || m.name || ' in Zone 400, Row ' || s."row" || ', Seat ' || s."number",
     'individual ticket',
     'enabled',
-    '2024-08-15',
-    '2024-08-15',
+    '2025-08-15',
+    '2025-08-15',
     m.created_at + INTERVAL '30 days',
     s.id_seat
 FROM seat s 
@@ -1033,3 +1048,247 @@ SELECT
     END
 FROM purchase_offer po
 WHERE po.type = 'individual ticket';
+
+-- SIMULATE SOME TICKET SALES TO TEST DYNAMIC PRICING
+-- Create test customers for simulation
+INSERT INTO users (name, surname, email, phone, password, type) VALUES 
+    ('Marko', 'Petrovic', 'marko@example.com', '+381601111111', 'test123', 'customer'),
+    ('Ana', 'Jovanovic', 'ana@example.com', '+381602222222', 'test123', 'customer'),
+    ('Stefan', 'Nikolic', 'stefan@example.com', '+381603333333', 'test123', 'customer');
+
+-- Add some credit cards for test customers  
+INSERT INTO credit_card (created_at, number, cvv, name, expiration_date, id_user) VALUES 
+    ('2025-08-01', '1234567890123456', '123', 'Marko Petrovic', '2028-12-31', 7),
+    ('2025-08-01', '2345678901234567', '234', 'Ana Jovanovic', '2028-12-31', 8),
+    ('2025-08-01', '3456789012345678', '345', 'Stefan Nikolic', '2028-12-31', 9);
+
+-- Simulate sold tickets for Match 1 (Partizan vs Crvena Zvezda) - 10 tickets sold
+-- This will increase zone occupancy and test dynamic pricing
+INSERT INTO cart_item (id_cart, id_purchase_offer, added_at, price)
+SELECT 
+    c.id_cart,
+    po.id_purchase_offer,
+    '2025-08-20',
+    2500 -- Fixed price at time of purchase
+FROM cart c 
+JOIN users u ON c.id_user = u.id_user
+CROSS JOIN (
+    SELECT po.id_purchase_offer 
+    FROM purchase_offer po 
+    JOIN individual_ticket it ON po.id_purchase_offer = it.id_purchase_offer
+    WHERE it.id_match = 1 -- Match 1: Partizan vs Crvena Zvezda
+    AND po.status = 'enabled'
+    LIMIT 10
+) po
+WHERE u.type = 'customer'
+AND c.is_current = true
+LIMIT 10;
+
+-- Mark these carts as bought to simulate actual sales
+UPDATE cart SET status = 'bought', is_current = false 
+WHERE id_cart IN (
+    SELECT DISTINCT ci.id_cart 
+    FROM cart_item ci 
+    JOIN cart c ON ci.id_cart = c.id_cart
+    JOIN users u ON c.id_user = u.id_user
+    WHERE u.type = 'customer'
+);
+
+-- Mark the sold purchase offers as bought
+UPDATE purchase_offer SET status = 'bought' 
+WHERE id_purchase_offer IN (
+    SELECT ci.id_purchase_offer 
+    FROM cart_item ci 
+    JOIN cart c ON ci.id_cart = c.id_cart
+    WHERE c.status = 'bought'
+);
+
+-- INSERT REALISTIC TICKET PRICE PARAMETERS FOR ZONE 400 AND ALL MATCHES
+-- Different parameters for each match to test dynamic pricing
+
+-- Match 1: Partizan vs Crvena Zvezda (September 5, 2025) - High demand derby match
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (800, 70, 2000, 8000, 3, 1, 1);
+
+-- Match 2: Partizan vs FMP (September 15, 2025) - Medium demand match  
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (500, 50, 1200, 5000, 3, 1, 2);
+
+-- Match 3: Partizan vs Mega (September 25, 2025) - Regular match
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (400, 40, 1000, 4000, 3, 1, 3);
+
+-- FUNKCIJA ZA DINAMIČKO IZRAČUNAVANJE CENE KARATA
+-- Implementira formulu: P_zona(t) = [P_min + (P_max - P_min) * ((e^(α*O_zona/K_zona + β*O_stad/C_stad) - 1) / (e^(α + β) - 1))] * w_vreme
+-- gde su: α = F * k, β = (1 - F) * k
+-- w_vreme = 1 + γ * (1 - (D_utakmice - D_trenutno) / T)
+
+CREATE OR REPLACE FUNCTION calculate_ticket_price(
+    p_match_id INTEGER,
+    p_zone_id INTEGER
+) RETURNS NUMERIC AS $$
+DECLARE
+    -- Parametri iz tabele ticket_price_parameter
+    v_price_factor NUMERIC;
+    v_time_factor NUMERIC;
+    v_min_price NUMERIC;
+    v_max_price NUMERIC;
+    
+    -- Podaci o zoni i stadionu
+    v_zone_occupied INTEGER := 0;
+    v_zone_capacity INTEGER;
+    v_stadium_occupied INTEGER := 0;
+    v_stadium_capacity INTEGER;
+    
+    -- Datum utakmice
+    v_match_date DATE;
+    v_current_date DATE := CURRENT_DATE;
+    v_days_difference INTEGER;
+    
+    -- Faktori za formulu
+    v_f NUMERIC; -- Ponder između zone i stadiona (0-1)
+    v_k NUMERIC; -- Globalni parametar strmine (preporučeno 5)
+    v_alpha NUMERIC;
+    v_beta NUMERIC;
+    v_gamma NUMERIC; -- Vremenski faktor multiplikator (preporučeno 0.5)
+    v_t NUMERIC; -- Maksimalni broj dana za vremenski faktor (preporučeno 30)
+    
+    -- Rezultati izračuna
+    v_zone_ratio NUMERIC;
+    v_stadium_ratio NUMERIC;
+    v_exponential_factor NUMERIC;
+    v_base_price NUMERIC;
+    v_time_weight NUMERIC;
+    v_final_price NUMERIC;
+    
+BEGIN
+    -- Dohvatanje parametara cena iz tabele
+    SELECT 
+        tpp.price_factor,
+        tpp.time_factor,
+        tpp.minimum_seat_price,
+        tpp.maximum_seat_price
+    INTO 
+        v_price_factor,
+        v_time_factor,
+        v_min_price,
+        v_max_price
+    FROM ticket_price_parameter tpp
+    WHERE tpp.id_match = p_match_id 
+      AND tpp.id_zone = p_zone_id
+    LIMIT 1;
+    
+    -- Ako nema parametara, vrati osnovnu cenu
+    IF v_min_price IS NULL THEN
+        RETURN 1000; -- Osnovna cena od 1000 dinara
+    END IF;
+    
+    -- Dohvatanje kapaciteta zone
+    SELECT z.maximum_capacity
+    INTO v_zone_capacity
+    FROM zone z
+    WHERE z.id_zone = p_zone_id;
+    
+    -- Izračunavanje zauzetih mesta u zoni
+    SELECT COUNT(*)
+    INTO v_zone_occupied
+    FROM cart_item ci
+    JOIN purchase_offer po ON ci.id_purchase_offer = po.id_purchase_offer
+    JOIN seat s ON po.id_seat = s.id_seat
+    JOIN individual_ticket it ON po.id_purchase_offer = it.id_purchase_offer
+    WHERE it.id_match = p_match_id 
+      AND s.id_zone = p_zone_id
+      AND po.status = 'bought';
+    
+    -- Izračunavanje ukupnog kapaciteta stadiona
+    SELECT SUM(z.maximum_capacity)
+    INTO v_stadium_capacity
+    FROM zone z
+    WHERE z.status = 'enabled';
+    
+    -- Izračunavanje ukupno zauzetih mesta u stadionu za taj meč
+    SELECT COUNT(*)
+    INTO v_stadium_occupied
+    FROM cart_item ci
+    JOIN purchase_offer po ON ci.id_purchase_offer = po.id_purchase_offer
+    JOIN individual_ticket it ON po.id_purchase_offer = it.id_purchase_offer
+    WHERE it.id_match = p_match_id
+      AND po.status = 'bought';
+    
+    -- Dohvatanje datuma utakmice
+    SELECT m.created_at
+    INTO v_match_date
+    FROM match m
+    WHERE m.id_match = p_match_id;
+    
+    -- Postavljanje faktora (mogu se prebaciti u tabelu parametara)
+    v_f := 0.6; -- 60% uticaj zone, 40% stadiona
+    v_k := COALESCE(v_price_factor::NUMERIC / 100.0, 5.0); -- Iz tabele ili default 5
+    v_gamma := COALESCE(v_time_factor::NUMERIC / 100.0, 0.5); -- Iz tabele ili default 0.5
+    v_t := 30; -- 30 dana maksimalno za vremenski faktor
+    
+    -- Izračunavanje α i β
+    v_alpha := v_f * v_k;
+    v_beta := (1 - v_f) * v_k;
+    
+    -- Izračunavanje odnosa zauzetosti
+    v_zone_ratio := CASE 
+        WHEN v_zone_capacity > 0 THEN v_zone_occupied::NUMERIC / v_zone_capacity::NUMERIC
+        ELSE 0
+    END;
+    
+    v_stadium_ratio := CASE 
+        WHEN v_stadium_capacity > 0 THEN v_stadium_occupied::NUMERIC / v_stadium_capacity::NUMERIC
+        ELSE 0
+    END;
+    
+    -- Izračunavanje eksponencijalnog faktora
+    -- (e^(α*O_zona/K_zona + β*O_stad/C_stad) - 1) / (e^(α + β) - 1)
+    v_exponential_factor := (
+        exp(v_alpha * v_zone_ratio + v_beta * v_stadium_ratio) - 1
+    ) / (
+        exp(v_alpha + v_beta) - 1
+    );
+    
+    -- Izračunavanje osnovne cene zone
+    v_base_price := v_min_price + (v_max_price - v_min_price) * v_exponential_factor;
+    
+    -- Izračunavanje vremenskog faktora
+    v_days_difference := v_match_date - v_current_date;
+    v_time_weight := 1 + v_gamma * (1 - v_days_difference::NUMERIC / v_t);
+    
+    -- Osiguravanje da vremenski faktor ne bude manji od 0.5
+    v_time_weight := GREATEST(v_time_weight, 0.5);
+    
+    -- Finalna cena
+    v_final_price := v_base_price * v_time_weight;
+    
+    -- Osiguravanje da cena ne prelazi maksimum i nije manja od minimuma
+    v_final_price := GREATEST(LEAST(v_final_price, v_max_price * 2), v_min_price * 0.5);
+    
+    RETURN ROUND(v_final_price, 2);
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške, vrati osnovnu cenu
+        RETURN COALESCE(v_min_price, 1000);
+END;
+$$ LANGUAGE plpgsql;
+
+-- PRIMER KORIŠĆENJA DINAMIČKIH CENA:
+-- Danas je 2. septembar 2025
+-- 
+-- Match 1: Partizan vs Crvena Zvezda (5. septembar - za 3 dana)
+-- - Derby utakmica, visok price_factor (8.0), time_factor (0.7)
+-- - Min: 2000, Max: 8000 dinara
+-- SELECT calculate_ticket_price(1, 1); 
+--
+-- Match 2: Partizan vs FMP (15. septembar - za 13 dana)  
+-- - Srednji demand, price_factor (5.0), time_factor (0.5)
+-- - Min: 1200, Max: 5000 dinara
+-- SELECT calculate_ticket_price(2, 1);
+--
+-- Match 3: Partizan vs Mega (25. septembar - za 23 dana)
+-- - Obična utakmica, nizak price_factor (4.0), time_factor (0.4) 
+-- - Min: 1000, Max: 4000 dinara
+-- SELECT calculate_ticket_price(3, 1);
