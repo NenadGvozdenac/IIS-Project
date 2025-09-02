@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MediatR;
-using match_service.src.Matches.BuildingBlocks.Infratructure.Database;
+using System.Reflection;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Infrastructure.Repositories;
-using System.Reflection;
+using match_service.src.Matches.Core.Infrastructure;
 
 namespace match_service.src.Matches.API.Startup;
 

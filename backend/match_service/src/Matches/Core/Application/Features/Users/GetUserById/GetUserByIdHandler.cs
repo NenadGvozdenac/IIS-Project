@@ -13,7 +13,7 @@ public class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, Result<GetUs
         _userRepository = userRepository;
     }
 
-    public async Task<Result<GetUserByIdResponse>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
+    public Task<Result<GetUserByIdResponse>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -21,13 +21,13 @@ public class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, Result<GetUs
 
             if (user == null)
             {
-                return Result<GetUserByIdResponse>.Failure($"User with ID {request.Id} not found")
-                    .WithCode((int)ResultCode.NotFound);
+                return Task.FromResult(Result<GetUserByIdResponse>.Failure($"User with ID {request.Id} not found")
+                    .WithCode((int)ResultCode.NotFound));
             }
 
             var response = new GetUserByIdResponse
             {
-                Id_User = user.Id_User,
+                Id_User = user.IdUser,
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email,
@@ -35,12 +35,12 @@ public class GetUserByIdHandler : IRequestHandler<GetUserByIdQuery, Result<GetUs
                 Type = user.Type
             };
 
-            return Result<GetUserByIdResponse>.Success(response);
+            return Task.FromResult(Result<GetUserByIdResponse>.Success(response));
         }
         catch (Exception ex)
         {
-            return Result<GetUserByIdResponse>.Failure($"An error occurred while retrieving the user: {ex.Message}")
-                .WithCode((int)ResultCode.InternalServerError);
+            return Task.FromResult(Result<GetUserByIdResponse>.Failure($"An error occurred while retrieving the user: {ex.Message}")
+                .WithCode((int)ResultCode.InternalServerError));
         }
     }
 }
