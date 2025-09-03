@@ -25,7 +25,7 @@ public class GetAllMatchesHandler : IRequestHandler<GetAllMatchesQuery, Result<G
                 {
                     IdMatch = m.IdMatch,
                     Name = m.Name,
-                    CreatedAt = m.CreatedAt,
+                    ScheduledAt = m.ScheduledAt,
                     Type = m.Type,
                     State = m.State,
                     City = m.City,

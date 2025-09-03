@@ -39,7 +39,7 @@ public class DeleteMatchHandler : IRequestHandler<DeleteMatchCommand, Result<Del
                     .WithCode((int)ResultCode.NotFound));
             }
 
-            if (match.CreatedAt <= DateTime.Now)
+            if (match.ScheduledAt <= DateTime.Now)
             {
                 return Task.FromResult(Result<DeleteMatchResponse>.Failure("Cannot delete match that has already started or finished")
                     .WithCode((int)ResultCode.Forbidden));

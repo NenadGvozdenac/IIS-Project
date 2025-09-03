@@ -29,7 +29,7 @@ public class GetMatchByIdHandler : IRequestHandler<GetMatchByIdQuery, Result<Get
             {
                 IdMatch = match.IdMatch,
                 Name = match.Name,
-                CreatedAt = match.CreatedAt,
+                ScheduledAt = match.ScheduledAt,
                 Type = match.Type,
                 State = match.State,
                 City = match.City,
