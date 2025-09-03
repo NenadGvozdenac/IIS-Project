@@ -101,6 +101,7 @@
               placeholder="Year"
               min="1800"
               :max="new Date().getFullYear()"
+              @change="handleYearChange"
             />
           </div>
 
@@ -154,14 +155,14 @@
         </div>
 
         <!-- Players Section -->
-        <div class="players-section">
+        <!-- <div class="players-section">
           <div class="players-header">
             <h2>Players</h2>
             <button type="button" class="btn-add-players">+ Add players</button>
           </div>
           
           <div class="players-grid">
-            <!-- Hardcoded players for now -->
+            Hardcoded players for now
             <div class="player-card" v-for="i in 8" :key="i">
               <h3>Kevin Punter (#0)</h3>
               <p>Position: Guard</p>
@@ -170,7 +171,7 @@
               <p>Weight: 86kg</p>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Submit Button -->
         <div class="form-actions">
@@ -185,6 +186,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { MATCHES_URL } from '../../services/const_service'
 
 const router = useRouter()
 
@@ -200,6 +202,13 @@ const formData = ref({
   keyStrengths: '',
   keyWeaknesses: ''
 })
+const handleYearChange = () => {
+  if (foundedYearInput.value) {
+    formData.value.foundedDate = new Date(Number(foundedYearInput.value), 0, 1).toISOString()
+  } else {
+    formData.value.foundedDate = null
+  }
+}
 
 const submitForm = async () => {
   try {
@@ -212,13 +221,16 @@ const submitForm = async () => {
       state: formData.value.state,
       city: formData.value.city,
       hall: formData.value.hall,
-      foundedDate: formData.value.foundedYear ? new Date(formData.value.foundedYear, 0, 1).toISOString() : null,
+      foundedDate: formData.value.foundedYear 
+          ? `${formData.value.foundedYear}-01-01`
+          : null,
       playingStyle: formData.value.playingStyle,
       keyStrengths: formData.value.keyStrengths,
       keyWeaknesses: formData.value.keyWeaknesses
     }
+    console.log("Submitting team data:", teamData)
 
-    const response = await axios.post('https://localhost:5001/api/team', teamData, {
+    const response = await axios.post(`${MATCHES_URL}/team`, teamData, {
       headers: {
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json'

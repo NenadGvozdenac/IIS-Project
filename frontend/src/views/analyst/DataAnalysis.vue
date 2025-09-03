@@ -109,6 +109,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { MATCHES_URL } from '../../services/const_service'
 
 const router = useRouter()
 const searchQuery = ref('')
@@ -125,7 +126,8 @@ const fetchTeams = async () => {
   try {
     const jwt = localStorage.getItem('token');
     console.log("JWT token:", jwt);
-    const response = await axios.get(`https://localhost:5001/api/team`, {
+    console.log("Fetching teams from:", `${MATCHES_URL}/team`);
+    const response = await axios.get(`${MATCHES_URL}/team`, {
       headers: {
         Authorization: `Bearer ${jwt}`
       }
@@ -179,8 +181,7 @@ const addOpponent = () => {
 }
 
 const checkMyTeam = () => {
-  // Implementirati logiku za "Check my team"
-  console.log('Check my team clicked')
+  router.push(`/analyst/team/1`)
 }
 
 onMounted(() => {

@@ -7,7 +7,7 @@ public partial class GeneralEvent
 {
     public int IdEvent { get; set; }
 
-    public DateOnly? CreationTime { get; set; }
+    public DateTime CreationTime { get; set; }
 
     public string? Notes { get; set; }
 

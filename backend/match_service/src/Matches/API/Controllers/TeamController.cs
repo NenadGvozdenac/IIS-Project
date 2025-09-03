@@ -39,6 +39,7 @@ public class TeamController : BaseController
     [HttpPost]
     public async Task<ActionResult> CreateTeam([FromBody] CreateTeamCommand command)
     {
+        Console.WriteLine($"Creating team: {command}");
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

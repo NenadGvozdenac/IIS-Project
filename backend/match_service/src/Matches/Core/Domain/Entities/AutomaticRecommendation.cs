@@ -9,7 +9,7 @@ public partial class AutomaticRecommendation
 
     public string? Status { get; set; }
 
-    public DateOnly? CreationTime { get; set; }
+    public DateTime CreationTime { get; set; }
 
     public int IdMatch { get; set; }
 

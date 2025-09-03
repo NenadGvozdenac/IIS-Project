@@ -6,6 +6,7 @@ using match_service.src.Matches.Core.Application.Features.TeamMember.GetTeamMemb
 using match_service.src.Matches.Core.Application.Features.TeamMember.CreateTeamMember;
 using match_service.src.Matches.Core.Application.Features.TeamMember.UpdateTeamMember;
 using match_service.src.Matches.Core.Application.Features.TeamMember.DeleteTeamMember;
+using match_service.src.Matches.Core.Application.Features.TeamMember.GetTeamPlayersByTeamId;
 
 namespace match_service.src.Matches.API.Controllers;
 
@@ -32,6 +33,14 @@ public class TeamMemberController : BaseController
     public async Task<ActionResult> GetAllTeamMembers()
     {
         var query = new GetAllTeamMembersQuery();
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("team/{teamId}")]
+    public async Task<ActionResult> GetTeamPlayersByTeamId(int teamId)
+    {
+        var query = new GetTeamPlayersByTeamIdQuery(teamId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
