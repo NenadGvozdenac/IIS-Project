@@ -3,6 +3,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
+import CustomerDashboard from '../views/customer/Dashboard.vue'
 import Profile from '../views/customer/Profile.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
@@ -32,6 +33,12 @@ const routes = [
     name: 'Dashboard',
     component: Dashboard,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/customer-dashboard',
+    name: 'CustomerDashboard',
+    component: CustomerDashboard,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
   },
   {
     path: '/profile',

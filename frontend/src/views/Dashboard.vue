@@ -100,10 +100,20 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getUserData } from '../services/auth_service';
 
+const router = useRouter();
 const userInfo = getUserData();
 
+onMounted(() => {
+  // Redirect customers to their specific dashboard
+  if (userInfo && userInfo.userRole === 'customer') {
+    router.replace('/customer-dashboard');
+    return;
+  }
+});
 </script>
 
 <style scoped>
