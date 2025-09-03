@@ -71,9 +71,7 @@
 </template>
 
 <script setup>
-import { useAuth } from '../composables/useAuth'
 
-const { isAuthenticated, userName } = useAuth()
 </script>
 
 <style scoped>

@@ -15,12 +15,12 @@
         </div>
         
         <div class="navbar-auth">
-          <template v-if="!isAuthenticated">
+          <template v-if="!userInfo">
             <router-link to="/login" class="btn btn-ghost">Login</router-link>
             <router-link to="/register" class="btn btn-primary">Sign Up</router-link>
           </template>
           <template v-else>
-            <span class="user-greeting">Hello, {{ userName }}</span>
+            <span class="user-greeting">Hello, {{ userInfo.userName }}</span>
             <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
             <button @click="logout" class="btn btn-secondary">Logout</button>
           </template>
@@ -63,27 +63,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
+import { getUserData } from '../services/auth_service';
 
-const router = useRouter()
-const { isAuthenticated, userName, logout: authLogout } = useAuth()
-const isMobileMenuOpen = ref(false)
-
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value
-}
-
-const closeMobileMenu = () => {
-  isMobileMenuOpen.value = false
-}
-
-const logout = () => {
-  authLogout()
-  closeMobileMenu()
-  router.push('/')
-}
+const userInfo = getUserData();
 </script>
 
 <style scoped>

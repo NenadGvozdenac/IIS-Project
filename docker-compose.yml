@@ -79,6 +79,10 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.vite
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
 
 volumes:
   pgdata:

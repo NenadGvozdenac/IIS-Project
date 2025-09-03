@@ -3,7 +3,7 @@
     <div class="container">
       <div class="dashboard-header">
         <h1>Welcome to your Dashboard</h1>
-        <p>Hi {{ userInfo?.name || 'User' }}, manage your Sports Hub account and activities here.</p>
+        <p>Hi {{ userInfo?.userName || 'User' }}, manage your Sports Hub account and activities here.</p>
       </div>
 
       <div class="dashboard-content">
@@ -17,15 +17,15 @@
               <div class="profile-info">
                 <div class="info-row">
                   <span class="label">Name:</span>
-                  <span class="value">{{ userInfo?.name || 'N/A' }}</span>
+                  <span class="value">{{ userInfo?.userName || 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">Email:</span>
-                  <span class="value">{{ userInfo?.email || 'N/A' }}</span>
+                  <span class="value">{{ userInfo?.userEmail || 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">User Type:</span>
-                  <span class="value">{{ userInfo?.userType || 'N/A' }}</span>
+                  <span class="value">{{ userInfo?.userRole || 'N/A' }}</span>
                 </div>
               </div>
             </div>
@@ -100,9 +100,10 @@
 </template>
 
 <script setup>
-import { useAuth } from '../composables/useAuth'
+import { getUserData } from '../services/auth_service';
 
-const { userInfo } = useAuth()
+const userInfo = getUserData();
+
 </script>
 
 <style scoped>
