@@ -208,7 +208,7 @@ CREATE TABLE management_member_request (
 CREATE TABLE match (
     id_match                SERIAL NOT NULL,
     name                    VARCHAR(255) NOT NULL,
-    created_at              TIMESTAMP WITH TIME ZONE NOT NULL,
+    scheduled_at            TIMESTAMP WITH TIME ZONE NOT NULL,
     type                    VARCHAR(20) NOT NULL CHECK (type IN ('away', 'home')),
     state                   VARCHAR(255) NOT NULL,
     city                    VARCHAR(255) NOT NULL,
@@ -985,10 +985,10 @@ INSERT INTO zone (name, rank, maximum_capacity, status) VALUES
     ('Zone 400', 400, 60, 'enabled');
 
 -- Insert 3 Partizan matches in the coming days (September 2025)
-INSERT INTO match (name, created_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
-    ('Partizan vs Crvena Zvezda', '2025-09-05', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
-    ('Partizan vs FMP', '2025-09-15', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
-    ('Partizan vs Mega', '2025-09-25', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
+INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
+    ('Partizan vs Crvena Zvezda', '2025-09-05 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
+    ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
+    ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
 
 -- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
@@ -1034,7 +1034,7 @@ SELECT
     'enabled',
     '2025-08-15',
     '2025-08-15',
-    m.created_at + INTERVAL '30 days',
+    m.scheduled_at + INTERVAL '30 days',
     s.id_seat
 FROM seat s 
 CROSS JOIN match m
@@ -1219,7 +1219,7 @@ BEGIN
       AND po.status = 'bought';
     
     -- Dohvatanje datuma utakmice
-    SELECT m.created_at
+    SELECT m.scheduled_at
     INTO v_match_date
     FROM match m
     WHERE m.id_match = p_match_id;

@@ -9,7 +9,7 @@ public partial class Match
 
     public string Name { get; set; } = null!;
 
-    public DateOnly CreatedAt { get; set; }
+    public DateTime ScheduledAt { get; set; }
 
     public string Type { get; set; } = null!;
 

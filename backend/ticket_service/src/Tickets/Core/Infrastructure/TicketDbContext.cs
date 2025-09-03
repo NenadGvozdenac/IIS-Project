@@ -51,6 +51,7 @@ public partial class TicketDbContext : DbContext
             optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
         }
     }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
@@ -177,7 +178,6 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.City)
                 .HasMaxLength(255)
                 .HasColumnName("city");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Hall)
                 .HasMaxLength(255)
                 .HasColumnName("hall");
@@ -188,6 +188,7 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
+            entity.Property(e => e.ScheduledAt).HasColumnName("scheduled_at");
             entity.Property(e => e.State)
                 .HasMaxLength(255)
                 .HasColumnName("state");
@@ -315,15 +316,18 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.Hall)
                 .HasMaxLength(255)
                 .HasColumnName("hall");
-            entity.Property(e => e.KeyStrenghts)
+            entity.Property(e => e.KeyStrengths)
                 .HasMaxLength(255)
-                .HasColumnName("key_strenghts");
+                .HasColumnName("key_strengths");
             entity.Property(e => e.KeyWeaknesses)
                 .HasMaxLength(255)
                 .HasColumnName("key_weaknesses");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
+            entity.Property(e => e.PlayingStyle)
+                .HasMaxLength(255)
+                .HasColumnName("playing_style");
             entity.Property(e => e.State)
                 .HasMaxLength(255)
                 .HasColumnName("state");
