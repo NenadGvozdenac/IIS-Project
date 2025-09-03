@@ -7,6 +7,10 @@ export class AuthService {
         try {
             const response = await axios.post(`${AUTH_URL}/login`, { email, password });
             localStorage.setItem('token', response.data.data.token);
+            
+            // Emit custom event for auth change
+            window.dispatchEvent(new CustomEvent('auth-changed'));
+            
             return response.data;
         } catch (error) {
             throw error.response.data;
@@ -25,6 +29,10 @@ export class AuthService {
                 user_type
             });
             localStorage.setItem('token', response.data.data.token);
+            
+            // Emit custom event for auth change
+            window.dispatchEvent(new CustomEvent('auth-changed'));
+            
             return response.data;
         } catch (error) {
             throw error.response.data;
@@ -60,4 +68,13 @@ export function getUserData() {
 
     const userData = AuthService.decode(token);
     return userData;
+}
+
+export function logout() {
+    localStorage.removeItem('token');
+    
+    // Emit custom event for auth change
+    window.dispatchEvent(new CustomEvent('auth-changed'));
+    
+    window.location.reload();
 }
