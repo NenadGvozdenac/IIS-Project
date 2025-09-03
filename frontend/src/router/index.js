@@ -5,6 +5,7 @@ import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import CustomerDashboard from '../views/customer/Dashboard.vue'
 import Profile from '../views/customer/Profile.vue'
+import Cart from '../views/customer/Cart.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
@@ -45,6 +46,12 @@ const routes = [
     name: 'Profile',
     component: Profile,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: Cart,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
   },
   {
     path: '/analyst',

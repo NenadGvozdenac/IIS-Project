@@ -1062,10 +1062,11 @@ INSERT INTO users (name, surname, email, phone, password, type) VALUES
     ('Stefan', 'Nikolic', 'stefan@example.com', '+381603333333', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'customer');
 
 -- Add some credit cards for test customers  
+-- Credit cards are: cc: 1234123412341234, cvv: 555
 INSERT INTO credit_card (created_at, number, cvv, name, expiration_date, id_user) VALUES 
-    ('2025-08-01', '1234567890123456', '123', 'Marko Petrovic', '2028-12-31', 7),
-    ('2025-08-01', '2345678901234567', '234', 'Ana Jovanovic', '2028-12-31', 8),
-    ('2025-08-01', '3456789012345678', '345', 'Stefan Nikolic', '2028-12-31', 9);
+    ('2025-08-01', 'NqegFjTqg93HknhxnULVXgADsUorREd2xp90DSsm2kc=', 'feYkA5OO5zBFu9AGPBGXTA==', 'Marko Petrovic', '2028-12-31', 7),
+    ('2025-08-01', 'NqegFjTqg93HknhxnULVXgADsUorREd2xp90DSsm2kc=', 'feYkA5OO5zBFu9AGPBGXTA==', 'Ana Jovanovic', '2028-12-31', 8),
+    ('2025-08-01', 'NqegFjTqg93HknhxnULVXgADsUorREd2xp90DSsm2kc=', 'feYkA5OO5zBFu9AGPBGXTA==', 'Stefan Nikolic', '2028-12-31', 9);
 
 -- Simulate sold tickets for Match 1 (Partizan vs Crvena Zvezda) - 10 tickets sold
 -- This will increase zone occupancy and test dynamic pricing
