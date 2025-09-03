@@ -9,7 +9,7 @@ public class MatchDto
 {
     public int IdMatch { get; set; }
     public string? Name { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public DateTime ScheduledAt { get; set; }
     public string? Type { get; set; }
     public string? State { get; set; }
     public string? City { get; set; }

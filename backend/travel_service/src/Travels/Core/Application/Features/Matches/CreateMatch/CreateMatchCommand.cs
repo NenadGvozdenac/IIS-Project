@@ -9,7 +9,7 @@ public class CreateMatchCommand : IRequest<Result<CreateMatchResponse>>
 
     public string Name { get; set; } = null!;
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime ScheduledAt { get; set; }
 
     public string Type { get; set; } = null!;
 

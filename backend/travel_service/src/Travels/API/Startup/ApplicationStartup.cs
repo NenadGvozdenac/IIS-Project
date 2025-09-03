@@ -28,6 +28,7 @@ public static class ApplicationStartup
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<ITravelInfoRepository, TravelInfoRepository>();
         services.AddScoped<IVisaRepository, VisaRepository>();
+        services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

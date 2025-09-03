@@ -1,0 +1,6 @@
+using MediatR;
+using travel_service.src.Travels.BuildingBlocks.Core.Domain;
+
+namespace travel_service.src.Travels.Core.Application.Features.TravelInformations.GetAllTravelInfos;
+
+public record GetAllTravelInfosQuery() : IRequest<Result<GetAllTravelInfosResponse>>;
