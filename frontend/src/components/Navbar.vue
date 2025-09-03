@@ -22,50 +22,60 @@
           <template v-else>
             <span class="user-greeting">Hello, {{ userInfo.userName }}</span>
             <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
-            <button @click="logout" class="btn btn-secondary">Logout</button>
+            <button @click="handleLogout" class="btn btn-secondary">Logout</button>
           </template>
         </div>
-      </div>
-      
-      <!-- Mobile menu button -->
-      <button 
-        class="mobile-menu-btn"
-        @click="toggleMobileMenu"
-        :class="{ 'active': isMobileMenuOpen }"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-    
-    <!-- Mobile menu -->
-    <div class="mobile-menu" :class="{ 'active': isMobileMenuOpen }">
-      <div class="mobile-nav">
-        <router-link to="/" class="mobile-nav-link" @click="closeMobileMenu">Home</router-link>
-        <router-link to="/about" class="mobile-nav-link" @click="closeMobileMenu">About</router-link>
-        <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Services</router-link>
-      </div>
-      
-      <div class="mobile-auth">
-        <template v-if="!isAuthenticated">
-          <router-link to="/login" class="btn btn-ghost w-full" @click="closeMobileMenu">Login</router-link>
-          <router-link to="/register" class="btn btn-primary w-full" @click="closeMobileMenu">Sign Up</router-link>
-        </template>
-        <template v-else>
-          <span class="user-greeting">Hello, {{ userName }}</span>
-          <router-link to="/dashboard" class="btn btn-ghost w-full" @click="closeMobileMenu">Dashboard</router-link>
-          <button @click="logout" class="btn btn-secondary w-full">Logout</button>
-        </template>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { getUserData } from '../services/auth_service';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { getUserData, logout } from '../services/auth_service';
 
-const userInfo = getUserData();
+const userInfo = ref(getUserData());
+
+// Function to update user info
+const updateUserInfo = () => {
+  userInfo.value = getUserData();
+};
+
+// Listen for storage events (when token changes)
+const handleStorageChange = (e) => {
+  if (e.key === 'token') {
+    updateUserInfo();
+  }
+};
+
+// Listen for custom events when user logs in/out
+const handleAuthChange = () => {
+  updateUserInfo();
+};
+
+onMounted(() => {
+  // Listen for storage changes (logout from another tab)
+  window.addEventListener('storage', handleStorageChange);
+  
+  // Listen for custom auth events
+  window.addEventListener('auth-changed', handleAuthChange);
+  
+  // Update user info on mount
+  updateUserInfo();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange);
+  window.removeEventListener('auth-changed', handleAuthChange);
+});
+
+// Override logout function to emit event
+const handleLogout = () => {
+  logout();
+  updateUserInfo();
+  // Emit custom event for auth change
+  window.dispatchEvent(new CustomEvent('auth-changed'));
+};
 </script>
 
 <style scoped>
