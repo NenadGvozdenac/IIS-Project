@@ -3,10 +3,15 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
+import CustomerDashboard from '../views/customer/Dashboard.vue'
+import Profile from '../views/customer/Profile.vue'
+import Cart from '../views/customer/Cart.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
+import ZonesSeats from '../views/administrator/ZonesSeats.vue'
+import { getUserData } from '../services/auth_service.js'
 
 const routes = [
   {
@@ -31,6 +36,24 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/customer-dashboard',
+    name: 'CustomerDashboard',
+    component: CustomerDashboard,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: Cart,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
+  },
+  {
     path: '/analyst',
     name: 'DataAnalysis',
     component: DataAnalysis,
@@ -53,6 +76,12 @@ const routes = [
     name: 'TeamEdit',
     component: TeamEdit,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/zones-seats',
+    name: 'ZonesSeats',
+    component: ZonesSeats,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -67,6 +96,13 @@ router.beforeEach((to, _, next) => {
   
   if (to.meta.requiresAuth && !token) {
     next('/login')
+  } else if (to.meta.requiresAdmin) {
+    const userData = getUserData()
+    if (!userData || userData.userRole !== 'admin') {
+      next('/dashboard') // Redirect to dashboard if not admin
+    } else {
+      next()
+    }
   } else {
     next()
   }

@@ -6,21 +6,23 @@
           Sports Hub
         </router-link>
       </div>
-      
+
       <div class="navbar-menu">
         <div class="navbar-nav">
-          <router-link to="/" class="nav-link">Home</router-link>
-          <router-link to="/about" class="nav-link">About</router-link>
-          <router-link to="/services" class="nav-link">Services</router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'admin'" to="/admin/zones-seats"
+            class="nav-link admin-link">
+            Zones & Seats
+          </router-link>
         </div>
-        
+
         <div class="navbar-auth">
           <template v-if="!userInfo">
             <router-link to="/login" class="btn btn-ghost">Login</router-link>
             <router-link to="/register" class="btn btn-primary">Sign Up</router-link>
           </template>
           <template v-else>
-            <span class="user-greeting">Hello, {{ userInfo.userName }}</span>
+            <router-link v-if="isCustomer()" to="/profile" class="btn btn-ghost">Profile</router-link>
+            <router-link v-if="isCustomer()" to="/cart" class="btn btn-ghost">Cart</router-link>
             <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
             <button @click="handleLogout" class="btn btn-secondary">Logout</button>
           </template>
@@ -56,10 +58,10 @@ const handleAuthChange = () => {
 onMounted(() => {
   // Listen for storage changes (logout from another tab)
   window.addEventListener('storage', handleStorageChange);
-  
+
   // Listen for custom auth events
   window.addEventListener('auth-changed', handleAuthChange);
-  
+
   // Update user info on mount
   updateUserInfo();
 });
@@ -75,6 +77,10 @@ const handleLogout = () => {
   updateUserInfo();
   // Emit custom event for auth change
   window.dispatchEvent(new CustomEvent('auth-changed'));
+};
+
+const isCustomer = () => {
+  return userInfo.value && userInfo.value.userRole === 'customer';
 };
 </script>
 
@@ -141,6 +147,17 @@ const handleLogout = () => {
 .nav-link.router-link-active {
   color: var(--color-primary);
   background-color: var(--color-surface);
+}
+
+.admin-link {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.admin-link:hover {
+  background-color: #fcd34d;
+  color: #78350f;
 }
 
 .navbar-auth {
@@ -242,7 +259,7 @@ const handleLogout = () => {
   .navbar-menu {
     display: none;
   }
-  
+
   .mobile-menu-btn {
     display: flex;
   }

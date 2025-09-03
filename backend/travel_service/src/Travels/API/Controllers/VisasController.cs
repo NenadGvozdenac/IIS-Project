@@ -17,10 +17,10 @@ public class VisasController : BaseController
         _mediator = mediator;
     }
 
-    [HttpPost("{userId}")]
-    public async Task<ActionResult> CreateVisa(int userId, [FromBody] CreateVisaCommand command)
+    [HttpPost("{memberId}")]
+    public async Task<ActionResult> CreateVisa(int memberId, [FromBody] CreateVisaCommand command)
     {
-        command.UserId = userId;
+        command.UserId = memberId;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

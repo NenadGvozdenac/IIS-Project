@@ -27,7 +27,7 @@ public class UpdateMatchHandler : IRequestHandler<UpdateMatchCommand, Result<Upd
                     .WithCode((int)ResultCode.NotFound));
             }
 
-            if (existingMatch.CreatedAt <= DateTime.Now)
+            if (existingMatch.ScheduledAt <= DateTime.Now)
             {
                 return Task.FromResult(Result<UpdateMatchResponse>.Failure("Cannot update match that has already started or finished")
                     .WithCode((int)ResultCode.Forbidden));
@@ -82,7 +82,7 @@ public class UpdateMatchHandler : IRequestHandler<UpdateMatchCommand, Result<Upd
             }
 
             existingMatch.Name = request.Name;
-            existingMatch.CreatedAt = request.CreatedAt;
+            existingMatch.ScheduledAt = request.ScheduledAt;
             existingMatch.Type = request.Type;
             existingMatch.State = request.State;
             existingMatch.City = request.City;
@@ -100,7 +100,7 @@ public class UpdateMatchHandler : IRequestHandler<UpdateMatchCommand, Result<Upd
             {
                 IdMatch = updatedMatch.IdMatch,
                 Name = updatedMatch.Name,
-                CreatedAt = updatedMatch.CreatedAt,
+                ScheduledAt = updatedMatch.ScheduledAt,
                 Type = updatedMatch.Type,
                 State = updatedMatch.State,
                 City = updatedMatch.City,
