@@ -12,6 +12,13 @@
           <router-link to="/" class="nav-link">Home</router-link>
           <router-link to="/about" class="nav-link">About</router-link>
           <router-link to="/services" class="nav-link">Services</router-link>
+          <router-link 
+            v-if="userInfo && userInfo.userRole === 'admin'" 
+            to="/admin/zones-seats" 
+            class="nav-link admin-link"
+          >
+            Zones & Seats
+          </router-link>
         </div>
         
         <div class="navbar-auth">
@@ -141,6 +148,17 @@ const handleLogout = () => {
 .nav-link.router-link-active {
   color: var(--color-primary);
   background-color: var(--color-surface);
+}
+
+.admin-link {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.admin-link:hover {
+  background-color: #fcd34d;
+  color: #78350f;
 }
 
 .navbar-auth {
