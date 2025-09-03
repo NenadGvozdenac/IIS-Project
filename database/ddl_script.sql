@@ -946,13 +946,14 @@ INSERT INTO nationality (state) VALUES ('Serbia');
 -- ID 4: Nikola Radovic - analyst
 -- ID 5: Marija Jankovic - scouting manager
 -- ID 6: Petar Miletic - team manager
+-- All passwords are 123456
 INSERT INTO users (name, surname, email, phone, password, type) VALUES 
-    ('Admin', 'User', 'admin@partizan.rs', '+381601234567', 'admin123', 'admin'),
-    ('Milos', 'Stojanovic', 'manager@partizan.rs', '+381601234571', 'manager123', 'club manager'),
-    ('Aleksandar', 'Milic', 'owner@partizan.rs', '+381601234572', 'owner123', 'club owner'),
-    ('Nikola', 'Radovic', 'analyst@partizan.rs', '+381601234573', 'analyst123', 'analyst'),
-    ('Marija', 'Jankovic', 'scouting@partizan.rs', '+381601234574', 'scouting123', 'scouting manager'),
-    ('Petar', 'Miletic', 'teammanager@partizan.rs', '+381601234575', 'team123', 'team manager');
+    ('Admin', 'User', 'admin@partizan.rs', '+381601234567', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'admin'),
+    ('Milos', 'Stojanovic', 'manager@partizan.rs', '+381601234571', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'club manager'),
+    ('Aleksandar', 'Milic', 'owner@partizan.rs', '+381601234572', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'club owner'),
+    ('Nikola', 'Radovic', 'analyst@partizan.rs', '+381601234573', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'analyst'),
+    ('Marija', 'Jankovic', 'scouting@partizan.rs', '+381601234574', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'scouting manager'),
+    ('Petar', 'Miletic', 'teammanager@partizan.rs', '+381601234575', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'team manager');
 
 -- Insert Position data
 INSERT INTO position (name) VALUES 
@@ -1054,10 +1055,11 @@ WHERE po.type = 'individual ticket';
 
 -- SIMULATE SOME TICKET SALES TO TEST DYNAMIC PRICING
 -- Create test customers for simulation
+-- All passwords are 123456
 INSERT INTO users (name, surname, email, phone, password, type) VALUES 
-    ('Marko', 'Petrovic', 'marko@example.com', '+381601111111', 'test123', 'customer'),
-    ('Ana', 'Jovanovic', 'ana@example.com', '+381602222222', 'test123', 'customer'),
-    ('Stefan', 'Nikolic', 'stefan@example.com', '+381603333333', 'test123', 'customer');
+    ('Marko', 'Petrovic', 'marko@example.com', '+381601111111', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'customer'),
+    ('Ana', 'Jovanovic', 'ana@example.com', '+381602222222', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'customer'),
+    ('Stefan', 'Nikolic', 'stefan@example.com', '+381603333333', '$2a$10$y201nvT/gV/aKAddECTdIOkWKeVPb6pXr5.RFpPAP/unWmWiPXq9.', 'customer');
 
 -- Add some credit cards for test customers  
 INSERT INTO credit_card (created_at, number, cvv, name, expiration_date, id_user) VALUES 

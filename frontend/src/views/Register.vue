@@ -72,26 +72,6 @@
             </div>
 
             <div class="form-group">
-              <label for="userType" class="form-label">Account Type</label>
-              <select
-                id="userType"
-                v-model="form.user_type"
-                class="form-select"
-                :class="{ 'error': errors.userType }"
-                required
-                >
-              <option value="">Select account type</option>
-              <option value="customer">Customer</option>
-              <option value="club manager">Club Manager</option>
-              <option value="club owner">Club Owner</option>
-              <option value="analyst">Analyst</option>
-              <option value="scouting manager">Scouting Manager</option>
-              <option value="team manager">Team Manager</option>
-              </select>
-              <span v-if="errors.userType" class="error-text">{{ errors.userType }}</span>
-            </div>
-
-            <div class="form-group">
               <label for="password" class="form-label">Password</label>
               <input
                 id="password"
@@ -143,10 +123,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
+import { AuthService } from '../services/auth_service.js'
 
 const router = useRouter()
-const { register } = useAuth()
 
 const loading = ref(false)
 const errorMessage = ref('')
@@ -156,7 +135,6 @@ const form = reactive({
   surname: '',
   email: '',
   phone: '',
-  user_type: '',
   password: '',
   confirm_password: ''
 })
@@ -166,7 +144,6 @@ const errors = reactive({
   surname: '',
   email: '',
   phone: '',
-  userType: '',
   password: '',
   confirmPassword: ''
 })
@@ -200,11 +177,6 @@ const validateForm = () => {
     isValid = false
   }
   
-  if (!form.user_type) {
-    errors.userType = 'Please select an account type'
-    isValid = false
-  }
-  
   if (!form.password) {
     errors.password = 'Password is required'
     isValid = false
@@ -231,9 +203,9 @@ const handleRegister = async () => {
   errorMessage.value = ''
   
   try {
-    const result = await register(form)
+    const result = await AuthService.register(form.name, form.surname, form.email, form.password, form.phone, form.confirm_password, 'customer')
     
-    if (result.success) {
+    if (result.code === 201) {
       router.push('/dashboard')
     } else {
       errorMessage.value = result.message || 'Registration failed. Please try again.'
