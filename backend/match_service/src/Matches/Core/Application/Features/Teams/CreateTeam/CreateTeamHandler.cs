@@ -51,7 +51,8 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, Result<Creat
                 Hall = request.Hall,
                 FoundedDate = request.FoundedDate,
                 Coach = request.Coach,
-                KeyStrenghts = request.KeyStrenghts,
+                PlayingStyle = request.PlayingStyle,
+                KeyStrengths = request.KeyStrengths,
                 KeyWeaknesses = request.KeyWeaknesses
             };
 
@@ -66,7 +67,8 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, Result<Creat
                 Hall = createdTeam.Hall,
                 FoundedDate = createdTeam.FoundedDate,
                 Coach = createdTeam.Coach,
-                KeyStrenghts = createdTeam.KeyStrenghts,
+                PlayingStyle = createdTeam.PlayingStyle,
+                KeyStrengths = createdTeam.KeyStrengths,
                 KeyWeaknesses = createdTeam.KeyWeaknesses
             };
 

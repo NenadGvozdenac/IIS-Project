@@ -22,6 +22,9 @@ public static class ApplicationStartup
     {
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IPositionRepository, PositionRepository>();
+        services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

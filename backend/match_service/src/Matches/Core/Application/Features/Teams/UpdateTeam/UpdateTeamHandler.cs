@@ -59,7 +59,8 @@ public class UpdateTeamHandler : IRequestHandler<UpdateTeamCommand, Result<Updat
                 Hall = request.Hall,
                 FoundedDate = request.FoundedDate,
                 Coach = request.Coach,
-                KeyStrenghts = request.KeyStrenghts,
+                PlayingStyle = request.PlayingStyle,
+                KeyStrengths = request.KeyStrengths,
                 KeyWeaknesses = request.KeyWeaknesses
             };
 
@@ -80,7 +81,8 @@ public class UpdateTeamHandler : IRequestHandler<UpdateTeamCommand, Result<Updat
                 Hall = updatedTeam.Hall,
                 FoundedDate = updatedTeam.FoundedDate,
                 Coach = updatedTeam.Coach,
-                KeyStrenghts = updatedTeam.KeyStrenghts,
+                PlayingStyle = updatedTeam.PlayingStyle,
+                KeyStrengths = updatedTeam.KeyStrengths,
                 KeyWeaknesses = updatedTeam.KeyWeaknesses
             };
 

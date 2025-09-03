@@ -42,7 +42,8 @@ public class TeamRepository : ITeamRepository
         existingTeam.Hall = team.Hall;
         existingTeam.FoundedDate = team.FoundedDate;
         existingTeam.Coach = team.Coach;
-        existingTeam.KeyStrenghts = team.KeyStrenghts;
+        existingTeam.PlayingStyle = team.PlayingStyle;
+        existingTeam.KeyStrengths = team.KeyStrengths;
         existingTeam.KeyWeaknesses = team.KeyWeaknesses;
 
         _matchDbContext.SaveChanges();

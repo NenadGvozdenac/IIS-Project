@@ -9,6 +9,7 @@ public class GetTeamByIdResponse
     public string? Hall { get; set; }
     public DateOnly? FoundedDate { get; set; }
     public string? Coach { get; set; }
-    public string? KeyStrenghts { get; set; }
+    public string? PlayingStyle { get; set; }
+    public string? KeyStrengths { get; set; }
     public string? KeyWeaknesses { get; set; }
 }

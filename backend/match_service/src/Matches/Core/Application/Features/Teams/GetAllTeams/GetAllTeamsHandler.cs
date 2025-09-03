@@ -28,7 +28,8 @@ public class GetAllTeamsHandler : IRequestHandler<GetAllTeamsQuery, Result<GetAl
                 Hall = team.Hall,
                 FoundedDate = team.FoundedDate,
                 Coach = team.Coach,
-                KeyStrenghts = team.KeyStrenghts,
+                PlayingStyle = team.PlayingStyle,
+                KeyStrengths = team.KeyStrengths,
                 KeyWeaknesses = team.KeyWeaknesses
             });
 

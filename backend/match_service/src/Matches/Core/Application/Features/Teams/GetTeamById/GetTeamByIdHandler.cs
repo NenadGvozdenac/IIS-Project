@@ -34,7 +34,8 @@ public class GetTeamByIdHandler : IRequestHandler<GetTeamByIdQuery, Result<GetTe
                 Hall = team.Hall,
                 FoundedDate = team.FoundedDate,
                 Coach = team.Coach,
-                KeyStrenghts = team.KeyStrenghts,
+                PlayingStyle = team.PlayingStyle,
+                KeyStrengths = team.KeyStrengths,
                 KeyWeaknesses = team.KeyWeaknesses
             };
 

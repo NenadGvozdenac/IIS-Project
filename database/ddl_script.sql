@@ -306,6 +306,8 @@ CREATE TABLE player (
     name           VARCHAR(255),
     surname        VARCHAR(255),
     birthday       DATE,
+    weight              INTEGER,
+    height              INTEGER,
     id_nationality INTEGER NOT NULL,
     id_position    INTEGER NOT NULL,
     PRIMARY KEY (id_player)
@@ -417,7 +419,8 @@ CREATE TABLE team (
     hall           VARCHAR(255) NOT NULL,
     founded_date   DATE,
     coach          VARCHAR(255),
-    key_strenghts  VARCHAR(255),
+    playing_style  VARCHAR(255),
+    key_strengths  VARCHAR(255),
     key_weaknesses VARCHAR(255),
     PRIMARY KEY (id_team)
 );
@@ -964,14 +967,14 @@ INSERT INTO season (started_at, name) VALUES
     ('2025-09-01', '2025/26 Season');
 
 -- Insert Partizan team
-INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, key_weaknesses) VALUES 
-    ('KK Partizan', 'Serbia', 'Belgrade', 'Stark Arena', '1945-10-04', 'Zeljko Obradovic', 'Strong defense, experienced players', 'Young bench, inconsistent offense');
+INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
+    ('KK Partizan', 'Serbia', 'Belgrade', 'Stark Arena', '1945-10-04', 'Zeljko Obradovic', 'defensive', 'Strong defense, experienced players', 'Young bench, inconsistent offense');
 
 -- Insert opponent teams
-INSERT INTO team (name, state, city, hall, founded_date, coach, key_strenghts, key_weaknesses) VALUES 
-    ('KK Crvena Zvezda', 'Serbia', 'Belgrade', 'Aleksandar Nikolic Hall', '1945-03-03', 'Ioannis Sfairopoulos', 'Fast tempo, good shooters', 'Weak rebounding'),
-    ('KK FMP', 'Serbia', 'Belgrade', 'FMP Hall', '1991-01-01', 'Marko Jaric', 'Young talent, energy', 'Lack of experience'),
-    ('KK Mega', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'Athletic players', 'Poor defense');
+INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
+    ('KK Crvena Zvezda', 'Serbia', 'Belgrade', 'Aleksandar Nikolic Hall', '1945-03-03', 'Ioannis Sfairopoulos', 'aggressive', 'Fast tempo, good shooters', 'Weak rebounding'),
+    ('KK FMP', 'Serbia', 'Belgrade', 'FMP Hall', '1991-01-01', 'Marko Jaric', 'fast', 'Young talent, energy', 'Lack of experience'),
+    ('KK Mega', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'defensive', 'Athletic players', 'Poor defense');
 
 -- Insert competition
 INSERT INTO competition (name, started_at, number_of_matches) VALUES 
