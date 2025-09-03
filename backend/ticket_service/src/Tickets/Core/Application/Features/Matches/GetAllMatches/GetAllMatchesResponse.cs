@@ -4,7 +4,7 @@ public class GetAllMatchesResponse
 {
     public int IdMatch { get; set; }
     public string Name { get; set; } = null!;
-    public DateOnly CreatedAt { get; set; }
+    public DateTime ScheduledAt { get; set; }
     public string Type { get; set; } = null!;
     public string State { get; set; } = null!;
     public string City { get; set; } = null!;

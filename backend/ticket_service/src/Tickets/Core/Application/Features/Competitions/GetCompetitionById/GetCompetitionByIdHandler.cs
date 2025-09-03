@@ -39,7 +39,7 @@ public class GetCompetitionByIdHandler : IRequestHandler<GetCompetitionByIdQuery
                 {
                     IdMatch = m.IdMatch,
                     Name = m.Name,
-                    Date = m.CreatedAt,
+                    Date = m.ScheduledAt,
                     Location = $"{m.City}, {m.Hall}",
                     Status = m.Type
                 }).ToList()

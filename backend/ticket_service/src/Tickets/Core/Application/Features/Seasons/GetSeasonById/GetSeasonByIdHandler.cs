@@ -42,7 +42,7 @@ public class GetSeasonByIdHandler : IRequestHandler<GetSeasonByIdQuery, Result<G
                     Name = m.Name,
                     City = m.City,
                     Hall = m.Hall,
-                    CreatedAt = m.CreatedAt
+                    ScheduledAt = m.ScheduledAt
                 }).ToList(),
                 SeasonTickets = season.SeasonTickets.Select(st => new SeasonTicketResponse
                 {
