@@ -131,7 +131,6 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.City)
                 .HasMaxLength(255)
                 .HasColumnName("city");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Hall)
                 .HasMaxLength(255)
                 .HasColumnName("hall");
@@ -142,6 +141,7 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
+            entity.Property(e => e.ScheduledAt).HasColumnName("scheduled_at");
             entity.Property(e => e.State)
                 .HasMaxLength(255)
                 .HasColumnName("state");

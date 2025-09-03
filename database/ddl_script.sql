@@ -129,7 +129,7 @@ CREATE TABLE agency (
 CREATE TABLE automatic_recommendations (
     priority      VARCHAR(20) CHECK (priority IN ('medium priority', 'not priority', 'urgent')),
     status        VARCHAR(20) CHECK (status IN ('accepted', 'rejected')),
-    creation_time DATE,
+    creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     id_match      INTEGER NOT NULL,
     PRIMARY KEY (id_match)
 );
@@ -175,7 +175,7 @@ CREATE TABLE credit_card (
 
 CREATE TABLE general_event (
     id_event      SERIAL NOT NULL,
-    creation_time DATE,
+    creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
     role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('break end', 'break start', 'other', 'pause end', 'pause start', 'period end', 'period start')),
@@ -223,17 +223,17 @@ CREATE TABLE match (
 );
 
 CREATE TABLE match_tracking (
-    start_time                 DATE,
-    end_time                   DATE,
+    start_time                 TIMESTAMP WITH TIME ZONE,
+    end_time                   TIMESTAMP WITH TIME ZONE NOT NULL,
     tracking_status            VARCHAR(20) CHECK (tracking_status IN ('active', 'finished', 'preparation')),
     period_duration            INTEGER,
     current_period             VARCHAR(20) CHECK (current_period IN ('1', '2', '3', '4', 'end')),
     period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused')),
-    period_start_time          DATE,
+    period_start_time          TIMESTAMP WITH TIME ZONE NOT NULL,
     elapsed_period_time        INTEGER,
-    last_pause_start_time      DATE,
+    last_pause_start_time      TIMESTAMP WITH TIME ZONE NOT NULL,
     total_pause_time_in_period INTEGER,
-    last_update_time           DATE,
+    last_update_time           TIMESTAMP WITH TIME ZONE NOT NULL,
     our_points                 INTEGER,
     opponent_points            INTEGER,
     id_user                    INTEGER,
@@ -276,7 +276,7 @@ CREATE TABLE offer (
 
 CREATE TABLE personal_event (
     id_event      SERIAL NOT NULL,
-    creation_time DATE,
+    creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
     role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('+2p', '+3p', '+ft', '2p', '3p', 'assist', 'block', 'foul', 'ft', 'other', 'reb def', 'reb of', 'steal', 'substitution in', 'substitution out')),
@@ -427,7 +427,7 @@ CREATE TABLE team (
 
 CREATE TABLE team_event (
     id_event      SERIAL NOT NULL,
-    creation_time DATE,
+    creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
     role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout')),
@@ -969,13 +969,13 @@ INSERT INTO season (started_at, name) VALUES
 
 -- Insert Partizan team
 INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
-    ('KK Partizan', 'Serbia', 'Belgrade', 'Stark Arena', '1945-10-04', 'Zeljko Obradovic', 'defensive', 'Strong defense, experienced players', 'Young bench, inconsistent offense');
+    ('KK Partizan', 'Serbia', 'Belgrade', 'Stark Arena', '1945-10-04', 'Zeljko Obradovic', 'Defensive', 'Strong defense, experienced players', 'Young bench, inconsistent offense');
 
 -- Insert opponent teams
 INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
-    ('KK Crvena Zvezda', 'Serbia', 'Belgrade', 'Aleksandar Nikolic Hall', '1945-03-03', 'Ioannis Sfairopoulos', 'aggressive', 'Fast tempo, good shooters', 'Weak rebounding'),
-    ('KK FMP', 'Serbia', 'Belgrade', 'FMP Hall', '1991-01-01', 'Marko Jaric', 'fast', 'Young talent, energy', 'Lack of experience'),
-    ('KK Mega', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'defensive', 'Athletic players', 'Poor defense');
+    ('KK Crvena Zvezda', 'Serbia', 'Belgrade', 'Aleksandar Nikolic Hall', '1945-03-03', 'Ioannis Sfairopoulos', 'Aggressive', 'Fast tempo, good shooters', 'Weak rebounding'),
+    ('KK FMP', 'Serbia', 'Belgrade', 'FMP Hall', '1991-01-01', 'Marko Jaric', 'Fast', 'Young talent, energy', 'Lack of experience'),
+    ('KK Mega', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'Defensive', 'Athletic players', 'Poor defense');
 
 -- Insert competition
 INSERT INTO competition (name, started_at, number_of_matches) VALUES 

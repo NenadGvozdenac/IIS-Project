@@ -5,9 +5,9 @@ namespace match_service.src.Matches.Core.Domain.Entities;
 
 public partial class MatchTracking
 {
-    public DateOnly? StartTime { get; set; }
+    public DateTime? StartTime { get; set; }
 
-    public DateOnly? EndTime { get; set; }
+    public DateTime EndTime { get; set; }
 
     public string? TrackingStatus { get; set; }
 
@@ -17,15 +17,15 @@ public partial class MatchTracking
 
     public string? PeriodStatus { get; set; }
 
-    public DateOnly? PeriodStartTime { get; set; }
+    public DateTime PeriodStartTime { get; set; }
 
     public int? ElapsedPeriodTime { get; set; }
 
-    public DateOnly? LastPauseStartTime { get; set; }
+    public DateTime LastPauseStartTime { get; set; }
 
     public int? TotalPauseTimeInPeriod { get; set; }
 
-    public DateOnly? LastUpdateTime { get; set; }
+    public DateTime LastUpdateTime { get; set; }
 
     public int? OurPoints { get; set; }
 
