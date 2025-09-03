@@ -19,6 +19,13 @@
         >
           Credit Cards
         </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'history' }"
+          @click="switchToHistoryTab"
+        >
+          Purchase History
+        </button>
       </div>
 
       <!-- Personal Info Tab -->
@@ -83,6 +90,81 @@
           <p>No credit cards added yet.</p>
           <button @click="openAddCardModal" class="btn btn-primary">
             Add Your First Card
+          </button>
+        </div>
+      </div>
+
+      <!-- Purchase History Tab -->
+      <div v-if="activeTab === 'history'" class="tab-content">
+        <div class="section-header">
+          <h2>Purchase History</h2>
+          <div class="history-stats" v-if="purchaseHistory.length > 0">
+            {{ purchaseHistory.length }} purchase{{ purchaseHistory.length !== 1 ? 's' : '' }}
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="loadingHistory" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading purchase history...</p>
+        </div>
+
+        <!-- Purchase History List -->
+        <div v-else-if="purchaseHistory.length > 0" class="history-list">
+          <div v-for="purchase in purchaseHistory" :key="purchase.idPurchaseOffer" class="history-item">
+            <div class="history-header">
+              <div class="ticket-type-badge" :class="purchase.type.replace(' ', '-')">
+                {{ purchase.type }}
+              </div>
+              <div class="purchase-date">
+                {{ formatDate(purchase.purchaseDate) }}
+              </div>
+            </div>
+            
+            <div class="history-content">
+              <div class="ticket-info">
+                <h3 class="ticket-name">{{ purchase.name }}</h3>
+                <p class="ticket-description">{{ purchase.description }}</p>
+                
+                <div class="ticket-details">
+                  <div class="detail-row">
+                    <span class="label">Seat:</span>
+                    <span class="value">{{ purchase.zoneName }} - Row {{ purchase.seatRow }}, Seat {{ purchase.seatNumber }}</span>
+                  </div>
+                  <div class="detail-row" v-if="purchase.matchName">
+                    <span class="label">Match:</span>
+                    <span class="value">{{ purchase.matchName }}</span>
+                  </div>
+                  <div class="detail-row" v-if="purchase.seasonName">
+                    <span class="label">Season:</span>
+                    <span class="value">{{ purchase.seasonName }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Valid until:</span>
+                    <span class="value">{{ formatDate(purchase.expiresAt) }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="ticket-actions">
+                <div class="ticket-price">
+                  {{ formatPrice(purchase.price) }} RSD
+                </div>
+                <button @click="printTicket(purchase)" class="btn btn-primary btn-sm">
+                  Print Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty History -->
+        <div v-else class="empty-state">
+          <div class="empty-icon">🎫</div>
+          <h3>No Purchase History</h3>
+          <p>You haven't purchased any tickets yet.</p>
+          <button @click="goToDashboard" class="btn btn-primary">
+            Browse Matches
           </button>
         </div>
       </div>
@@ -175,11 +257,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { CreditCardService } from '../../services/credit_card_service.js';
+import { MatchService } from '../../services/match_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 // Reactive data
 const activeTab = ref('info');
 const creditCards = ref([]);
+const purchaseHistory = ref([]);
+const loadingHistory = ref(false);
 const loading = ref(false);
 const userInfo = ref(getUserData());
 
@@ -340,6 +425,60 @@ const switchToCardsTab = async () => {
   if (creditCards.value.length === 0) {
     await loadCreditCards();
   }
+};
+
+const switchToHistoryTab = async () => {
+  activeTab.value = 'history';
+  if (purchaseHistory.value.length === 0) {
+    await loadPurchaseHistory();
+  }
+};
+
+const loadPurchaseHistory = async () => {
+  try {
+    loadingHistory.value = true;
+    const response = await MatchService.getPurchaseHistory();
+    purchaseHistory.value = response.value || response || [];
+  } catch (error) {
+    console.error('Error loading purchase history:', error);
+    purchaseHistory.value = [];
+  } finally {
+    loadingHistory.value = false;
+  }
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const formatPrice = (price) => {
+  if (!price && price !== 0) return '0.00';
+  return parseFloat(price).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const getTicketTypeClass = (type) => {
+  switch (type) {
+    case 'season ticket':
+      return 'season-ticket';
+    case 'individual ticket':
+      return 'individual-ticket';
+    default:
+      return 'default-ticket';
+  }
+};
+
+const printTicket = (ticket) => {
+  // TODO: Implement ticket printing functionality
+  alert(`Printing ticket: ${ticket.name}`);
 };
 </script>
 
@@ -666,5 +805,293 @@ const switchToCardsTab = async () => {
   .card-actions {
     flex-direction: column;
   }
+
+  .history-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .history-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Purchase History Styles */
+.history-loading {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-text-muted);
+}
+
+.history-grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.history-item {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: var(--spacing-xl);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+}
+
+.history-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+}
+
+.history-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.history-title h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.3;
+}
+
+.history-title p {
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.ticket-type-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-type-badge.season-ticket {
+  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+  color: #1b5e20;
+  border: 1px solid #4caf50;
+}
+
+.ticket-type-badge.individual-ticket {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #0d47a1;
+  border: 1px solid #2196f3;
+}
+
+.purchase-date {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.history-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-xl);
+  gap: var(--spacing-lg);
+}
+
+.ticket-info {
+  flex: 1;
+}
+
+.ticket-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.3;
+}
+
+.ticket-description {
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.ticket-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.detail-row .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-row .value {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.ticket-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  min-width: 150px;
+}
+
+.ticket-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: right;
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  border-radius: var(--radius-lg);
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  min-width: 120px;
+}
+
+.ticket-actions .btn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  font-size: 0.85rem;
+}
+
+.ticket-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.ticket-type-badge.default-ticket {
+  background-color: #f5f5f5;
+  color: #616161;
+}
+
+.history-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  text-align: center;
+  padding: var(--spacing-md);
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.history-detail .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.history-detail .value {
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.history-detail .value.price {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.history-actions .btn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.history-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.history-empty {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-empty h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.history-empty p {
+  color: var(--color-text-muted);
+  margin: 0;
 }
 </style>
