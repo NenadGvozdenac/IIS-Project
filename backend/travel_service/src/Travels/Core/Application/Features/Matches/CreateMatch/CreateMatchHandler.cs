@@ -77,7 +77,7 @@ public class CreateMatchHandler : IRequestHandler<CreateMatchCommand, Result<Cre
             var match = new Match
             {
                 Name = request.Name,
-                CreatedAt = request.CreatedAt,
+                ScheduledAt = request.ScheduledAt,
                 Type = request.Type,
                 State = request.State,
                 City = request.City,
@@ -95,7 +95,7 @@ public class CreateMatchHandler : IRequestHandler<CreateMatchCommand, Result<Cre
             {
                 IdMatch = createdMatch.IdMatch,
                 Name = createdMatch.Name,
-                CreatedAt = createdMatch.CreatedAt,
+                ScheduledAt = createdMatch.ScheduledAt,
                 Type = createdMatch.Type,
                 State = createdMatch.State,
                 City = createdMatch.City,
