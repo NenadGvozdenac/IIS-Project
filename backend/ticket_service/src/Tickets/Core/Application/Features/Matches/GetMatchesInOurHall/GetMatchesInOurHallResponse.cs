@@ -10,9 +10,9 @@ public class GetMatchesInOurHallResponse
     public string City { get; set; } = null!;
     public string Hall { get; set; } = null!;
     public bool IsInOurHall { get; set; }
-    public bool TransportationRequired { get; set; }
-    public bool AccommodationRequired { get; set; }
-    
+    public bool TicketsForSale { get; set; }
+    public DateTime? TicketsWentOnSale { get; set; }
+
     // Related entities
     public string? CompetitionName { get; set; }
     public string SeasonName { get; set; } = null!;

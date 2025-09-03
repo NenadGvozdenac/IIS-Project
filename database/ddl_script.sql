@@ -214,6 +214,8 @@ CREATE TABLE match (
     city                    VARCHAR(255) NOT NULL,
     hall                    VARCHAR(255) NOT NULL,
     is_in_our_hall          BOOLEAN NOT NULL,
+    tickets_for_sale        BOOLEAN NOT NULL DEFAULT FALSE,
+    tickets_went_on_sale    TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     transportation_required BOOLEAN NOT NULL,
     accommodation_required  BOOLEAN NOT NULL,
     id_competition          INTEGER,
@@ -986,10 +988,10 @@ INSERT INTO zone (name, rank, maximum_capacity, status) VALUES
     ('Zone 400', 400, 60, 'enabled');
 
 -- Insert 3 Partizan matches in the coming days (September 2025)
-INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, id_competition, id_season, id_team) VALUES 
-    ('Partizan vs Crvena Zvezda', '2025-09-05 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 2),
-    ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 3),
-    ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, 1, 1, 4);
+INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, tickets_for_sale, tickets_went_on_sale, id_competition, id_season, id_team) VALUES 
+    ('Partizan vs Crvena Zvezda', '2025-09-05 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-05 19:00:00+01', 1, 1, 2),
+    ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-15 19:00:00+01', 1, 1, 3),
+    ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-25 19:00:00+01', 1, 1, 4);
 
 -- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 

@@ -7,12 +7,12 @@
         <p class="welcome-subtitle">Discover upcoming matches and secure your tickets</p>
       </div>
 
-      <!-- Upcoming Matches Section -->
-      <div class="matches-section">
+      <!-- Matches With Tickets For Sale Section -->
+      <div class="matches-section" v-if="matchesWithTickets.length > 0">
         <div class="section-header">
-          <h2>Upcoming Matches</h2>
-          <div class="matches-count" v-if="matches.length > 0">
-            {{ matches.length }} match{{ matches.length !== 1 ? 'es' : '' }} available
+          <h2>Tickets Available Now</h2>
+          <div class="matches-count">
+            {{ matchesWithTickets.length }} match{{ matchesWithTickets.length !== 1 ? 'es' : '' }} with tickets for sale
           </div>
         </div>
 
@@ -22,9 +22,9 @@
           <p>Loading matches...</p>
         </div>
 
-        <!-- Matches Grid -->
-        <div v-else-if="matches.length > 0" class="matches-grid">
-          <div v-for="match in matches" :key="match.idMatch" class="match-card">
+        <!-- Matches With Tickets Grid -->
+        <div class="matches-grid">
+          <div v-for="match in matchesWithTickets" :key="match.idMatch" class="match-card">
             <div class="match-header">
               <div class="match-date">
                 {{ formatMatchDate(match.scheduledAt) }}
@@ -46,7 +46,7 @@
                   <i class="icon-location"></i>
                   <span>{{ match.hall }}, {{ match.city }}</span>
                 </div>
-                <div class="info-item">
+                <div class="info-item" v-if="match.competitionName">
                   <i class="icon-trophy"></i>
                   <span>{{ match.competitionName }}</span>
                 </div>
@@ -54,11 +54,19 @@
                   <i class="icon-team"></i>
                   <span>{{ match.teamName }}</span>
                 </div>
+                <div class="info-item tickets-available">
+                  <i class="icon-tickets"></i>
+                  <span>Tickets on sale since {{ formatTicketSaleDate(match.ticketsWentOnSale) }}</span>
+                </div>
+                <br v-if="!match.competitionName" />
               </div>
               
               <div class="match-status">
                 <span class="status-badge home-match">
                   {{ match.type }} match
+                </span>
+                <span class="status-badge tickets-available">
+                  Tickets Available
                 </span>
               </div>
             </div>
@@ -70,13 +78,77 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Empty State -->
-        <div v-else class="empty-state">
-          <div class="empty-icon">🎟️</div>
-          <h3>No Upcoming Matches</h3>
-          <p>There are currently no upcoming matches scheduled. Check back later for new events!</p>
+      <!-- Upcoming Matches Without Tickets Section -->
+      <div class="matches-section" v-if="matchesWithoutTickets.length > 0">
+        <div class="section-header">
+          <h2>Upcoming Matches</h2>
+          <div class="matches-count">
+            {{ matchesWithoutTickets.length }} match{{ matchesWithoutTickets.length !== 1 ? 'es' : '' }} scheduled
+          </div>
         </div>
+
+        <!-- Matches Without Tickets Grid -->
+        <div class="matches-grid">
+          <div v-for="match in matchesWithoutTickets" :key="match.idMatch" class="match-card match-card-no-tickets">
+            <div class="match-header">
+              <div class="match-date">
+                {{ formatMatchDate(match.scheduledAt) }}
+              </div>
+              <div class="match-time">
+                {{ formatMatchTime(match.scheduledAt) }}
+              </div>
+            </div>
+            
+            <div class="match-teams">
+              <div class="match-title">
+                <h3>{{ match.name }}</h3>
+              </div>
+            </div>
+
+            <div class="match-details">
+              <div class="match-info">
+                <div class="info-item">
+                  <i class="icon-location"></i>
+                  <span>{{ match.hall }}, {{ match.city }}</span>
+                </div>
+                <div class="info-item" v-if="match.competitionName">
+                  <i class="icon-trophy"></i>
+                  <span>{{ match.competitionName }}</span>
+                </div>
+                <div class="info-item">
+                  <i class="icon-team"></i>
+                  <span>{{ match.teamName }}</span>
+                </div>
+                <br v-if="!match.competitionName" />
+              </div>
+              
+              <div class="match-status">
+                <span class="status-badge home-match">
+                  {{ match.type }} match
+                </span>
+                <span class="status-badge tickets-coming-soon">
+                  Tickets Coming Soon
+                </span>
+              </div>
+            </div>
+
+            <div class="match-actions">
+              <div class="info-notice">
+                <i class="icon-info"></i>
+                <span>Tickets will be available soon. Stay tuned!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="!loading && matches.length === 0" class="empty-state">
+        <div class="empty-icon">🎟️</div>
+        <h3>No Upcoming Matches</h3>
+        <p>There are currently no upcoming matches scheduled. Check back later for new events!</p>
       </div>
 
       <!-- Quick Actions Section -->
@@ -114,6 +186,8 @@ const router = useRouter();
 
 // Reactive data
 const matches = ref([]);
+const matchesWithTickets = ref([]);
+const matchesWithoutTickets = ref([]);
 const loading = ref(false);
 const userInfo = ref(getUserData());
 
@@ -122,17 +196,18 @@ const loadUpcomingMatches = async () => {
   try {
     loading.value = true;
     const response = await MatchService.getMatchesInOurHall();
+
+    matches.value = response.value || response || [];
     
-    // Filter for upcoming matches only
-    const now = new Date();
-    matches.value = (response.value || response || []).filter(match => {
-      const matchDate = new Date(match.scheduledAt);
-      return matchDate > now;
-    }).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
-    
+    // Separate matches based on ticket availability
+    matchesWithTickets.value = matches.value.filter(match => match.ticketsForSale);
+    matchesWithoutTickets.value = matches.value.filter(match => !match.ticketsForSale);
+
   } catch (error) {
     console.error('Error loading matches:', error);
     matches.value = [];
+    matchesWithTickets.value = [];
+    matchesWithoutTickets.value = [];
   } finally {
     loading.value = false;
   }
@@ -159,24 +234,13 @@ const formatMatchTime = (dateString) => {
   });
 };
 
-const getStatusClass = (status) => {
-  if (!status) return 'scheduled';
-  switch (status.toLowerCase()) {
-    case 'scheduled':
-    case 'upcoming':
-      return 'scheduled';
-    case 'live':
-    case 'ongoing':
-      return 'live';
-    case 'finished':
-    case 'completed':
-      return 'finished';
-    case 'cancelled':
-    case 'postponed':
-      return 'cancelled';
-    default:
-      return 'scheduled';
-  }
+const formatTicketSaleDate = (dateString) => {
+  if (!dateString) return 'recently';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
 };
 
 const viewMatchDetails = (match) => {
@@ -292,6 +356,17 @@ onMounted(() => {
   box-shadow: var(--shadow-lg);
 }
 
+.match-card-no-tickets {
+  border: 2px dashed var(--color-border);
+  background: #fafafa;
+  opacity: 0.8;
+}
+
+.match-card-no-tickets:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
 .match-header {
   display: flex;
   justify-content: space-between;
@@ -327,9 +402,31 @@ onMounted(() => {
   content: "👥";
 }
 
+.info-item .icon-tickets::before {
+  content: "🎫";
+}
+
+.info-item .icon-info::before {
+  content: "ℹ️";
+}
+
+.status-badge {
+  margin-right: 2px;
+}
+
 .status-badge.home-match {
   background-color: #e8f5e8;
   color: #2e7d32;
+}
+
+.status-badge.tickets-available {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-badge.tickets-coming-soon {
+  background-color: #fff3e0;
+  color: #ef6c00;
 }
 
 .match-details {
@@ -353,6 +450,11 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
+.info-item.tickets-available {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
 .info-item .icon-location::before {
   content: "📍";
 }
@@ -367,6 +469,8 @@ onMounted(() => {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  display: inline-block;
 }
 
 .status-badge.scheduled {
@@ -397,6 +501,20 @@ onMounted(() => {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
   font-weight: 600;
+}
+
+.info-notice {
+  text-align: center;
+  padding: var(--spacing-md);
+  background-color: #fff3e0;
+  border: 1px solid #ffcc02;
+  border-radius: var(--radius-md);
+  color: #ef6c00;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
 }
 
 /* Empty State */

@@ -29,11 +29,11 @@ public class GetMatchesInOurHallHandler : IRequestHandler<GetMatchesInOurHallQue
                 City = match.City,
                 Hall = match.Hall,
                 IsInOurHall = match.IsInOurHall,
-                TransportationRequired = match.TransportationRequired,
-                AccommodationRequired = match.AccommodationRequired,
                 CompetitionName = match.IdCompetitionNavigation?.Name,
                 SeasonName = match.IdSeasonNavigation.Name,
-                TeamName = match.IdTeamNavigation.Name
+                TeamName = match.IdTeamNavigation.Name,
+                TicketsForSale = match.TicketsForSale,
+                TicketsWentOnSale = match.TicketsWentOnSale
             });
 
             return Task.FromResult(Result<IEnumerable<GetMatchesInOurHallResponse>>.Success(response));

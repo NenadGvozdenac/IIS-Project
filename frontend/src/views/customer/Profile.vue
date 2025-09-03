@@ -98,8 +98,14 @@
       <div v-if="activeTab === 'history'" class="tab-content">
         <div class="section-header">
           <h2>Purchase History</h2>
-          <div class="history-stats" v-if="purchaseHistory.length > 0">
-            {{ purchaseHistory.length }} purchase{{ purchaseHistory.length !== 1 ? 's' : '' }}
+          <div class="section-header-actions">
+            <div class="history-stats" v-if="purchaseHistory.length > 0">
+              {{ purchaseHistory.length }} purchase{{ purchaseHistory.length !== 1 ? 's' : '' }}
+            </div>
+            <router-link to="/my-tickets" class="btn btn-primary btn-sm">
+              <i class="icon-external"></i>
+              View All Tickets
+            </router-link>
           </div>
         </div>
 
@@ -573,6 +579,28 @@ const printTicket = (ticket) => {
   color: var(--color-text);
 }
 
+.section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.history-stats {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.icon-external::before {
+  content: "🔗";
+  margin-right: var(--spacing-xs);
+}
+
 /* Credit Cards Grid */
 .cards-grid {
   display: grid;
@@ -787,6 +815,12 @@ const printTicket = (ticket) => {
     flex-direction: column;
     align-items: stretch;
     gap: var(--spacing-md);
+  }
+  
+  .section-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
   }
   
   .cards-grid {

@@ -39,6 +39,23 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
                     .WithCode((int)ResultCode.NotFound));
             }
 
+            if (purchaseOffer.Type == "individual ticket")
+            {
+                var individualTicket = _individualTicketRepository.GetByPurchaseOfferId(request.PurchaseOfferId);
+
+                if (individualTicket == null)
+                {
+                    return Task.FromResult(Result<AddToCartResponse>.Failure($"Individual ticket with Purchase Offer ID {request.PurchaseOfferId} not found")
+                        .WithCode((int)ResultCode.NotFound));
+                }
+
+                if (individualTicket.IdMatchNavigation.TicketsForSale == false)
+                {
+                    return Task.FromResult(Result<AddToCartResponse>.Failure("Tickets for this match are not currently for sale")
+                        .WithCode((int)ResultCode.BadRequest));
+                }
+            }
+
             if (purchaseOffer.Status != "enabled")
             {
                 if (purchaseOffer.Status == "bought")
@@ -157,8 +174,6 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
         }
         catch (Exception ex)
         {
-            // Log error but don't fail the main operation
-            // In production, you would use proper logging here
             Console.WriteLine($"Error disabling individual tickets: {ex.Message}");
         }
     }

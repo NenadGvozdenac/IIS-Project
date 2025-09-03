@@ -28,4 +28,6 @@ public class CreateMatchCommand : IRequest<Result<CreateMatchResponse>>
     public int SeasonId { get; set; }
 
     public int TeamId { get; set; }
+
+    public int? CompetitionId { get; set; }
 }

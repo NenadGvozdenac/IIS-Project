@@ -5,6 +5,7 @@ import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import CustomerDashboard from '../views/customer/Dashboard.vue'
 import Profile from '../views/customer/Profile.vue'
+import MyTickets from '../views/customer/MyTickets.vue'
 import Cart from '../views/customer/Cart.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
@@ -46,6 +47,12 @@ const routes = [
     name: 'Profile',
     component: Profile,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-tickets',
+    name: 'MyTickets',
+    component: MyTickets,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
   },
   {
     path: '/cart',
