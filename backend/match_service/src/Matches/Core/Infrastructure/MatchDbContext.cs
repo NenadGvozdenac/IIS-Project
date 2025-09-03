@@ -281,6 +281,7 @@ public partial class MatchDbContext : DbContext
 
             entity.Property(e => e.IdPlayer).HasColumnName("id_player");
             entity.Property(e => e.Birthday).HasColumnName("birthday");
+            entity.Property(e => e.Height).HasColumnName("height");
             entity.Property(e => e.IdNationality).HasColumnName("id_nationality");
             entity.Property(e => e.IdPosition).HasColumnName("id_position");
             entity.Property(e => e.Name)
@@ -289,6 +290,7 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.Surname)
                 .HasMaxLength(255)
                 .HasColumnName("surname");
+            entity.Property(e => e.Weight).HasColumnName("weight");
 
             entity.HasOne(d => d.IdNationalityNavigation).WithMany(p => p.Players)
                 .HasForeignKey(d => d.IdNationality)
@@ -344,15 +346,18 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.Hall)
                 .HasMaxLength(255)
                 .HasColumnName("hall");
-            entity.Property(e => e.KeyStrenghts)
+            entity.Property(e => e.KeyStrengths)
                 .HasMaxLength(255)
-                .HasColumnName("key_strenghts");
+                .HasColumnName("key_strengths");
             entity.Property(e => e.KeyWeaknesses)
                 .HasMaxLength(255)
                 .HasColumnName("key_weaknesses");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
+            entity.Property(e => e.PlayingStyle)
+                .HasMaxLength(255)
+                .HasColumnName("playing_style");
             entity.Property(e => e.State)
                 .HasMaxLength(255)
                 .HasColumnName("state");

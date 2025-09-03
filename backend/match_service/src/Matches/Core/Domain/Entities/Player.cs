@@ -13,6 +13,10 @@ public partial class Player
 
     public DateOnly? Birthday { get; set; }
 
+    public int? Weight { get; set; }
+
+    public int? Height { get; set; }
+
     public int IdNationality { get; set; }
 
     public int IdPosition { get; set; }
