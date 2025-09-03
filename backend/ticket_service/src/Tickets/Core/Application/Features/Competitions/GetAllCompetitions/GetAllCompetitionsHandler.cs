@@ -32,7 +32,7 @@ public class GetAllCompetitionsHandler : IRequestHandler<GetAllCompetitionsQuery
                 {
                     IdMatch = m.IdMatch,
                     Name = m.Name,
-                    Date = m.CreatedAt
+                    Date = m.ScheduledAt
                 }).ToList()
             });
 

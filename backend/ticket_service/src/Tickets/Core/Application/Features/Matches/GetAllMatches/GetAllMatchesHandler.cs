@@ -23,7 +23,7 @@ public class GetAllMatchesHandler : IRequestHandler<GetAllMatchesQuery, Result<I
             {
                 IdMatch = match.IdMatch,
                 Name = match.Name,
-                CreatedAt = match.CreatedAt,
+                ScheduledAt = match.ScheduledAt,
                 Type = match.Type,
                 State = match.State,
                 City = match.City,

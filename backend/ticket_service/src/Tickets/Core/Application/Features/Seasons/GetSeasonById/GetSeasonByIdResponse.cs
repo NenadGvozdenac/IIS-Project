@@ -19,7 +19,7 @@ public class MatchResponse
     public string Name { get; set; } = null!;
     public string? City { get; set; }
     public string? Hall { get; set; }
-    public DateOnly CreatedAt { get; set; }
+    public DateTime ScheduledAt { get; set; }
 }
 
 public class SeasonTicketResponse

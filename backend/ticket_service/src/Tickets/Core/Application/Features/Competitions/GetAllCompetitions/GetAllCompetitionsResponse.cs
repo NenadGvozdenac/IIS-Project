@@ -15,5 +15,5 @@ public class MatchInfo
 {
     public int IdMatch { get; set; }
     public string Name { get; set; } = null!;
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 }
