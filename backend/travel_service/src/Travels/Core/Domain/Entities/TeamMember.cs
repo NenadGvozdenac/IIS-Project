@@ -18,6 +18,4 @@ public partial class TeamMember
     public virtual Team IdTeamNavigation { get; set; } = null!;
 
     public virtual TravelInformation? TravelInformation { get; set; }
-
-    public virtual ICollection<Request> IdRequests { get; set; } = new List<Request>();
 }
