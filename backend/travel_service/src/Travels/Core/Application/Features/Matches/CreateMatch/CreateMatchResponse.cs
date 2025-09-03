@@ -24,4 +24,6 @@ public class CreateMatchResponse
     public int IdSeason { get; set; }
 
     public int IdTeam { get; set; }
+    
+    public int? IdCompetition { get; set; }
 }

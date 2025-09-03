@@ -86,7 +86,8 @@ public class CreateMatchHandler : IRequestHandler<CreateMatchCommand, Result<Cre
                 TransportationRequired = request.TransportationRequired,
                 AccommodationRequired = request.AccommodationRequired,
                 IdSeason = request.SeasonId,
-                IdTeam = request.TeamId
+                IdTeam = request.TeamId,
+                IdCompetition = request.CompetitionId
             };
 
             var createdMatch = _matchRepository.Create(match);
@@ -104,7 +105,8 @@ public class CreateMatchHandler : IRequestHandler<CreateMatchCommand, Result<Cre
                 TransportationRequired = createdMatch.TransportationRequired,
                 AccommodationRequired = createdMatch.AccommodationRequired,
                 IdSeason = createdMatch.IdSeason,
-                IdTeam = createdMatch.IdTeam
+                IdTeam = createdMatch.IdTeam,
+                IdCompetition = createdMatch.IdCompetition
             };
 
             return Task.FromResult(Result<CreateMatchResponse>.Success(response));
