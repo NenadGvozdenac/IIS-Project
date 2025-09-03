@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+namespace travel_service.src.Travels.Core.Application.Features.Matches.UpdateMatch;
 
-namespace travel_service.src.Travels.Core.Domain.Entities;
-
-public partial class Match
+public class UpdateMatchResponse
 {
     public int IdMatch { get; set; }
-
     public string Name { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
@@ -30,16 +26,4 @@ public partial class Match
     public int IdSeason { get; set; }
 
     public int IdTeam { get; set; }
-
-    public virtual Competition? IdCompetitionNavigation { get; set; }
-
-    public virtual Season IdSeasonNavigation { get; set; } = null!;
-
-    public virtual Team IdTeamNavigation { get; set; } = null!;
-
-    public virtual ICollection<Offer> Offers { get; set; } = new List<Offer>();
-
-    public virtual ICollection<Request> Requests { get; set; } = new List<Request>();
-
-    public virtual Trip? Trip { get; set; }
 }

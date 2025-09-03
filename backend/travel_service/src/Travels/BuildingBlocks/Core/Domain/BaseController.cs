@@ -24,7 +24,7 @@ public class BaseController : ControllerBase
             ResultCode.BadRequest => BadRequest(result),
             ResultCode.NotFound => NotFound(result),
             ResultCode.Unauthorized => Unauthorized(result),
-            ResultCode.Forbidden => Forbid(),
+            ResultCode.Forbidden => StatusCode(403, result),
             ResultCode.Conflict => Conflict(result),
             _ => StatusCode(500, result),
         };

@@ -21,6 +21,13 @@ public static class ApplicationStartup
     private static void SetupRepositories(IServiceCollection services)
     {
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IMatchRepository, MatchRepository>();
+        services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IMemberRepository, MemberRepository>();
+        services.AddScoped<ITravelInfoRepository, TravelInfoRepository>();
+        services.AddScoped<IVisaRepository, VisaRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

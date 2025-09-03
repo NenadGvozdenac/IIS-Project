@@ -326,25 +326,6 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdMatch)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_request_match");
-
-            entity.HasMany(d => d.IdManagementMembers).WithMany(p => p.IdRequests)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ManagementMemberRequest",
-                    r => r.HasOne<Management>().WithMany()
-                        .HasForeignKey("IdManagementMember")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_mgmt_mem_req_management"),
-                    l => l.HasOne<Request>().WithMany()
-                        .HasForeignKey("IdRequest")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_mgmt_mem_req_request"),
-                    j =>
-                    {
-                        j.HasKey("IdRequest", "IdManagementMember").HasName("management_member_request_pkey");
-                        j.ToTable("management_member_request");
-                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
-                        j.IndexerProperty<int>("IdManagementMember").HasColumnName("id_management_member");
-                    });
         });
 
         modelBuilder.Entity<Season>(entity =>
@@ -434,26 +415,6 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdTeam)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_team_member_team");
-
-            entity.HasMany(d => d.IdRequests).WithMany(p => p.Ids)
-                .UsingEntity<Dictionary<string, object>>(
-                    "TeamMemberRequest",
-                    r => r.HasOne<Request>().WithMany()
-                        .HasForeignKey("IdRequest")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_team_mem_req_request"),
-                    l => l.HasOne<TeamMember>().WithMany()
-                        .HasForeignKey("IdTeam", "IdPlayer")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_team_mem_req_team_member"),
-                    j =>
-                    {
-                        j.HasKey("IdTeam", "IdPlayer", "IdRequest").HasName("team_member_request_pkey");
-                        j.ToTable("team_member_request");
-                        j.IndexerProperty<int>("IdTeam").HasColumnName("id_team");
-                        j.IndexerProperty<int>("IdPlayer").HasColumnName("id_player");
-                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
-                    });
         });
 
         modelBuilder.Entity<TransportationOffer>(entity =>
