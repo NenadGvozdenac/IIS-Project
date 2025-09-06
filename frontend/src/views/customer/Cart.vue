@@ -14,7 +14,7 @@
         <!-- Cart Header -->
         <div class="cart-header">
           <div class="cart-info">
-            <h2>Cart #{{ cart.idCart }}</h2>
+            <h2>Cart</h2>
             <p class="cart-meta">
               Created: {{ formatDate(cart.createdAt) }} |
               Items: {{ cart.itemsNumber }} |
@@ -637,7 +637,7 @@ onMounted(() => {
   background: white;
   border-radius: var(--radius-lg);
   width: 90%;
-  max-width: 600px;
+  max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);

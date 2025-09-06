@@ -21,7 +21,7 @@ export class TicketPrintService {
         <div style="width: 400px; height: 250px; border: 2px solid #2563eb; padding: 20px;">
           <h2>{{MATCH_NAME}}</h2>
           <p>Ticket Holder: {{USER_NAME}}</p>
-          <p>{{ZONE_NAME}} - Row {{SEAT_ROW}}, Seat {{SEAT_NUMBER}}</p>
+          <p>{{ZONE_NAME}} - Row {{SEAT_ROW}}, Seat {{SEAT_NUMBER}} ({{SEAT_DIRECTION}} Side)</p>
           <p>Price: {{TICKET_PRICE}} RSD</p>
           <p>Valid until: {{VALID_UNTIL}}</p>
         </div>
@@ -56,6 +56,7 @@ export class TicketPrintService {
         ZONE_NAME: ticketData.zoneName || 'General',
         SEAT_ROW: ticketData.seatRow,
         SEAT_NUMBER: ticketData.seatNumber,
+        SEAT_DIRECTION: this.capitalizeFirst(ticketData.seatDirection || 'North'),
         TICKET_PRICE: this.formatPrice(ticketData.price),
         TICKET_ID: ticketData.idPurchaseOffer,
         PURCHASE_DATE: this.formatDate(ticketData.purchaseDate),
@@ -131,5 +132,10 @@ export class TicketPrintService {
       default:
         return 'default-ticket';
     }
+  }
+
+  static capitalizeFirst(str) {
+    if (!str) return 'North';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 }
