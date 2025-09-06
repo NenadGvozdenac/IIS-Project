@@ -226,16 +226,16 @@ CREATE TABLE match (
 
 CREATE TABLE match_tracking (
     start_time                 TIMESTAMP WITH TIME ZONE,
-    end_time                   TIMESTAMP WITH TIME ZONE NOT NULL,
-    tracking_status            VARCHAR(20) CHECK (tracking_status IN ('active', 'finished', 'preparation')),
+    end_time                   TIMESTAMP WITH TIME ZONE,
+    tracking_status            VARCHAR(20) CHECK (tracking_status IN ('active', 'finished', 'preparation', 'upcoming')),
     period_duration            INTEGER,
     current_period             VARCHAR(20) CHECK (current_period IN ('1', '2', '3', '4', 'end')),
     period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused')),
-    period_start_time          TIMESTAMP WITH TIME ZONE NOT NULL,
+    period_start_time          TIMESTAMP WITH TIME ZONE,
     elapsed_period_time        INTEGER,
-    last_pause_start_time      TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_pause_start_time      TIMESTAMP WITH TIME ZONE,
     total_pause_time_in_period INTEGER,
-    last_update_time           TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_update_time           TIMESTAMP WITH TIME ZONE,
     our_points                 INTEGER,
     opponent_points            INTEGER,
     id_user                    INTEGER,
@@ -936,6 +936,55 @@ CREATE TRIGGER trigger_cart_item_delete
 
 -- KRAJ TRIGGERA NENAD GVOZDENAC #3
 
+-- SRDJAN ILIC TRIGGER #4 - Automatsko kreiranje MatchTracking-a kada se kreira Match
+CREATE OR REPLACE FUNCTION create_match_tracking_for_match()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO match_tracking (
+        start_time,
+        end_time,
+        tracking_status,
+        period_duration,
+        current_period,
+        period_status,
+        period_start_time,
+        elapsed_period_time,
+        last_pause_start_time,
+        total_pause_time_in_period,
+        last_update_time,
+        our_points,
+        opponent_points,
+        id_user,
+        id_match
+    ) VALUES (
+        NULL,                                    -- start_time
+        NULL,                                    -- end_time (initially set to scheduled time)
+        'upcoming',                              -- tracking_status
+        600,                                     -- period_duration (600 seconds default)
+        '1',                                     -- current_period
+        'active',                                -- period_status
+        NULL,                                    -- period_start_time
+        0,                                       -- elapsed_period_time
+        NULL,                                    -- last_pause_start_time
+        0,                                       -- total_pause_time_in_period
+        NULL,                                    -- last_update_time
+        0,                                       -- our_points
+        0,                                       -- opponent_points
+        NULL,                                    -- id_user
+        NEW.id_match                             -- id_match
+    );
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_match_tracking_for_match
+    AFTER INSERT ON match
+    FOR EACH ROW
+    EXECUTE FUNCTION create_match_tracking_for_match();
+
+-- KRAJ TRIGGERA #4
+
 -- DML DATA INSERTION
 
 -- Insert Nationality for Serbian players
@@ -1018,6 +1067,111 @@ SELECT
     s.id_seat
 FROM seat s 
 WHERE s.id_zone = 1;
+
+-- Insert 10 players for Partizan (id_team = 1)
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+('Nikola', 'Jovic', '2002-06-09', 98, 208, 1, 1),
+('Aleksa', 'Avramovic', '1994-10-25', 88, 192, 1, 2),
+('Uros', 'Trifunovic', '2001-02-05', 90, 197, 1, 3),
+('Balsa', 'Koprivica', '2000-05-01', 110, 213, 1, 5),
+('Alen', 'Smailagic', '2000-08-18', 102, 208, 1, 4),
+('Danilo', 'Andjusic', '1991-04-22', 86, 195, 1, 2),
+('Zach', 'LeDay', '1994-05-30', 103, 202, 1, 4),
+('James', 'Nunnally', '1990-07-14', 98, 201, 1, 3),
+('Yam', 'Madar', '2000-12-21', 81, 190, 1, 1),
+('Bruno', 'Caboclo', '1995-09-21', 104, 206, 1, 5);
+
+-- Connect these players as team members for Partizan (id_team = 1)
+-- Jersey numbers 1-10, all status 'active'
+INSERT INTO team_member (jersey_number, status, id_player, id_team) VALUES
+(1, 'active', 1, 1),
+(2, 'active', 2, 1),
+(3, 'active', 3, 1),
+(4, 'active', 4, 1),
+(5, 'active', 5, 1),
+(6, 'active', 6, 1),
+(7, 'active', 7, 1),
+(8, 'active', 8, 1),
+(9, 'active', 9, 1),
+(10, 'active', 10, 1);
+
+-- Insert 10 players for Crvena Zvezda (id_team = 2)
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+('Ognjen', 'Dobric', '1994-10-27', 92, 200, 1, 3),
+('Branko', 'Lazic', '1989-01-12', 90, 195, 1, 2),
+('Stefan', 'Markovic', '1988-04-25', 98, 197, 1, 1),
+('Dejan', 'Davidovac', '1997-01-17', 100, 202, 1, 4),
+('Miroslav', 'Raduljica', '1988-01-05', 113, 213, 1, 5),
+('Nikola', 'Ivanovic', '1994-02-19', 85, 190, 1, 1),
+('Luka', 'Mitrovic', '1993-03-21', 104, 205, 1, 4),
+('Dalibor', 'Ilic', '2000-03-04', 98, 202, 1, 3),
+('Nemanja', 'Nedovic', '1991-06-16', 87, 191, 1, 2),
+('Filip', 'Petrušev', '2000-04-15', 102, 211, 1, 5);
+
+-- Connect these players as team members for Crvena Zvezda (id_team = 2)
+INSERT INTO team_member (jersey_number, status, id_player, id_team) VALUES
+(1, 'active', 11, 2),
+(2, 'active', 12, 2),
+(3, 'active', 13, 2),
+(4, 'active', 14, 2),
+(5, 'active', 15, 2),
+(6, 'active', 16, 2),
+(7, 'active', 17, 2),
+(8, 'active', 18, 2),
+(9, 'active', 19, 2),
+(10, 'active', 20, 2);
+
+-- Insert 10 players for FMP (id_team = 3)
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+('Marko', 'Pecarski', '2000-02-12', 98, 208, 1, 4),
+('Aleksa', 'Uskokovic', '1999-06-30', 82, 190, 1, 1),
+('Stefan', 'Lazarevic', '1996-08-20', 95, 198, 1, 3),
+('Nikola', 'Jankovic', '1994-02-13', 110, 206, 1, 5),
+('Milos', 'Gajic', '1998-09-09', 90, 195, 1, 2),
+('Petar', 'Rikalo', '1992-11-17', 85, 188, 1, 1),
+('Filip', 'Stojanovic', '2001-05-22', 100, 203, 1, 4),
+('Vuk', 'Radivojevic', '1983-07-30', 92, 197, 1, 2),
+('Milan', 'Milovanovic', '1991-06-18', 105, 205, 1, 5),
+('Dusan', 'Ristic', '1995-11-27', 110, 210, 1, 5);
+
+-- Connect these players as team members for FMP (id_team = 3)
+INSERT INTO team_member (jersey_number, status, id_player, id_team) VALUES
+(1, 'active', 21, 3),
+(2, 'active', 22, 3),
+(3, 'active', 23, 3),
+(4, 'active', 24, 3),
+(5, 'active', 25, 3),
+(6, 'active', 26, 3),
+(7, 'active', 27, 3),
+(8, 'active', 28, 3),
+(9, 'active', 29, 3),
+(10, 'active', 30, 3);
+
+-- Insert 10 players for Mega (id_team = 4)
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+('Mihailo', 'Jovicic', '1999-01-24', 80, 188, 1, 1),
+('Matej', 'Rudan', '2001-03-21', 98, 208, 1, 4),
+('Nikola', 'Miskovic', '1999-01-25', 100, 210, 1, 5),
+('Andrija', 'Marjanovic', '1999-01-14', 88, 193, 1, 2),
+('Petar', 'Zivkovic', '2002-07-12', 92, 200, 1, 3),
+('Marko', 'Kovacevic', '2000-09-09', 95, 198, 1, 3),
+('Lazar', 'Vasic', '2001-02-15', 85, 190, 1, 1),
+('Vladimir', 'Vukovic', '1998-05-05', 105, 205, 1, 5),
+('Stefan', 'Simic', '2000-11-11', 90, 195, 1, 2),
+('Uros', 'Plavsic', '1998-12-13', 110, 211, 1, 5);
+
+-- Connect these players as team members for Mega (id_team = 4)
+INSERT INTO team_member (jersey_number, status, id_player, id_team) VALUES
+(1, 'active', 31, 4),
+(2, 'active', 32, 4),
+(3, 'active', 33, 4),
+(4, 'active', 34, 4),
+(5, 'active', 35, 4),
+(6, 'active', 36, 4),
+(7, 'active', 37, 4),
+(8, 'active', 38, 4),
+(9, 'active', 39, 4),
+(10, 'active', 40, 4);
 
 -- Insert season ticket pricing
 INSERT INTO season_ticket (id_purchase_offer, id_season, ticket_price)

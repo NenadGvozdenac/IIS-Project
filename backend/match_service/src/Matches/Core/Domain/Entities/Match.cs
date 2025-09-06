@@ -21,6 +21,10 @@ public partial class Match
 
     public bool IsInOurHall { get; set; }
 
+    public bool TicketsForSale { get; set; }
+
+    public DateTime? TicketsWentOnSale { get; set; }
+
     public bool TransportationRequired { get; set; }
 
     public bool AccommodationRequired { get; set; }

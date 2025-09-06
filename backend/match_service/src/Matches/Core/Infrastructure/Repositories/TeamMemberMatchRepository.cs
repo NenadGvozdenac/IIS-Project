@@ -1,0 +1,64 @@
+using match_service.src.Matches.Core.Application.Interfaces;
+using match_service.src.Matches.Core.Domain.Entities;
+using match_service.src.Matches.Core.Infrastructure;
+
+namespace match_service.src.Matches.Core.Infrastructure.Repositories
+{
+    public class TeamMemberMatchRepository : ITeamMemberMatchRepository
+    {
+        private readonly MatchDbContext _context;
+
+        public TeamMemberMatchRepository(MatchDbContext context)
+        {
+            _context = context;
+        }
+
+        public IEnumerable<TeamMemberMatch> GetByMatchId(int matchId)
+        {
+            return _context.TeamMemberMatches
+                .Where(tmm => tmm.IdMatch == matchId)
+                .ToList();
+        }
+
+        public TeamMemberMatch? GetById(int matchId, int teamId, int playerId)
+        {
+            return _context.TeamMemberMatches
+                .FirstOrDefault(tmm => tmm.IdMatch == matchId && tmm.IdTeam == teamId && tmm.IdPlayer == playerId);
+        }
+
+        public TeamMemberMatch Create(TeamMemberMatch teamMemberMatch)
+        {
+            _context.TeamMemberMatches.Add(teamMemberMatch);
+            _context.SaveChanges();
+            return teamMemberMatch;
+        }
+
+        public void Update(TeamMemberMatch teamMemberMatch)
+        {
+            _context.TeamMemberMatches.Update(teamMemberMatch);
+            _context.SaveChanges();
+        }
+
+        public bool Delete(int matchId, int teamId, int playerId)
+        {
+            var teamMemberMatch = GetById(matchId, teamId, playerId);
+            if (teamMemberMatch == null)
+                return false;
+
+            _context.TeamMemberMatches.Remove(teamMemberMatch);
+            _context.SaveChanges();
+            return true;
+        }
+
+        public bool Exists(int matchId, int teamId, int playerId)
+        {
+            return _context.TeamMemberMatches
+                .Any(tmm => tmm.IdMatch == matchId && tmm.IdTeam == teamId && tmm.IdPlayer == playerId);
+        }
+
+        public void AddRange(IEnumerable<TeamMemberMatch> teamMemberMatches)
+        {
+            _context.TeamMemberMatches.AddRange(teamMemberMatches);
+        }
+    }
+}
