@@ -278,7 +278,16 @@ export default {
                 const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
                 if (response.isSuccess) {
                     // Filter seats by the selected side using the correct field name
-                    this.seats = response.value.filter(seat => seat.seatDirection === this.selectedSide);
+                    console.log('Selected side:', this.selectedSide);
+                    console.log('Total seats from API:', response.value.length);
+                    console.log('Sample seat data:', response.value[0]);
+                    
+                    this.seats = response.value.filter(seat => {
+                        console.log(`Seat ${seat.seatRow}-${seat.seatNumber}: direction="${seat.seatDirection}", selectedSide="${this.selectedSide}", match=${seat.seatDirection === this.selectedSide}`);
+                        return seat.seatDirection === this.selectedSide;
+                    });
+                    
+                    console.log('Filtered seats count:', this.seats.length);
                     this.groupSeats();
                     await this.checkSeatOffers();
                 }
@@ -300,6 +309,7 @@ export default {
                         this.selectedZone.idZone,
                         seat.seatRow,
                         seat.seatNumber,
+                        this.selectedSide,
                         this.matchId
                     );
                     
@@ -308,7 +318,7 @@ export default {
                     }
                 } catch (error) {
                     // If there's no offer for this seat, it will remain unavailable
-                    console.log(`No offer available for seat ${seat.seatRow}-${seat.seatNumber}`);
+                    console.log(`No offer available for seat ${seat.seatRow}-${seat.seatNumber} on ${this.selectedSide} side`);
                 }
             });
             

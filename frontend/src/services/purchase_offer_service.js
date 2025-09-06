@@ -2,11 +2,11 @@ import axios from 'axios';
 import { TICKETS_URL } from './const_service.js';
 
 export class PurchaseOfferService {
-    static async getIndividualTicketOffer(zone, row, seat, match) {
+    static async getIndividualTicketOffer(zone, row, seat, direction, match) {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `${TICKETS_URL}/PurchaseOffers/individual-ticket/zone/${zone}/row/${row}/seat/${seat}/match/${match}`,
+                `${TICKETS_URL}/PurchaseOffers/individual-ticket/zone/${zone}/row/${row}/seat/${seat}/direction/${direction}/match/${match}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
