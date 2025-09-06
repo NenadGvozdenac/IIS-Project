@@ -200,7 +200,13 @@
 
             <div class="form-group mb-3">
               <label class="form-label">Date & Time</label>
-              <input v-model="editMatchData.scheduledAt" type="datetime-local" required class="form-control">
+              <input
+                v-model="editMatchData.scheduledAt"
+                type="datetime-local"
+                required
+                class="form-control"
+                :min="minDateTime"
+              >
             </div>
             
             <div class="form-group mb-3">
@@ -303,6 +309,22 @@ const getUserId = () => {
 }
 
 const currentDate = ref(new Date())
+
+const pad = (n) => n.toString().padStart(2, '0')
+const getMinDateTime = () => {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = pad(now.getMonth() + 1)
+  const dd = pad(now.getDate())
+  const hh = pad(now.getHours())
+  const min = pad(now.getMinutes())
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`
+}
+const minDateTime = ref(getMinDateTime())
+
+setInterval(() => {
+  minDateTime.value = getMinDateTime()
+}, 60000)
 const matches = ref([])
 const selectedMatch = ref(null)
 const showMenu = ref(false)
@@ -312,7 +334,6 @@ const isTeamManager = ref(true)
 const userName = ref('Team Manager') 
 const loading = ref(false)
 
-// Dropdown data
 const competitions = ref([])
 const seasons = ref([])
 const teams = ref([])
@@ -481,7 +502,9 @@ const fetchTeams = async () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     })
-    teams.value = response.data.value || []
+    // Preskoči prvi tim (moj tim)
+    const allTeams = response.data.value || []
+    teams.value = allTeams.length > 1 ? allTeams.slice(1) : []
   } catch (error) {
     console.error('Error fetching teams:', error)
   }
@@ -506,10 +529,21 @@ const createMatch = async () => {
     alert('User not authenticated')
     return
   }
-  
+  // Validacija: ne dozvoli vreme pre trenutnog ako je danasnji datum
+  const selected = new Date(editMatchData.value.scheduledAt)
+  const now = new Date()
+  if (
+    selected.getFullYear() === now.getFullYear() &&
+    selected.getMonth() === now.getMonth() &&
+    selected.getDate() === now.getDate() &&
+    (selected.getHours() < now.getHours() || (selected.getHours() === now.getHours() && selected.getMinutes() < now.getMinutes()))
+  ) {
+    alert('Vreme mora biti veće od trenutnog!')
+    return
+  }
   // Update userId in newMatch before sending
   editMatchData.value.userId = userId
-  editMatchData.value.scheduledAt = new Date(editMatchData.value.scheduledAt).toISOString()
+  editMatchData.value.scheduledAt = selected.toISOString()
   try {
     loading.value = true
     console.log('Creating match with data:', editMatchData.value)
@@ -518,7 +552,6 @@ const createMatch = async () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     })
-    
     showCreateModal.value = false
     resetNewMatch()
     await fetchMatches()
@@ -682,9 +715,21 @@ const updateMatch = async () => {
     alert('User not authenticated')
     return
   }
+  // Validacija: ne dozvoli vreme pre trenutnog ako je danasnji datum
+  const selected = new Date(editMatchData.value.scheduledAt)
+  const now = new Date()
+  if (
+    selected.getFullYear() === now.getFullYear() &&
+    selected.getMonth() === now.getMonth() &&
+    selected.getDate() === now.getDate() &&
+    (selected.getHours() < now.getHours() || (selected.getHours() === now.getHours() && selected.getMinutes() < now.getMinutes()))
+  ) {
+    alert('Vreme mora biti veće od trenutnog!')
+    return
+  }
   // Prepare data
   const payload = { ...editMatchData.value, userId }
-  payload.scheduledAt = new Date(payload.scheduledAt).toISOString()
+  payload.scheduledAt = selected.toISOString()
   try {
     loading.value = true
     await axios.put(`https://localhost:5007/api/matches/${editMatchData.value.idMatch}/${userId}`, payload, {
@@ -785,9 +830,9 @@ const openCreateModal = async () => {
     isInOurHall: false,
     transportationRequired: false,
     accommodationRequired: false,
-    competitionId: 0,
-    seasonId: 0,
-    teamId: 0,
+    competitionId: '',
+    seasonId: '',
+    teamId: '',
     userId: getUserId()
   })
   showCreateModal.value = true
@@ -1242,6 +1287,13 @@ onUnmounted(() => {
   border-radius: 0.375rem;
   font-size: 0.875rem;
   background: white;
+  
+  /* Ovo sakriva prirodnu strelicu u različitim browser-ima */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Vaša custom strelica */
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.5rem center;
   background-repeat: no-repeat;
@@ -1253,6 +1305,12 @@ onUnmounted(() => {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-select option {
+  color: #374151;
+  background: #fff;
+  font-size: 0.95rem;
 }
 
 .form-check {
