@@ -1,6 +1,7 @@
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Domain.Entities;
 using match_service.src.Matches.Core.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace match_service.src.Matches.Core.Infrastructure.Repositories
 {
@@ -16,7 +17,24 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
         public IEnumerable<TeamMemberMatch> GetByMatchId(int matchId)
         {
             return _context.TeamMemberMatches
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdPlayerNavigation)
+                        .ThenInclude(p => p.IdPositionNavigation)
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdTeamNavigation)
                 .Where(tmm => tmm.IdMatch == matchId)
+                .ToList();
+        }
+
+        public IEnumerable<TeamMemberMatch> GetByMatchAndTeamId(int matchId, int teamId)
+        {
+            return _context.TeamMemberMatches
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdPlayerNavigation)
+                        .ThenInclude(p => p.IdPositionNavigation)
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdTeamNavigation)
+                .Where(tmm => tmm.IdMatch == matchId && tmm.IdTeam == teamId)
                 .ToList();
         }
 

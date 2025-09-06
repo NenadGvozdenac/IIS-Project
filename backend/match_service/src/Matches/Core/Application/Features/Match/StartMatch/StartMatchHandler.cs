@@ -57,11 +57,11 @@ public class StartMatchHandler : IRequestHandler<StartMatchCommand, Result<Start
             }
 
             // Create TeamMemberMatch entries for our team (id_team = 1)
-            var teamMemberMatches = new List<TeamMemberMatch>();
+            var teamMemberMatches = new List<Domain.Entities.TeamMemberMatch>();
             
             foreach (var playerId in request.OurTeamPlayerIds)
             {
-                var teamMemberMatch = new TeamMemberMatch
+                var teamMemberMatch = new Domain.Entities.TeamMemberMatch
                 {
                     IdMatch = request.MatchId,
                     IdTeam = 1, // Our team (Partizan)
@@ -75,7 +75,7 @@ public class StartMatchHandler : IRequestHandler<StartMatchCommand, Result<Start
             // Create TeamMemberMatch entries for opponent team
             foreach (var playerId in request.OpponentTeamPlayerIds)
             {
-                var teamMemberMatch = new TeamMemberMatch
+                var teamMemberMatch = new Domain.Entities.TeamMemberMatch
                 {
                     IdMatch = request.MatchId,
                     IdTeam = match.IdTeam, // Opponent team

@@ -64,12 +64,12 @@ namespace match_service.src.Matches.Core.Application.Features.MatchTracking.Prep
                 var ourTeamId = 1; // This should be configurable or retrieved from settings
                 var opponentTeamId = match.IdTeam;
 
-                var teamMemberMatches = new List<TeamMemberMatch>();
+                var teamMemberMatches = new List<Domain.Entities.TeamMemberMatch>();
 
                 // Create TeamMemberMatch entries for our team
                 foreach (var playerId in request.OurTeamPlayerIds)
                 {
-                    var teamMemberMatch = new TeamMemberMatch
+                    var teamMemberMatch = new Domain.Entities.TeamMemberMatch
                     {
                         IdMatch = request.MatchId,
                         IdTeam = ourTeamId,
@@ -84,7 +84,7 @@ namespace match_service.src.Matches.Core.Application.Features.MatchTracking.Prep
                 // Create TeamMemberMatch entries for opponent team
                 foreach (var playerId in request.OpponentTeamPlayerIds)
                 {
-                    var teamMemberMatch = new TeamMemberMatch
+                    var teamMemberMatch = new Domain.Entities.TeamMemberMatch
                     {
                         IdMatch = request.MatchId,
                         IdTeam = opponentTeamId,

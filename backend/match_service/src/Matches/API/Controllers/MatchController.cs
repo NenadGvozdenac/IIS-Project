@@ -6,6 +6,7 @@ using match_service.src.Matches.Core.Application.Features.Match.GetMatchById;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
 using match_service.src.Matches.Core.Application.Features.Match.StartMatch;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.PrepareMatchTracking;
+using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.GetTeamMembersByMatch;
 
 namespace match_service.src.Matches.API.Controllers;
 
@@ -51,6 +52,14 @@ public class MatchController : BaseController
     //     var result = await _mediator.Send(command);
     //     return CreateResponse(result);
     // }
+
+    [HttpGet("{matchId}/team-members")]
+    public async Task<ActionResult> GetTeamMembersByMatch(int matchId, [FromQuery] int? teamId = null)
+    {
+        var query = new GetTeamMembersByMatchQuery(matchId, teamId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
 
     [HttpPost("{matchId}/prepare")]
     public async Task<ActionResult> PrepareMatchTracking(int matchId, [FromBody] PrepareMatchTrackingRequest request)

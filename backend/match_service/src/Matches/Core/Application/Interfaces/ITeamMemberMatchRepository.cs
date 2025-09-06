@@ -5,6 +5,7 @@ namespace match_service.src.Matches.Core.Application.Interfaces
     public interface ITeamMemberMatchRepository
     {
         IEnumerable<TeamMemberMatch> GetByMatchId(int matchId);
+        IEnumerable<TeamMemberMatch> GetByMatchAndTeamId(int matchId, int teamId);
         TeamMemberMatch? GetById(int matchId, int teamId, int playerId);
         TeamMemberMatch Create(TeamMemberMatch teamMemberMatch);
         void Update(TeamMemberMatch teamMemberMatch);
