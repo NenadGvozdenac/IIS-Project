@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
 using ticket_service.src.Tickets.Core.Application.Features.Seats.GetAllSeats;
 using ticket_service.src.Tickets.Core.Application.Features.Seats.GetSeatById;
+using ticket_service.src.Tickets.Core.Application.Features.Seats.GetSeatsByZone;
 using ticket_service.src.Tickets.Core.Application.Features.Seats.CreateSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Seats.UpdateSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Seats.DeleteSeat;
@@ -32,6 +33,14 @@ public class SeatsController : BaseController
     public async Task<ActionResult> GetSeatById(int id)
     {
         var query = new GetSeatByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("zone/{zoneId}")]
+    public async Task<ActionResult> GetSeatsByZone(int zoneId)
+    {
+        var query = new GetSeatsByZoneQuery(zoneId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

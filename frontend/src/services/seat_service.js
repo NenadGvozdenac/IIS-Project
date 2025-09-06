@@ -73,4 +73,18 @@ export class SeatService {
             throw error.response?.data || error;
         }
     }
+
+    static async getSeatsByZone(zoneId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${TICKETS_URL}/seats/zone/${zoneId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }

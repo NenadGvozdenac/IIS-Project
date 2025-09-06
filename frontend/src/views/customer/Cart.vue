@@ -2,7 +2,7 @@
   <div class="customer-cart">
     <div class="container">
       <h1 class="page-title">My Cart</h1>
-      
+
       <!-- Loading State -->
       <div v-if="loading" class="loading-state">
         <div class="spinner"></div>
@@ -14,10 +14,10 @@
         <!-- Cart Header -->
         <div class="cart-header">
           <div class="cart-info">
-            <h2>Cart #{{ cart.idCart }}</h2>
+            <h2>Cart</h2>
             <p class="cart-meta">
-              Created: {{ formatDate(cart.createdAt) }} | 
-              Items: {{ cart.itemsNumber }} | 
+              Created: {{ formatDate(cart.createdAt) }} |
+              Items: {{ cart.itemsNumber }} |
               Status: <span class="status-badge" :class="cart.status">{{ cart.status }}</span>
             </p>
           </div>
@@ -81,7 +81,7 @@
           <h3>Checkout</h3>
           <button @click="closeCheckoutModal" class="close-btn">&times;</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="checkout-summary">
             <h4>Order Summary</h4>
@@ -98,7 +98,7 @@
 
           <div class="payment-section">
             <h4>Select Payment Method</h4>
-            
+
             <!-- Loading credit cards -->
             <div v-if="loadingCards" class="loading-cards">
               <div class="spinner-sm"></div>
@@ -109,12 +109,7 @@
             <div v-else-if="creditCards.length > 0" class="credit-cards-list">
               <div v-for="card in creditCards" :key="card.idCreditCard" class="credit-card-option">
                 <label class="card-radio">
-                  <input 
-                    type="radio" 
-                    :value="card.idCreditCard" 
-                    v-model="selectedCardId"
-                    name="creditCard"
-                  />
+                  <input type="radio" :value="card.idCreditCard" v-model="selectedCardId" name="creditCard" />
                   <div class="card-info">
                     <div class="card-number">**** **** **** {{ card.number.slice(-4) }}</div>
                     <div class="card-name">{{ card.name }}</div>
@@ -126,12 +121,7 @@
             <!-- Add new card option -->
             <div class="add-new-card">
               <label class="card-radio">
-                <input 
-                  type="radio" 
-                  value="new" 
-                  v-model="selectedCardId"
-                  name="creditCard"
-                />
+                <input type="radio" value="new" v-model="selectedCardId" name="creditCard" />
                 <div class="card-info">
                   <div class="card-number">Add New Credit Card</div>
                   <div class="card-name">Enter new payment details</div>
@@ -143,47 +133,25 @@
             <div v-if="selectedCardId === 'new'" class="new-card-form">
               <div class="form-group">
                 <label>Card Number *</label>
-                <input 
-                  v-model="newCard.number" 
-                  type="text" 
-                  class="form-control"
-                  placeholder="1234 5678 9012 3456"
-                  maxlength="19"
-                  @input="formatCardNumber"
-                />
+                <input v-model="newCard.number" type="text" class="form-control" placeholder="1234 5678 9012 3456"
+                  maxlength="19" @input="formatCardNumber" />
               </div>
-              
+
               <div class="form-group">
                 <label>Cardholder Name *</label>
-                <input 
-                  v-model="newCard.name" 
-                  type="text" 
-                  class="form-control"
-                  placeholder="John Doe"
-                />
+                <input v-model="newCard.name" type="text" class="form-control" placeholder="John Doe" />
               </div>
-              
+
               <div class="form-row">
                 <div class="form-group half-width">
                   <label>Expiry Date *</label>
-                  <input 
-                    v-model="newCard.expirationDate" 
-                    type="date" 
-                    class="form-control"
-                    :min="minExpiryDate"
-                  />
+                  <input v-model="newCard.expirationDate" type="date" class="form-control" :min="minExpiryDate" />
                 </div>
-                
+
                 <div class="form-group half-width">
                   <label>CVV *</label>
-                  <input 
-                    v-model="newCard.cvv" 
-                    type="text" 
-                    class="form-control"
-                    placeholder="123"
-                    maxlength="4"
-                    @input="formatCVV"
-                  />
+                  <input v-model="newCard.cvv" type="text" class="form-control" placeholder="123" maxlength="4"
+                    @input="formatCVV" />
                 </div>
               </div>
             </div>
@@ -238,7 +206,7 @@ const minExpiryDate = computed(() => {
 
 const canCheckout = computed(() => {
   if (!selectedCardId.value) return false;
-  
+
   if (selectedCardId.value === 'new') {
     const cardNumber = (newCard.value.number || '').replace(/\s/g, '');
     return (
@@ -248,7 +216,7 @@ const canCheckout = computed(() => {
       (newCard.value.expirationDate || '').length > 0
     );
   }
-  
+
   return true;
 });
 
@@ -292,7 +260,7 @@ const removeFromCart = async (purchaseOfferId) => {
   if (!confirm('Are you sure you want to remove this item from your cart?')) {
     return;
   }
-  
+
   try {
     await CartService.removeFromCart(purchaseOfferId);
     await loadCart(); // Reload cart after removal
@@ -334,11 +302,11 @@ const closeCheckoutModal = () => {
 
 const formatCardNumber = (event) => {
   let value = event.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
-  
+
   if (value.length > 16) {
     value = value.slice(0, 16);
   }
-  
+
   const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
   newCard.value.number = formattedValue;
 };
@@ -351,9 +319,9 @@ const formatCVV = (event) => {
 const completeCheckout = async () => {
   try {
     checkoutLoading.value = true;
-    
+
     let cardToUse = selectedCardId.value;
-    
+
     // If new card selected, create it first
     if (selectedCardId.value === 'new') {
       const cardData = {
@@ -362,17 +330,17 @@ const completeCheckout = async () => {
         cvv: newCard.value.cvv,
         expirationDate: newCard.value.expirationDate
       };
-      
+
       const newCardResponse = await CreditCardService.createCreditCard(cardData);
       cardToUse = newCardResponse.value?.idCreditCard || newCardResponse.idCreditCard;
     }
-    
+
     await CartService.checkout(cart.value.idCart, cardToUse);
-    
+
     alert('Checkout completed successfully!');
     closeCheckoutModal();
     await loadCart(); // Reload cart
-    
+
   } catch (error) {
     console.error('Error during checkout:', error);
     alert('Error during checkout. Please try again.');
@@ -423,8 +391,13 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Cart Content */
@@ -631,16 +604,16 @@ onMounted(() => {
     flex-direction: column;
     gap: var(--spacing-md);
   }
-  
+
   .cart-item {
     flex-direction: column;
     gap: var(--spacing-md);
   }
-  
+
   .cart-actions {
     flex-direction: column;
   }
-  
+
   .cart-actions .btn {
     max-width: none;
   }
@@ -664,7 +637,7 @@ onMounted(() => {
   background: white;
   border-radius: var(--radius-lg);
   width: 90%;
-  max-width: 600px;
+  max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
