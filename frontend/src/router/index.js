@@ -13,6 +13,7 @@ import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
 import ZonesSeats from '../views/administrator/ZonesSeats.vue'
 import { getUserData } from '../services/auth_service.js'
+import Matches from '../views/teammanager/Matches.vue'
 
 const routes = [
   {
@@ -89,6 +90,12 @@ const routes = [
     name: 'ZonesSeats',
     component: ZonesSeats,
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/team-manager/matches',
+    name: 'TeamManagerMatches',
+    component: Matches,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
   }
 ]
 
@@ -110,7 +117,16 @@ router.beforeEach((to, _, next) => {
     } else {
       next()
     }
+  } 
+  else if (to.meta.requiresRole) {
+  const userData = getUserData()
+  if (!userData || userData.userRole !== to.meta.requiresRole) {
+    next('/dashboard')
   } else {
+    next()
+  }
+  }
+  else {
     next()
   }
 })
