@@ -4,7 +4,7 @@
             <!-- Header -->
             <div class="header-section">
                 <button @click="goBack" class="back-btn">
-                    <i class="icon-arrow-left"></i> Back to Matches
+                    < Back to Matches
                 </button>
                 <div class="match-info" v-if="selectedMatch">
                     <h1>{{ selectedMatch.name }}</h1>
@@ -38,9 +38,26 @@
                 </div>
             </div>
 
+            <!-- Side Selection -->
+            <div v-if="selectedZone" class="side-selection-section">
+                <h2>Select a Side in {{ selectedZone.name }}</h2>
+                <div class="sides-grid">
+                    <div v-for="side in availableSides" :key="side" @click="selectSide(side)"
+                        :class="['side-card', { 'selected': selectedSide === side }]">
+                        <div class="side-header">
+                            <h3>{{ side.charAt(0).toUpperCase() + side.slice(1) }} Side</h3>
+                            <div class="side-icon">{{ getSideIcon(side) }}</div>
+                        </div>
+                        <div class="side-details">
+                            <div class="side-info">{{ getSideSeatsCount(side) }} seats</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Seat Selection -->
-            <div v-if="selectedZone" class="seat-selection-section">
-                <h2>Select a Seat in {{ selectedZone.name }}</h2>
+            <div v-if="selectedZone && selectedSide" class="seat-selection-section">
+                <h2>Select a Seat in {{ selectedZone.name }} - {{ selectedSide.charAt(0).toUpperCase() + selectedSide.slice(1) }} Side</h2>
 
                 <div v-if="loadingSeats" class="loading-state">
                     <div class="spinner"></div>
@@ -158,6 +175,8 @@ export default {
             selectedMatch: null,
             zones: [],
             selectedZone: null,
+            selectedSide: null,
+            availableSides: ['north', 'east', 'south', 'west'],
             seats: [],
             groupedSeats: {},
             seatOffers: {}, // New: store offers for each seat
@@ -236,18 +255,30 @@ export default {
 
         async selectZone(zone) {
             this.selectedZone = zone;
+            this.selectedSide = null; // Reset side selection
             this.selectedSeat = null;
             this.currentOffer = null;
             this.seatOffers = {}; // Reset seat offers
-            await this.loadSeats();
+            // Note: Don't load seats yet, wait for side selection
+        },
+
+        selectSide(side) {
+            this.selectedSide = side;
+            this.selectedSeat = null;
+            this.currentOffer = null;
+            this.seatOffers = {}; // Reset seat offers
+            this.loadSeats(); // Load seats for the selected side
         },
 
         async loadSeats() {
+            if (!this.selectedZone || !this.selectedSide) return;
+            
             this.loadingSeats = true;
             try {
                 const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
                 if (response.isSuccess) {
-                    this.seats = response.value;
+                    // Filter seats by the selected side using the correct field name
+                    this.seats = response.value.filter(seat => seat.seatDirection === this.selectedSide);
                     this.groupSeats();
                     await this.checkSeatOffers();
                 }
@@ -373,6 +404,25 @@ export default {
 
         clearSuccess() {
             this.successMessage = null;
+        },
+
+        getSideIcon(side) {
+            switch (side) {
+                case 'north': return '⬆️';
+                case 'east': return '➡️';
+                case 'south': return '⬇️';
+                case 'west': return '⬅️';
+                default: return '📍';
+            }
+        },
+
+        getSideSeatsCount(side) {
+            if (!this.selectedZone) return 0;
+            
+            // Calculate expected seats per side based on zone capacity
+            const totalCapacity = this.selectedZone.maximumCapacity;
+            const seatsPerSide = totalCapacity / 4;
+            return Math.floor(seatsPerSide);
         }
     }
 };
@@ -506,6 +556,85 @@ export default {
     align-items: center;
     gap: var(--spacing-sm);
     font-size: 0.875rem;
+}
+
+/* Side Selection Styles */
+.side-selection-section {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+}
+
+.side-selection-section h2 {
+    color: var(--color-text);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.sides-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.side-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    text-align: center;
+}
+
+.side-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.side-card.selected {
+    border-color: var(--color-primary);
+    background: #f8faff;
+    box-shadow: var(--shadow-md);
+}
+
+.side-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.side-header h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.side-icon {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.side-details {
+    color: var(--color-text-light);
+    font-size: 0.875rem;
+}
+
+.side-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
 }
 
 /* Seats Legend */
@@ -792,6 +921,10 @@ export default {
         grid-template-columns: 1fr;
     }
 
+    .sides-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .seats-legend {
         flex-direction: column;
         gap: var(--spacing-md);
@@ -822,6 +955,11 @@ export default {
 
     .zone-card {
         padding: var(--spacing-md);
+    }
+
+    .sides-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
     }
 
     .summary-card {

@@ -983,9 +983,12 @@ INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, k
 INSERT INTO competition (name, started_at, number_of_matches) VALUES 
     ('ABA Liga 2025/26', '2025-09-01', 30);
 
--- Insert Zone 400
+-- Insert multiple zones with 4 sides each
 INSERT INTO zone (name, rank, maximum_capacity, status) VALUES 
-    ('Zone 400', 400, 200, 'enabled');
+    ('Zone 100', 100, 160, 'enabled'),  -- 4 sides × 5 rows × 8 seats = 160 seats (least)
+    ('Zone 200', 200, 400, 'enabled'),  -- 4 sides × 8 rows × 12.5 → 4 sides × 10 rows × 10 seats = 400 seats
+    ('Zone 300', 300, 600, 'enabled'),  -- 4 sides × 10 rows × 15 seats = 600 seats  
+    ('Zone 400', 400, 800, 'enabled');  -- 4 sides × 10 rows × 20 seats = 800 seats (most)
 
 -- Insert 3 Partizan matches in the coming days (September 2025)
 INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, tickets_for_sale, tickets_went_on_sale, id_competition, id_season, id_team) VALUES 
@@ -993,23 +996,85 @@ INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, 
     ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-15 19:00:00+01', 1, 1, 3),
     ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-25 19:00:00+01', 1, 1, 4);
 
--- Insert 300 seats for Zone 400 (10 rows x 30 seats = 300 seats)
+-- Insert seats for all zones with 4 sides each
+
+-- Zone 100: 4 sides × 5 rows × 8 seats = 160 seats (least)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
 SELECT 
     row_num,
     seat_num,
     'standard',
-    'north',
+    CASE 
+        WHEN side_num = 1 THEN 'north'
+        WHEN side_num = 2 THEN 'east'
+        WHEN side_num = 3 THEN 'south'
+        WHEN side_num = 4 THEN 'west'
+    END,
     'enabled',
-    1
-FROM generate_series(1, 10) AS row_num,
+    1  -- Zone 100
+FROM generate_series(1, 4) AS side_num,
+     generate_series(1, 5) AS row_num,
+     generate_series(1, 8) AS seat_num;
+
+-- Zone 200: 4 sides × 10 rows × 10 seats = 400 seats
+INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
+SELECT 
+    row_num,
+    seat_num,
+    'standard',
+    CASE 
+        WHEN side_num = 1 THEN 'north'
+        WHEN side_num = 2 THEN 'east'
+        WHEN side_num = 3 THEN 'south'
+        WHEN side_num = 4 THEN 'west'
+    END,
+    'enabled',
+    2  -- Zone 200
+FROM generate_series(1, 4) AS side_num,
+     generate_series(1, 10) AS row_num,
+     generate_series(1, 10) AS seat_num;
+
+-- Zone 300: 4 sides × 10 rows × 15 seats = 600 seats
+INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
+SELECT 
+    row_num,
+    seat_num,
+    'standard',
+    CASE 
+        WHEN side_num = 1 THEN 'north'
+        WHEN side_num = 2 THEN 'east'
+        WHEN side_num = 3 THEN 'south'
+        WHEN side_num = 4 THEN 'west'
+    END,
+    'enabled',
+    3  -- Zone 300
+FROM generate_series(1, 4) AS side_num,
+     generate_series(1, 10) AS row_num,
+     generate_series(1, 15) AS seat_num;
+
+-- Zone 400: 4 sides × 10 rows × 20 seats = 800 seats
+INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
+SELECT 
+    row_num,
+    seat_num,
+    'standard',
+    CASE 
+        WHEN side_num = 1 THEN 'north'
+        WHEN side_num = 2 THEN 'east'
+        WHEN side_num = 3 THEN 'south'
+        WHEN side_num = 4 THEN 'west'
+    END,
+    'enabled',
+    4  -- Zone 400
+FROM generate_series(1, 4) AS side_num,
+     generate_series(1, 10) AS row_num,
      generate_series(1, 20) AS seat_num;
 
--- Insert season tickets for all seats in zone 400
+-- Insert season tickets for all seats in all zones
 INSERT INTO purchase_offer (name, description, type, status, released_at, created_at, expires_at, id_seat)
 SELECT 
-    'Season Ticket - Zone 400 Row ' || s."row" || ' Seat ' || s."number",
-    'Full season access to Zone 400, Row ' || s."row" || ', Seat ' || s."number",
+    'Season Ticket - ' || z.name || ' Row ' || s."row" || ' Seat ' || s."number" || ' (' || s.direction || ')',
+    'Full season access to ' || z.name || ', Row ' || s."row" || ', Seat ' || s."number" || ' (' || s.direction || ' side)',
     'season ticket',
     'enabled',
     '2025-08-01',
@@ -1017,22 +1082,28 @@ SELECT
     '2026-06-30',
     s.id_seat
 FROM seat s 
-WHERE s.id_zone = 1;
+JOIN zone z ON s.id_zone = z.id_zone;
 
--- Insert season ticket pricing
+-- Insert season ticket pricing with different prices per zone
 INSERT INTO season_ticket (id_purchase_offer, id_season, ticket_price)
 SELECT 
     po.id_purchase_offer,
     1,
-    15000  -- Price in dinars
+    CASE 
+        WHEN po.name LIKE '%Zone 100%' THEN 25000  -- Premium zone, highest price
+        WHEN po.name LIKE '%Zone 200%' THEN 20000  
+        WHEN po.name LIKE '%Zone 300%' THEN 15000  
+        WHEN po.name LIKE '%Zone 400%' THEN 10000  -- Furthest zone, lowest price
+        ELSE 15000
+    END
 FROM purchase_offer po
 WHERE po.type = 'season ticket';
 
--- Insert individual tickets for all seats for all 3 matches
+-- Insert individual tickets for all seats in all zones for all 3 matches
 INSERT INTO purchase_offer (name, description, type, status, released_at, created_at, expires_at, id_seat)
 SELECT 
-    'Individual Ticket - ' || m.name || ' - Zone 400 Row ' || s."row" || ' Seat ' || s."number",
-    'Single match ticket for ' || m.name || ' in Zone 400, Row ' || s."row" || ', Seat ' || s."number",
+    'Individual Ticket - ' || m.name || ' - ' || z.name || ' Row ' || s."row" || ' Seat ' || s."number" || ' (' || s.direction || ')',
+    'Single match ticket for ' || m.name || ' in ' || z.name || ', Row ' || s."row" || ', Seat ' || s."number" || ' (' || s.direction || ' side)',
     'individual ticket',
     'enabled',
     '2025-08-15',
@@ -1040,8 +1111,9 @@ SELECT
     m.scheduled_at,
     s.id_seat
 FROM seat s 
+JOIN zone z ON s.id_zone = z.id_zone
 CROSS JOIN match m
-WHERE s.id_zone = 1 AND m.id_match IN (1, 2, 3);
+WHERE m.id_match IN (1, 2, 3);
 
 -- Insert individual ticket details linking to matches
 INSERT INTO individual_ticket (id_purchase_offer, id_match)
@@ -1111,20 +1183,63 @@ WHERE id_purchase_offer IN (
     WHERE c.status = 'bought'
 );
 
--- INSERT REALISTIC TICKET PRICE PARAMETERS FOR ZONE 400 AND ALL MATCHES
--- Different parameters for each match to test dynamic pricing
+-- INSERT REALISTIC TICKET PRICE PARAMETERS FOR ALL ZONES AND ALL MATCHES
+-- Different parameters for each match and zone to test dynamic pricing
+-- Zone 100 (Premium) > Zone 200 (VIP) > Zone 300 (Standard) > Zone 400 (Economy)
 
 -- Match 1: Partizan vs Crvena Zvezda (September 5, 2025) - High demand derby match
-INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
-VALUES (800, 70, 2000, 8000, 3, 1, 1);
 
--- Match 2: Partizan vs FMP (September 15, 2025) - Medium demand match  
+-- Zone 100 (Premium - Most Expensive)
 INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
-VALUES (500, 50, 1200, 5000, 3, 1, 2);
+VALUES (800, 70, 4000, 12000, 3, 1, 1);
+
+-- Zone 200 (VIP)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (800, 70, 3000, 9000, 3, 2, 1);
+
+-- Zone 300 (Standard)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (800, 70, 2000, 6000, 3, 3, 1);
+
+-- Zone 400 (Economy - Least Expensive)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (800, 70, 1000, 3000, 3, 4, 1);
+
+-- Match 2: Partizan vs FMP (September 15, 2025) - Medium demand match
+
+-- Zone 100 (Premium - Most Expensive)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (500, 50, 2500, 7500, 3, 1, 2);
+
+-- Zone 200 (VIP)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (500, 50, 2000, 6000, 3, 2, 2);
+
+-- Zone 300 (Standard)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (500, 50, 1500, 4500, 3, 3, 2);
+
+-- Zone 400 (Economy - Least Expensive)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (500, 50, 800, 2400, 3, 4, 2);
 
 -- Match 3: Partizan vs Mega (September 25, 2025) - Regular match
+
+-- Zone 100 (Premium - Most Expensive)
 INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
-VALUES (400, 40, 1000, 4000, 3, 1, 3);
+VALUES (400, 40, 2000, 6000, 3, 1, 3);
+
+-- Zone 200 (VIP)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (400, 40, 1500, 4500, 3, 2, 3);
+
+-- Zone 300 (Standard)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (400, 40, 1200, 3600, 3, 3, 3);
+
+-- Zone 400 (Economy - Least Expensive)
+INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
+VALUES (400, 40, 600, 1800, 3, 4, 3);
 
 -- FUNKCIJA ZA DINAMIČKO IZRAČUNAVANJE CENE KARATA
 -- Implementira formulu: P_zona(t) = [P_min + (P_max - P_min) * ((e^(α*O_zona/K_zona + β*O_stad/C_stad) - 1) / (e^(α + β) - 1))] * w_vreme
