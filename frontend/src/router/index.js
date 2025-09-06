@@ -16,6 +16,11 @@ import MatchDetail from '../views/analyst/MatchDetail.vue'
 import ZonesSeats from '../views/administrator/ZonesSeats.vue'
 import { getUserData } from '../services/auth_service.js'
 import Matches from '../views/teammanager/Matches.vue'
+import MatchesView from '../views/clubmanager/MatchesView.vue'
+import MatchDetails from '../views/teammanager/MatchDetails.vue'
+import MatchDetailsClubManager from '../views/clubmanager/MatchDetailsClubManager.vue'
+import Players from '../views/teammanager/Players.vue'
+import TravelInfos from '../views/clubmanager/TravelInfos.vue'
 
 const routes = [
   {
@@ -110,6 +115,36 @@ const routes = [
     name: 'TeamManagerMatches',
     component: Matches,
     meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/club-manager/matches',
+    name: 'ClubManagerMatches',
+    component: MatchesView,
+    meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/team-manager/matches/:id',
+    name: 'MatchDetails',
+    component: MatchDetails,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/club-manager/matches/:id',
+    name: 'MatchDetailsClubManager',
+    component: MatchDetailsClubManager,
+    meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/team-manager/players',
+    name: 'TeamManagerPlayers',
+    component: Players,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/club-manager/travelinfo',
+    name: 'ClubManagerTravel',
+    component: TravelInfos,
+    meta: { requiresAuth: true, requiresRole: 'club manager' }
   }
 ]
 

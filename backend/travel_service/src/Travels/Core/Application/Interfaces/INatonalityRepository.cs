@@ -2,8 +2,8 @@ using travel_service.src.Travels.Core.Domain.Entities;
 
 namespace travel_service.src.Travels.Core.Application.Interfaces;
 
-public interface ISeasonRepository
+public interface INationalityRepository
 {
-    IEnumerable<Season> GetAll();
-    Season? GetById(int id);
+    Nationality? GetById(int id);
+    IEnumerable<Nationality> GetAll();
 }

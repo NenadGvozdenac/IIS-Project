@@ -20,4 +20,10 @@ public class CompetitionRepository : ICompetitionRepository
             .OrderBy(c => c.StartedAt)
             .ToList();
     }
+    public Competition? GetById(int id)
+    {
+        return _travelDbContext.Competitions
+            .Include(c => c.Matches)
+            .FirstOrDefault(c => c.IdCompetition == id);
+    }
 }

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Seasons.GetAllSeasons;
+using travel_service.src.Travels.Core.Application.Features.Seasons.GetSeasonById;
 
 namespace travel_service.src.Travels.API.Controllers;
 
@@ -23,4 +24,11 @@ public class SeasonsController : BaseController
         return CreateResponse(result);
     }
 
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetSeasonById(int id)
+    {
+        var query = new GetSeasonByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
 }

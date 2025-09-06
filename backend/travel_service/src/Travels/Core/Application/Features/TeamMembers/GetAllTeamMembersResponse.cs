@@ -9,4 +9,6 @@ public class GetAllTeamMembersResponse
     public int IdPlayer { get; set; }
 
     public int IdTeam { get; set; }
+
+    public string FullName { get; set; } = null!;   
 }
