@@ -1,38 +1,5 @@
 <template>
   <div class="data-analysis">
-    <!-- Header Navigation -->
-    <header class="header">
-      <div class="header-left">
-        <div class="logo">📧</div>
-      </div>
-      
-      <div class="header-center">
-        <nav class="main-nav">
-          <router-link 
-            to="/analyst" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'DataAnalysis' }"
-          >
-            Data analysis
-          </router-link>
-          <router-link 
-            to="/matches" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'Matches' }"
-          >
-            Matches
-          </router-link>
-          <router-link 
-            to="/reports" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'Reports' }"
-          >
-            Reports
-          </router-link>
-        </nav>
-      </div>
-    </header>
-
     <!-- Main Content -->
     <main class="main-content">
       <div class="content-header">

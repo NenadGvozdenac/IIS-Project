@@ -145,6 +145,8 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.State)
                 .HasMaxLength(255)
                 .HasColumnName("state");
+            entity.Property(e => e.TicketsForSale).HasColumnName("tickets_for_sale");
+            entity.Property(e => e.TicketsWentOnSale).HasColumnName("tickets_went_on_sale");
             entity.Property(e => e.TransportationRequired).HasColumnName("transportation_required");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)

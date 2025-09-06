@@ -11,6 +11,8 @@ import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
+import MatchesOverview from '../views/analyst/MatchesOverview.vue'
+import MatchDetail from '../views/analyst/MatchDetail.vue'
 import ZonesSeats from '../views/administrator/ZonesSeats.vue'
 import { getUserData } from '../services/auth_service.js'
 import Matches from '../views/teammanager/Matches.vue'
@@ -65,25 +67,37 @@ const routes = [
     path: '/analyst',
     name: 'DataAnalysis',
     component: DataAnalysis,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/add',
     name: 'TeamAdd',
     component: TeamAdd,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/:id',
     name: 'TeamDetail',
     component: TeamDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/:id/edit',
     name: 'TeamEdit',
     component: TeamEdit,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
+  },
+  {
+    path: '/analyst/matches',
+    name: 'Matches',
+    component: MatchesOverview,
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
+  },
+  {
+    path: '/analyst/matches/:id',
+    name: 'MatchDetail',
+    component: MatchDetail,
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/admin/zones-seats',
