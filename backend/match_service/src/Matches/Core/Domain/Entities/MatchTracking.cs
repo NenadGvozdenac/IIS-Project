@@ -7,7 +7,7 @@ public partial class MatchTracking
 {
     public DateTime? StartTime { get; set; }
 
-    public DateTime EndTime { get; set; }
+    public DateTime? EndTime { get; set; }
 
     public string? TrackingStatus { get; set; }
 
@@ -17,15 +17,15 @@ public partial class MatchTracking
 
     public string? PeriodStatus { get; set; }
 
-    public DateTime PeriodStartTime { get; set; }
+    public DateTime? PeriodStartTime { get; set; }
 
     public int? ElapsedPeriodTime { get; set; }
 
-    public DateTime LastPauseStartTime { get; set; }
+    public DateTime? LastPauseStartTime { get; set; }
 
     public int? TotalPauseTimeInPeriod { get; set; }
 
-    public DateTime LastUpdateTime { get; set; }
+    public DateTime? LastUpdateTime { get; set; }
 
     public int? OurPoints { get; set; }
 

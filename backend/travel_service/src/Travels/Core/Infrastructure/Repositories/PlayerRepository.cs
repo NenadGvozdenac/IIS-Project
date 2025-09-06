@@ -18,4 +18,9 @@ public class PlayerRepository : IPlayerRepository
     {
         return _travelDbContext.Players.ToList();
     }
+
+    public Player? GetById(int id)
+    {
+        return _travelDbContext.Players.FirstOrDefault(p => p.IdPlayer == id);
+    }
 }

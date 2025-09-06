@@ -18,4 +18,9 @@ public class SeasonRepository : ISeasonRepository
     {
         return _travelDbContext.Seasons.ToList();
     }
+    public Season? GetById(int id)
+    {
+        return _travelDbContext.Seasons
+            .FirstOrDefault(s => s.IdSeason == id);
+    }
 }

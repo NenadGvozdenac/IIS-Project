@@ -5,4 +5,5 @@ namespace travel_service.src.Travels.Core.Application.Interfaces;
 public interface ISeasonRepository
 {
     IEnumerable<Season> GetAll();
+    Season? GetById(int id);
 }

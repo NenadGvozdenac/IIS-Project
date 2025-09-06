@@ -25,6 +25,9 @@ public static class ApplicationStartup
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
+        services.AddScoped<IMatchRepository, MatchRepository>();
+        services.AddScoped<IMatchTrackingRepository, MatchTrackingRepository>();
+        services.AddScoped<ITeamMemberMatchRepository, TeamMemberMatchRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

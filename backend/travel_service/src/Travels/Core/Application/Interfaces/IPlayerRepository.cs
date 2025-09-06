@@ -5,4 +5,5 @@ namespace travel_service.src.Travels.Core.Application.Interfaces;
 public interface IPlayerRepository
 {
     IEnumerable<Player> GetAll();
+    Player? GetById(int id);
 }

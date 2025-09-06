@@ -16,4 +16,6 @@ public class TravelInfoDto
     public int? IdManagementMember { get; set; }
     public int? IdTeam { get; set; }
     public int? IdPlayer { get; set; }
+    public string FullPlayerName { get; set; } = null!;
+    public string Nationality { get; set; } = null!;
 }

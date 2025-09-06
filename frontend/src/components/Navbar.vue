@@ -13,6 +13,14 @@
             class="nav-link admin-link">
             Zones & Seats
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst"
+            class="nav-link analyst-link">
+            Data analysis
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst/matches"
+            class="nav-link analyst-link">
+            Matches
+          </router-link>
         </div>
 
         <div class="navbar-auth">
@@ -158,6 +166,17 @@ const isCustomer = () => {
 .admin-link:hover {
   background-color: #fcd34d;
   color: #78350f;
+}
+
+.analyst-link {
+  background-color: #e0f2fe;
+  color: #0277bd;
+  font-weight: 600;
+}
+
+.analyst-link:hover {
+  background-color: #b3e5fc;
+  color: #01579b;
 }
 
 .navbar-auth {

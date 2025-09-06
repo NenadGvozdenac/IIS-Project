@@ -113,6 +113,14 @@ onMounted(() => {
     router.replace('/customer-dashboard');
     return;
   }
+  else if(userInfo && userInfo.userRole === 'team manager') {
+    router.replace('/team-manager/matches');
+    return;
+  }
+  else if(userInfo && userInfo.userRole === 'club manager') {
+    router.replace('/club-manager/matches');
+    return;
+  }
 });
 </script>
 

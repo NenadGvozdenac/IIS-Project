@@ -7,10 +7,14 @@ namespace travel_service.src.Travels.Core.Application.Features.TravelInformation
 public class GetAllTravelInfosHandler : IRequestHandler<GetAllTravelInfosQuery, Result<GetAllTravelInfosResponse>>
 {
     private readonly ITravelInfoRepository _travelInfoRepository;
+    private readonly IPlayerRepository _playerRepository;
+    private readonly INationalityRepository _nationalityRepository;
 
-    public GetAllTravelInfosHandler(ITravelInfoRepository travelInfoRepository)
+    public GetAllTravelInfosHandler(ITravelInfoRepository travelInfoRepository, IPlayerRepository playerRepository, INationalityRepository nationalityRepository)
     {
         _travelInfoRepository = travelInfoRepository;
+        _playerRepository = playerRepository;
+        _nationalityRepository = nationalityRepository;
     }
 
     public Task<Result<GetAllTravelInfosResponse>> Handle(GetAllTravelInfosQuery request, CancellationToken cancellationToken)
@@ -21,17 +25,25 @@ public class GetAllTravelInfosHandler : IRequestHandler<GetAllTravelInfosQuery, 
 
             var response = new GetAllTravelInfosResponse
             {
-                TravelInfos = travelInfos.Select(t => new TravelInfoDto
-                {
-                    IdTravelInfo = t.IdTravelInformation,
-                    PassportNumber = t.PassportNumber,
-                    PassportExpirationDate = t.PassportExpirationDate,
-                    Phone = t.Phone,
-                    Email = t.Email,
-                    Role = t.Role,
-                    IdManagementMember = t.IdManagementMember,
-                    IdTeam = t.IdTeam,
-                    IdPlayer = t.IdPlayer
+                TravelInfos = travelInfos.Select(t => {
+                    var player = t.IdPlayer.HasValue ? _playerRepository.GetById(t.IdPlayer.Value) : null;
+                    var nationality = player != null
+                        ? _nationalityRepository.GetById(player.IdNationality).State ?? string.Empty
+                        : null;
+                    return new TravelInfoDto
+                    {
+                        IdTravelInfo = t.IdTravelInformation,
+                        PassportNumber = t.PassportNumber,
+                        PassportExpirationDate = t.PassportExpirationDate,
+                        Phone = t.Phone,
+                        Email = t.Email,
+                        Role = t.Role,
+                        IdManagementMember = t.IdManagementMember,
+                        IdTeam = t.IdTeam,
+                        IdPlayer = t.IdPlayer,
+                        FullPlayerName = player != null ? $"{player.Name} {player.Surname}" : string.Empty,
+                        Nationality = nationality ?? string.Empty
+                    };
                 }).ToList()
             };
 
