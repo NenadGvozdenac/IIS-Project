@@ -11,6 +11,8 @@ import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
+import MatchesOverview from '../views/analyst/MatchesOverview.vue'
+import MatchDetail from '../views/analyst/MatchDetail.vue'
 import ZonesSeats from '../views/administrator/ZonesSeats.vue'
 import { getUserData } from '../services/auth_service.js'
 
@@ -82,6 +84,18 @@ const routes = [
     path: '/analyst/team/:id/edit',
     name: 'TeamEdit',
     component: TeamEdit,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/matches',
+    name: 'Matches',
+    component: MatchesOverview,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/matches/:id',
+    name: 'MatchDetail',
+    component: MatchDetail,
     meta: { requiresAuth: true }
   },
   {
