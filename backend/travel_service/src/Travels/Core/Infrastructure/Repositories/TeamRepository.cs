@@ -18,4 +18,9 @@ public class TeamRepository : ITeamRepository
     {
         return _travelDbContext.Teams.ToList();
     }
+    public Team? GetById(int id)
+    {
+        return _travelDbContext.Teams
+            .FirstOrDefault(t => t.IdTeam == id);
+    }
 }

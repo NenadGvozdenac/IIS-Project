@@ -5,9 +5,9 @@
         <div class="header-content">
           
           <nav class="nav-menu" v-if="isTeamManager">
-            <router-link to="/team-manager/matches" class="nav-link active">Matches</router-link>
-            <router-link to="/team-manager/players" class="nav-link">Players</router-link>
-            <router-link to="/team-manager/travel" class="nav-link">Travel Organization</router-link>
+            <router-link to="/club-manager/matches" class="nav-link active">Matches</router-link>
+            <router-link to="/club-manager/travelinfo" class="nav-link">Players</router-link>
+            <router-link to="/club-manager/travel" class="nav-link">Travel Organization</router-link>
           </nav>
         </div>
       </div>
@@ -27,9 +27,7 @@
         
         
         <div class="calendar-actions">
-          <button @click="openCreateModal" class="btn btn-primary" v-if="isTeamManager">
-            + New Match
-          </button>
+          <!-- Club manager nema opciju dodavanja meča -->
         </div>
       </div>
 
@@ -124,169 +122,17 @@
       :style="{ top: menuPosition.y + 'px', left: menuPosition.x + 'px' }"
       @click.stop
     >
-      <!-- Details - uvek dostupan -->
+      <!-- Club manager vidi samo detalje meča -->
       <div class="menu-item" @click="viewMatchDetails">Details</div>
-      
-      <!-- Edit i Delete - samo za buduće mečeve i ako je ostalo više od 24h -->
-      <div class="menu-item" @click="editMatch" v-if="canEditMatch(selectedMatch)">Edit</div>
-      <div class="menu-item danger" @click="deleteMatch" v-if="canDeleteMatch(selectedMatch)">Delete</div>
-      
-      <!-- Report - samo za odigrane mečeve -->
-      <div class="menu-item" @click="generateReport" v-if="isMatchPlayed(selectedMatch)">Report (ctrl+r)</div>
-      
-      <!-- Transport opcije - samo ako je potreban transport i meč nije odigran -->
-      <template v-if="showTransportOptions(selectedMatch)">
-        <hr>
-        <div class="menu-item" @click="transportRequest">Transport request</div>
-        <div class="menu-item" @click="transportOffers">Transport offers</div>
-      </template>
-      
-      <!-- Accommodation opcije - samo ako je potreban smeštaj i meč nije odigran -->
-      <template v-if="showAccommodationOptions(selectedMatch)">
-        <hr>
-        <div class="menu-item" @click="accommodationRequest">Accommodation request</div>
-        <div class="menu-item" @click="accommodationOffers">Accommodation offers</div>
-      </template>
     </div>
 
     <!-- Create/Edit Match Modal -->
     <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeMatchModal">
-      <div class="modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ showEditModal ? 'Edit Match' : 'Create New Match' }}</h3>
-          <button @click="closeMatchModal" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="showEditModal ? updateMatch() : createMatch()">
-            <div class="form-group mb-3">
-              <label class="form-label">Match Name</label>
-              <input v-model="editMatchData.name" type="text" required class="form-control" placeholder="Enter match name">
-            </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label">State</label>
-              <input v-model="editMatchData.state" type="text" required class="form-control" placeholder="Enter state">
-            </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label">Competition</label>
-              <select v-model="editMatchData.competitionId" required class="form-select">
-                <option value="">Select Competition</option>
-                <option v-for="competition in competitions" :key="competition.idCompetition" :value="competition.idCompetition">
-                  {{ competition.name }}
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group mb-3">
-              <label class="form-label">Season</label>
-              <select v-model="editMatchData.seasonId" required class="form-select">
-                <option value="">Select Season</option>
-                <option v-for="season in seasons" :key="season.idSeason" :value="season.idSeason">
-                  {{ season.name }}
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group mb-3">
-              <label class="form-label">Opponent Team</label>
-              <select v-model="editMatchData.teamId" required class="form-select">
-                <option value="">Select Opponent Team</option>
-                <option v-for="team in teams" :key="team.idTeam" :value="team.idTeam">
-                  {{ team.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label">Date & Time</label>
-              <input
-                v-model="editMatchData.scheduledAt"
-                type="datetime-local"
-                required
-                class="form-control"
-                :min="minDateTime"
-              >
-            </div>
-            
-            <div class="form-group mb-3">
-              <label class="form-label">Match Type</label>
-              <select v-model="editMatchData.type" required class="form-select" @change="onTypeChange">
-                <option value="">Select Type</option>
-                <option value="home">Home</option>
-                <option value="away">Away</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label">City</label>
-              <input v-model="editMatchData.city" type="text" required class="form-control" placeholder="Enter city">
-            </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label">Hall/Stadium</label>
-              <input v-model="editMatchData.hall" type="text" required class="form-control" placeholder="Enter hall or stadium">
-            </div>
-
-            <div v-if="editMatchData.type === 'home'" class="form-group mb-3">
-              <div class="form-check">
-                <input v-model="editMatchData.isInOurHall" type="checkbox" class="form-check-input" id="ourHallCheck">
-                <label class="form-check-label" for="ourHallCheck">
-                  Is in our hall
-                </label>
-              </div>
-            </div>
-
-            <div v-if="editMatchData.type === 'home'" class="form-group mb-3">
-              <div class="form-check">
-                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="homeTransportCheck">
-                <label class="form-check-label" for="homeTransportCheck">
-                  Transportation Required
-                </label>
-              </div>
-            </div>
-
-            <div v-if="editMatchData.type === 'away'" class="form-group mb-3">
-              <div class="form-check">
-                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="transportCheck">
-                <label class="form-check-label" for="transportCheck">
-                  Transportation Required
-                </label>
-              </div>
-            </div>
-
-            <div v-if="editMatchData.type === 'away'" class="form-group mb-3">
-              <div class="form-check">
-                <input v-model="editMatchData.accommodationRequired" type="checkbox" class="form-check-input" id="accommodationCheck">
-                <label class="form-check-label" for="accommodationCheck">
-                  Accommodation Required
-                </label>
-              </div>
-            </div>
-            
-            <div class="modal-actions">
-              <button type="button" @click="closeMatchModal" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">{{ showEditModal ? 'Save Changes' : 'Create Match' }}</button>
-            </div>
-          </form>
-        </div>
-      </div>
+  <!-- Club manager nema modal za kreiranje/editovanje meča -->
     </div>
 
     <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-      <div class="modal" @click.stop>
-        <div class="modal-header">
-          <h3>Delete Match</h3>
-          <button @click="closeDeleteModal" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete this match?</p>
-          <div class="modal-actions">
-            <button type="button" @click="closeDeleteModal" class="btn btn-secondary">Cancel</button>
-            <button type="button" @click="confirmDeleteMatch" class="btn btn-danger">Delete</button>
-          </div>
-        </div>
-      </div>
+  <!-- Club manager nema modal za brisanje meča -->
     </div>
   </div>
 </template>
@@ -661,7 +507,7 @@ const formatMatchTime = (dateTime) => {
 const viewMatchDetails = () => {
   if (selectedMatch.value && selectedMatch.value.idMatch) {
     router.push({
-      name: 'MatchDetails',
+      name: 'MatchDetailsClubManager',
       params: { id: selectedMatch.value.idMatch }
     })
   }

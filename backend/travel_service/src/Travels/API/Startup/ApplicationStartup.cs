@@ -30,6 +30,7 @@ public static class ApplicationStartup
         services.AddScoped<IVisaRepository, VisaRepository>();
         services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+        services.AddScoped<INationalityRepository, NationalityRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

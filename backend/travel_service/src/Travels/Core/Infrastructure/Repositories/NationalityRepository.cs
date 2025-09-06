@@ -5,22 +5,22 @@ using travel_service.src.Travels.Core.Infrastructure;
 
 namespace travel_service.src.Travels.Core.Infrastructure.Repositories;
 
-public class PlayerRepository : IPlayerRepository
+public class NationalityRepository : INationalityRepository
 {
     private readonly TravelDbContext _travelDbContext;
 
-    public PlayerRepository(TravelDbContext context)
+    public NationalityRepository(TravelDbContext context)
     {
         _travelDbContext = context;
     }
 
-    public IEnumerable<Player> GetAll()
+    public IEnumerable<Nationality> GetAll()
     {
-        return _travelDbContext.Players.ToList();
+        return _travelDbContext.Nationalities.ToList();
     }
-
-    public Player? GetById(int id)
+    public Nationality? GetById(int id)
     {
-        return _travelDbContext.Players.FirstOrDefault(p => p.IdPlayer == id);
+        return _travelDbContext.Nationalities
+            .FirstOrDefault(n => n.IdNationality == id);
     }
 }

@@ -7,10 +7,12 @@ namespace travel_service.src.Travels.Core.Application.Features.TeamMembers.GetAl
 public class GetAllTeamMembersHandler : IRequestHandler<GetAllTeamMembersQuery, Result<List<GetAllTeamMembersResponse>>>
 {
     private readonly ITeamMemberRepository _teamMemberRepository;
+    private readonly IPlayerRepository _playerRepository;
 
-    public GetAllTeamMembersHandler(ITeamMemberRepository teamMemberRepository)
+    public GetAllTeamMembersHandler(ITeamMemberRepository teamMemberRepository, IPlayerRepository playerRepository)
     {
         _teamMemberRepository = teamMemberRepository;
+        _playerRepository = playerRepository;
     }
 
     public Task<Result<List<GetAllTeamMembersResponse>>> Handle(GetAllTeamMembersQuery request, CancellationToken cancellationToken)
@@ -25,7 +27,8 @@ public class GetAllTeamMembersHandler : IRequestHandler<GetAllTeamMembersQuery, 
                 JerseyNumber = tm.JerseyNumber,
                 Status = tm.Status,
                 IdPlayer = tm.IdPlayer,
-                IdTeam = tm.IdTeam
+                IdTeam = tm.IdTeam,
+                FullName = _playerRepository.GetById(tm.IdPlayer)?.Name + " " + _playerRepository.GetById(tm.IdPlayer)?.Surname ?? "Unknown Player"
             }).ToList();
 
             return Task.FromResult(Result<List<GetAllTeamMembersResponse>>.Success(response));
