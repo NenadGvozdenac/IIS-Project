@@ -66,37 +66,37 @@ const routes = [
     path: '/analyst',
     name: 'DataAnalysis',
     component: DataAnalysis,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/add',
     name: 'TeamAdd',
     component: TeamAdd,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/:id',
     name: 'TeamDetail',
     component: TeamDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/analyst/team/:id/edit',
     name: 'TeamEdit',
     component: TeamEdit,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
-    path: '/matches',
+    path: '/analyst/matches',
     name: 'Matches',
     component: MatchesOverview,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
-    path: '/matches/:id',
+    path: '/analyst/matches/:id',
     name: 'MatchDetail',
     component: MatchDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
     path: '/admin/zones-seats',

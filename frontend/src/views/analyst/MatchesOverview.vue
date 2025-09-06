@@ -307,7 +307,7 @@ const handleMatchAction = (match) => {
   if (match.trackingStatus === 'preparation') {
     // Navigate to match detail page
     console.log('Navigating to match detail for match:', match)
-    router.push(`/matches/${match.idMatch}`)
+    router.push(`/analyst/matches/${match.idMatch}`)
   } else {
     // Open startup modal for upcoming matches
     console.log('Opening startup modal for match:', match)
@@ -444,7 +444,7 @@ const acceptMatchStartup = async () => {
     closeStartupModal()
     console.log('Match prepared successfully, selectedMatch.value: ', selectedMatch.value)
     // Navigate to match detail page
-    router.push(`/matches/${SelectedMatchId}`)
+    router.push(`/analyst/matches/${SelectedMatchId}`)
   } catch (err) {
     console.error('Error preparing match:', err)
     error.value = err.response?.data?.message || 'Failed to prepare match'

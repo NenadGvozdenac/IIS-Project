@@ -17,7 +17,7 @@
             class="nav-link analyst-link">
             Data analysis
           </router-link>
-          <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/matches"
+          <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst/matches"
             class="nav-link analyst-link">
             Matches
           </router-link>
