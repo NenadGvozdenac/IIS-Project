@@ -90,6 +90,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { MatchService } from '../../services/match_service.js';
+import { TicketPrintService } from '../../services/ticket_print_service.js';
+import { getUserData } from '../../services/auth_service.js';
 
 // Reactive data
 const purchaseHistory = ref([]);
@@ -138,9 +140,18 @@ const getTicketTypeClass = (type) => {
   }
 };
 
-const printTicket = (ticket) => {
-  // TODO: Implement ticket printing functionality
-  alert(`Printing ticket: ${ticket.name}`);
+const printTicket = async (ticket) => {
+  try {
+    // Get user data for the ticket
+    const userData = getUserData();
+    
+    // Use the ticket print service
+    await TicketPrintService.printTicket(ticket, userData);
+    
+  } catch (error) {
+    console.error('Error printing ticket:', error);
+    alert('Failed to print ticket. Please try again.');
+  }
 };
 
 // Lifecycle

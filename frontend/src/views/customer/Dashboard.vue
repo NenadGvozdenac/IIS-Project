@@ -197,7 +197,15 @@ const loadUpcomingMatches = async () => {
     loading.value = true;
     const response = await MatchService.getMatchesInOurHall();
 
-    matches.value = response.value || response || [];
+    const allMatches = response.value || response || [];
+    
+    // Filter out past matches - only show matches that are in the future
+    const now = new Date();
+    matches.value = allMatches.filter(match => {
+      if (!match.scheduledAt) return true; // Include matches without scheduled date
+      const matchDate = new Date(match.scheduledAt);
+      return matchDate > now; // Only include future matches
+    });
     
     // Separate matches based on ticket availability
     matchesWithTickets.value = matches.value.filter(match => match.ticketsForSale);
@@ -244,8 +252,8 @@ const formatTicketSaleDate = (dateString) => {
 };
 
 const viewMatchDetails = (match) => {
-  // Navigate to match details page (we'll need to create this route)
-  router.push(`/match/${match.idMatch}`);
+  // Navigate to seat selection page
+  router.push(`/seat-selection/${match.idMatch}`);
 };
 
 const goToProfile = () => {

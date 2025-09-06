@@ -985,7 +985,7 @@ INSERT INTO competition (name, started_at, number_of_matches) VALUES
 
 -- Insert Zone 400
 INSERT INTO zone (name, rank, maximum_capacity, status) VALUES 
-    ('Zone 400', 400, 60, 'enabled');
+    ('Zone 400', 400, 200, 'enabled');
 
 -- Insert 3 Partizan matches in the coming days (September 2025)
 INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, tickets_for_sale, tickets_went_on_sale, id_competition, id_season, id_team) VALUES 
@@ -993,7 +993,7 @@ INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, 
     ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-15 19:00:00+01', 1, 1, 3),
     ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-25 19:00:00+01', 1, 1, 4);
 
--- Insert 50+ seats for Zone 400 (10 rows x 6 seats = 60 seats)
+-- Insert 300 seats for Zone 400 (10 rows x 30 seats = 300 seats)
 INSERT INTO seat ("row", "number", type, direction, status, id_zone) 
 SELECT 
     row_num,
@@ -1003,7 +1003,7 @@ SELECT
     'enabled',
     1
 FROM generate_series(1, 10) AS row_num,
-     generate_series(1, 6) AS seat_num;
+     generate_series(1, 20) AS seat_num;
 
 -- Insert season tickets for all seats in zone 400
 INSERT INTO purchase_offer (name, description, type, status, released_at, created_at, expires_at, id_seat)
@@ -1037,7 +1037,7 @@ SELECT
     'enabled',
     '2025-08-15',
     '2025-08-15',
-    m.scheduled_at + INTERVAL '30 days',
+    m.scheduled_at,
     s.id_seat
 FROM seat s 
 CROSS JOIN match m
