@@ -293,7 +293,7 @@
         <div v-if="showZoneModal" class="modal-overlay" @click="closeZoneModal">
             <div class="modal" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ isEditingZone ? 'Edit Zone' : 'New Zone' }}</h3>
+                    <h3>{{ isEditingZone ? 'Edit Zone' : 'Create New Zone' }}</h3>
                     <button @click="closeZoneModal" class="close-btn">&times;</button>
                 </div>
 
@@ -328,7 +328,7 @@
                         <button type="button" @click="closeZoneModal" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <button type="submit" class="btn btn-primary" :disabled="loading || !isZoneFormValid">
                             {{ loading ? 'Saving...' : (isEditingZone ? 'Save' : 'Create') }}
                         </button>
                     </div>
@@ -340,7 +340,7 @@
         <div v-if="showSeatModal" class="modal-overlay" @click="closeSeatModal">
             <div class="modal" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ isEditingSeat ? 'Edit Seat' : 'New Seat' }}</h3>
+                    <h3>{{ isEditingSeat ? 'Edit Seat' : 'Create New Seat' }}</h3>
                     <button @click="closeSeatModal" class="close-btn">&times;</button>
                 </div>
 
@@ -396,7 +396,7 @@
                         <button type="button" @click="closeSeatModal" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <button type="submit" class="btn btn-primary" :disabled="loading || !isSeatFormValid">
                             {{ loading ? 'Saving...' : (isEditingSeat ? 'Save' : 'Create') }}
                         </button>
                     </div>
@@ -463,10 +463,10 @@ const isEditingSeat = ref(false);
 const seatForm = ref({
     row: null,
     number: null,
-    type: 'regular',
+    type: 'standard',
     direction: '',
     status: '',
-    idZone: null
+    idZone: ''
 });
 
 // Computed properties for filtering
@@ -643,6 +643,22 @@ const hasActiveSeatFilters = computed(() => {
            seatFilters.value.zone || seatFilters.value.status;
 });
 
+// Form validation
+const isZoneFormValid = computed(() => {
+    return zoneForm.value.name && 
+           zoneForm.value.rank && 
+           zoneForm.value.maximumCapacity && 
+           zoneForm.value.status;
+});
+
+const isSeatFormValid = computed(() => {
+    return seatForm.value.row && 
+           seatForm.value.number && 
+           seatForm.value.direction && 
+           seatForm.value.status && 
+           seatForm.value.idZone;
+});
+
 // Filter methods
 const clearZoneFilters = () => {
     zoneFilters.value = {
@@ -813,7 +829,7 @@ const openCreateSeatModal = () => {
         type: 'standard',
         direction: '',
         status: '',
-        idZone: null
+        idZone: ''
     };
     showSeatModal.value = true;
 }; const editSeat = (seat) => {
@@ -838,7 +854,7 @@ const closeSeatModal = () => {
         type: 'standard',
         direction: '',
         status: '',
-        idZone: null
+        idZone: ''
     };
 }; const saveSeat = async () => {
     try {
@@ -1076,6 +1092,12 @@ onMounted(async () => {
     cursor: not-allowed;
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .pagination-controls span {
     padding: 0 var(--spacing-sm);
     color: var(--color-text-muted);
@@ -1168,21 +1190,22 @@ onMounted(async () => {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .modal {
     background: white;
     border-radius: var(--radius-lg);
-    width: 90%;
     max-width: 500px;
+    width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .modal-header {
@@ -1205,12 +1228,7 @@ onMounted(async () => {
     font-size: 1.5rem;
     cursor: pointer;
     color: var(--color-text-muted);
-    padding: 0;
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: color 0.2s ease;
 }
 
 .close-btn:hover {
@@ -1222,23 +1240,24 @@ onMounted(async () => {
 }
 
 .form-group {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
 .form-group label {
     display: block;
+    margin-bottom: var(--spacing-xs);
     font-weight: 500;
     color: var(--color-text);
-    margin-bottom: var(--spacing-sm);
+    font-size: 0.875rem;
 }
 
 .form-control {
     width: 100%;
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
-    font-size: 1rem;
-    transition: border-color 0.2s ease;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
 }
 
 .form-control:focus {
@@ -1247,13 +1266,30 @@ onMounted(async () => {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.form-control:disabled {
+    background-color: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.text-muted {
+    color: #6b7280;
+}
+
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: var(--spacing-md);
-    padding-top: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-md);
     border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-md);
 }
 
 /* Responsive */
