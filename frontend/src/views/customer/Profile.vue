@@ -262,10 +262,14 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { CreditCardService } from '../../services/credit_card_service.js';
 import { MatchService } from '../../services/match_service.js';
 import { TicketPrintService } from '../../services/ticket_print_service.js';
 import { getUserData } from '../../services/auth_service.js';
+
+// Router
+const router = useRouter();
 
 // Reactive data
 const activeTab = ref('info');
@@ -495,6 +499,10 @@ const printTicket = async (ticket) => {
     console.error('Error printing ticket:', error);
     alert('Failed to print ticket. Please try again.');
   }
+};
+
+const goToDashboard = () => {
+  router.push('/customer/dashboard');
 };
 </script>
 
