@@ -391,6 +391,7 @@ CREATE TABLE session (
     id_session_type   INTEGER NOT NULL,
     id_user           INTEGER NOT NULL,
     id_player         INTEGER NOT NULL,
+    note              VARCHAR(255),
     PRIMARY KEY (id_session)
 );
 
