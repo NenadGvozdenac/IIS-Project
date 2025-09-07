@@ -1,7 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
-using scouting_service.src.Scoutings.Core.Application.Interfaces;
-using scouting_service.src.Scoutings.Core.Domain.Entities;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetAllPlayers;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerById;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.CreatePlayer;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.UpdatePlayer;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -9,93 +12,41 @@ namespace scouting_service.src.Scoutings.API.Controllers;
 [Route("api/[controller]")]
 public class PlayersController : BaseController
 {
-    private readonly IPlayerRepository _playerRepository;
+    private readonly IMediator _mediator;
 
-    public PlayersController(IPlayerRepository playerRepository)
+    public PlayersController(IMediator mediator)
     {
-        _playerRepository = playerRepository;
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<Player>> GetAll()
+    public async Task<ActionResult> GetAll()
     {
-        try
-        {
-            var players = _playerRepository.GetAll();
-            var result = Result<IEnumerable<Player>>.Success(players);
-            return CreateResponse(result);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error retrieving players: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
+        var query = new GetAllPlayersQuery();
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
     }
 
     [HttpGet("{id}")]
-    public ActionResult<Player> GetById(int id)
+    public async Task<ActionResult> GetById(int id)
     {
-        try
-        {
-            var player = _playerRepository.GetById(id);
-            if (player == null)
-            {
-                var result = Result.Failure($"Player with ID {id} not found").WithCode((int)ResultCode.NotFound);
-                return CreateResponse(result);
-            }
-
-            var successResult = Result<Player>.Success(player);
-            return CreateResponse(successResult);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error retrieving player: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
+        var query = new GetPlayerByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
     }
 
     [HttpPost]
-    public ActionResult<Player> Create([FromBody] CreatePlayerRequest request)
+    public async Task<ActionResult> Create([FromBody] CreatePlayerCommand command)
     {
-        try
-        {
-            if (request == null)
-            {
-                var result = Result.Failure("Player data is required").WithCode((int)ResultCode.BadRequest);
-                return CreateResponse(result);
-            }
-
-            var player = new Player
-            {
-                Name = request.Name,
-                Surname = request.Surname,
-                Birthday = request.Birthday,
-                Weight = request.Weight,
-                Height = request.Height,
-                IdNationality = request.IdNationality,
-                IdPosition = request.IdPosition
-            };
-
-            var createdPlayer = _playerRepository.Create(player);
-            var successResult = Result<Player>.Success(createdPlayer);
-            return CreateResponse(successResult);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error creating player: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
     }
-}
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, [FromBody] UpdatePlayerCommand command)
+    {
+        command.IdPlayer = id;
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
 
-// Request DTOs
-public class CreatePlayerRequest
-{
-    public string? Name { get; set; }
-    public string? Surname { get; set; }
-    public DateOnly? Birthday { get; set; }
-    public int? Weight { get; set; }
-    public int? Height { get; set; }
-    public int IdNationality { get; set; }
-    public int IdPosition { get; set; }
 }

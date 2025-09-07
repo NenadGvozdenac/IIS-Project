@@ -19,7 +19,7 @@ public partial class User
 
     public string Type { get; set; } = null!;
 
-    public virtual Metric? Metric { get; set; }
+    public virtual ICollection<Metric> Metrics { get; set; } = new List<Metric>();
 
     public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
 }

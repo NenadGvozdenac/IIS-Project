@@ -5,7 +5,7 @@ namespace scouting_service.src.Scoutings.Core.Domain.Entities;
 
 public partial class SessionMetric
 {
-    public string? Value { get; set; }
+    public string Value { get; set; } = null!;
 
     public int IdSession { get; set; }
 

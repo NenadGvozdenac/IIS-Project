@@ -23,6 +23,12 @@ public class SessionMetricRepository : ISessionMetricRepository
         return _context.SessionMetrics.Find(id);
     }
 
+    public SessionMetric? GetBySessionAndMetric(int sessionId, int metricId)
+    {
+        return _context.SessionMetrics
+            .FirstOrDefault(sm => sm.IdSession == sessionId && sm.IdMetrics == metricId);
+    }
+
     public SessionMetric Create(SessionMetric sessionMetric)
     {
         _context.SessionMetrics.Add(sessionMetric);

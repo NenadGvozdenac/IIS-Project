@@ -7,7 +7,7 @@ public partial class MetricType
 {
     public int IdType { get; set; }
 
-    public string? Type { get; set; }
+    public string Type { get; set; } = null!;
 
     public virtual ICollection<Metric> Metrics { get; set; } = new List<Metric>();
 }

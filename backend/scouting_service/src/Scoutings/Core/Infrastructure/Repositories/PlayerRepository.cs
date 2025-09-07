@@ -1,6 +1,7 @@
 using scouting_service.src.Scoutings.Core.Application.Interfaces;
 using scouting_service.src.Scoutings.Core.Domain.Entities;
 using scouting_service.src.Scoutings.Core.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace scouting_service.src.Scoutings.Core.Infrastructure.Repositories;
 
@@ -15,12 +16,19 @@ public class PlayerRepository : IPlayerRepository
 
     public IEnumerable<Player> GetAll()
     {
-        return _context.Players.ToList();
+        return _context.Players
+                        .Include(p => p.PhysicalMetrics)
+                        .Include(p => p.IdNationalityNavigation)
+                        .Include(p => p.IdPositionNavigation)
+                        .ToList();
     }
 
     public Player? GetById(int id)
     {
-        return _context.Players.Find(id);
+        return _context.Players.Include(p => p.PhysicalMetrics)
+                                .Include(p => p.IdNationalityNavigation)
+                                .Include(p => p.IdPositionNavigation)
+                                .FirstOrDefault(p => p.IdPlayer == id);
     }
 
     public Player Create(Player player)

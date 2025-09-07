@@ -7,7 +7,7 @@ public partial class SessionType
 {
     public int IdType { get; set; }
 
-    public string? Type { get; set; }
+    public string Type { get; set; } = null!;
 
     public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
 }

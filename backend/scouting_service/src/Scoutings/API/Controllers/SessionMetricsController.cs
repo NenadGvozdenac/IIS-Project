@@ -1,7 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
-using scouting_service.src.Scoutings.Core.Application.Interfaces;
-using scouting_service.src.Scoutings.Core.Domain.Entities;
+using scouting_service.src.Scoutings.Core.Application.Features.SessionMetrics.GetAllSessionMetrics;
+using scouting_service.src.Scoutings.Core.Application.Features.SessionMetrics.CreateSessionMetric;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -9,85 +10,25 @@ namespace scouting_service.src.Scoutings.API.Controllers;
 [Route("api/[controller]")]
 public class SessionMetricsController : BaseController
 {
-    private readonly ISessionMetricRepository _sessionMetricRepository;
+    private readonly IMediator _mediator;
 
-    public SessionMetricsController(ISessionMetricRepository sessionMetricRepository)
+    public SessionMetricsController(IMediator mediator)
     {
-        _sessionMetricRepository = sessionMetricRepository;
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<SessionMetric>> GetAll()
+    public async Task<ActionResult> GetAll()
     {
-        try
-        {
-            var sessionMetrics = _sessionMetricRepository.GetAll();
-            var result = Result<IEnumerable<SessionMetric>>.Success(sessionMetrics);
-            return CreateResponse(result);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error retrieving session metrics: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
-    }
-
-    [HttpGet("{id}")]
-    public ActionResult<SessionMetric> GetById(int id)
-    {
-        try
-        {
-            var sessionMetric = _sessionMetricRepository.GetById(id);
-            if (sessionMetric == null)
-            {
-                var result = Result.Failure($"Session metric with ID {id} not found").WithCode((int)ResultCode.NotFound);
-                return CreateResponse(result);
-            }
-
-            var successResult = Result<SessionMetric>.Success(sessionMetric);
-            return CreateResponse(successResult);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error retrieving session metric: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
+        var query = new GetAllSessionMetricsQuery();
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
     }
 
     [HttpPost]
-    public ActionResult<SessionMetric> Create([FromBody] CreateSessionMetricRequest request)
+    public async Task<ActionResult> Create([FromBody] CreateSessionMetricCommand command)
     {
-        try
-        {
-            if (request == null)
-            {
-                var result = Result.Failure("Session metric data is required").WithCode((int)ResultCode.BadRequest);
-                return CreateResponse(result);
-            }
-
-            var sessionMetric = new SessionMetric
-            {
-                Value = request.Value,
-                IdSession = request.IdSession,
-                IdMetrics = request.IdMetrics
-            };
-
-            var createdSessionMetric = _sessionMetricRepository.Create(sessionMetric);
-            var successResult = Result<SessionMetric>.Success(createdSessionMetric);
-            return CreateResponse(successResult);
-        }
-        catch (Exception ex)
-        {
-            var result = Result.Failure($"Error creating session metric: {ex.Message}").WithCode((int)ResultCode.BadRequest);
-            return CreateResponse(result);
-        }
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
     }
-}
-
-// Request DTOs
-public class CreateSessionMetricRequest
-{
-    public string? Value { get; set; }
-    public int IdSession { get; set; }
-    public int IdMetrics { get; set; }
 }

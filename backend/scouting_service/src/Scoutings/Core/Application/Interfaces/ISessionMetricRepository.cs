@@ -5,6 +5,7 @@ namespace scouting_service.src.Scoutings.Core.Application.Interfaces;
 public interface ISessionMetricRepository
 {
     SessionMetric? GetById(int id);
+    SessionMetric? GetBySessionAndMetric(int sessionId, int metricId);
     SessionMetric Create(SessionMetric sessionMetric);
     SessionMetric Update(SessionMetric sessionMetric);
     void Delete(int id);

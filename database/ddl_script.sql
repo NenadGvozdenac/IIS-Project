@@ -245,23 +245,23 @@ CREATE TABLE match_tracking (
 
 CREATE TABLE metric_type (
     id_type SERIAL NOT NULL,
-    type    VARCHAR(255),
+    type    VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_type)
 );
 
 CREATE TABLE metrics (
     id_metrics     SERIAL NOT NULL,
-    name           VARCHAR(255),
-    is_permanent   INTEGER,
-    metric_weight  INTEGER,
-    id_user        INTEGER NOT NULL UNIQUE,
+    name           VARCHAR(255) NOT NULL,
+    is_permanent   INTEGER NOT NULL,
+    metric_weight  INTEGER NOT NULL,
+    id_user        INTEGER NOT NULL,
     id_metric_type INTEGER NOT NULL,
     PRIMARY KEY (id_metrics)
 );
 
 CREATE TABLE nationality (
     id_nationality SERIAL NOT NULL,
-    state          VARCHAR(255),
+    state          VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_nationality)
 );
 
@@ -317,7 +317,7 @@ CREATE TABLE player (
 
 CREATE TABLE position (
     id_position SERIAL NOT NULL,
-    name        VARCHAR(20),
+    name        VARCHAR(20) NOT NULL,
     PRIMARY KEY (id_position)
 );
 
@@ -385,18 +385,18 @@ CREATE TABLE sent_request (
 
 CREATE TABLE session (
     id_session        SERIAL NOT NULL,
-    start_time        DATE,
+    start_time        DATE NOT NULL,
     end_time          DATE,
     id_session_status INTEGER NOT NULL,
     id_session_type   INTEGER NOT NULL,
     id_user           INTEGER NOT NULL,
     id_player         INTEGER NOT NULL,
-    note              VARCHAR(255),
+    note              VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_session)
 );
 
 CREATE TABLE session_metrics (
-    value      VARCHAR(255),
+    value      VARCHAR(255) NOT NULL,
     id_session INTEGER NOT NULL,
     id_metrics INTEGER NOT NULL,
     PRIMARY KEY (id_metrics, id_session)
@@ -404,13 +404,13 @@ CREATE TABLE session_metrics (
 
 CREATE TABLE session_status (
     id_status SERIAL NOT NULL,
-    status    VARCHAR(255),
+    status    VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_status)
 );
 
 CREATE TABLE session_type (
     id_type SERIAL NOT NULL,
-    type    VARCHAR(255),
+    type    VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_type)
 );
 

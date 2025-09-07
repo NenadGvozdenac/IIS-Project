@@ -55,8 +55,6 @@ public partial class ScoutingDbContext : DbContext
 
             entity.ToTable("metrics");
 
-            entity.HasIndex(e => e.IdUser, "metrics_id_user_key").IsUnique();
-
             entity.Property(e => e.IdMetrics).HasColumnName("id_metrics");
             entity.Property(e => e.IdMetricType).HasColumnName("id_metric_type");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
@@ -71,8 +69,8 @@ public partial class ScoutingDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_metrics_metric_type");
 
-            entity.HasOne(d => d.IdUserNavigation).WithOne(p => p.Metric)
-                .HasForeignKey<Metric>(d => d.IdUser)
+            entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.Metrics)
+                .HasForeignKey(d => d.IdUser)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_metrics_user");
         });
