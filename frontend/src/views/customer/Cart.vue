@@ -253,7 +253,7 @@ const formatPrice = (price) => {
 };
 
 const goToDashboard = () => {
-  router.push('/customer-dashboard');
+  router.push('/customer/dashboard');
 };
 
 const removeFromCart = async (purchaseOfferId) => {

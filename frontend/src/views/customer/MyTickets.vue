@@ -4,7 +4,7 @@
       <div class="page-header">
         <h1 class="page-title">My Tickets</h1>
         <div class="breadcrumb">
-          <router-link to="/customer-dashboard" class="breadcrumb-link">Dashboard</router-link>
+          <router-link to="/customer/dashboard" class="breadcrumb-link">Dashboard</router-link>
           <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-current">My Tickets</span>
         </div>
@@ -78,7 +78,7 @@
           <div class="empty-icon">🎫</div>
           <h3>No Tickets Found</h3>
           <p>You haven't purchased any tickets yet.</p>
-          <router-link to="/customer-dashboard" class="btn btn-primary">
+          <router-link to="/customer/dashboard" class="btn btn-primary">
             Browse Matches
           </router-link>
         </div>

@@ -22,6 +22,8 @@ import MatchDetails from '../views/teammanager/MatchDetails.vue'
 import MatchDetailsClubManager from '../views/clubmanager/MatchDetailsClubManager.vue'
 import Players from '../views/teammanager/Players.vue'
 import TravelInfos from '../views/clubmanager/TravelInfos.vue'
+import AdminDashboard from '../views/administrator/Dashboard.vue'
+import ClubOwnerDashboard from '../views/clubowner/Dashboard.vue'
 
 const routes = [
   {
@@ -46,7 +48,19 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/customer-dashboard',
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/club-owner/dashboard',
+    name: 'ClubOwnerDashboard',
+    component: ClubOwnerDashboard,
+    meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/customer/dashboard',
     name: 'CustomerDashboard',
     component: CustomerDashboard,
     meta: { requiresAuth: true, requiresRole: 'customer' }
