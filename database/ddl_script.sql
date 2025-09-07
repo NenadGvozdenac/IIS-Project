@@ -290,15 +290,15 @@ CREATE TABLE personal_event (
 
 CREATE TABLE physical_metrics (
     id_physical_metrics SERIAL NOT NULL,
-    vertical_jump       INTEGER,
-    fat_percentage      INTEGER,
-    bench_press_weight  INTEGER,
-    squat_weight        INTEGER,
-    sprint_speed        INTEGER,
-    weight              INTEGER,
-    height              INTEGER,
-    wingspan            INTEGER,
-    date_of_measurement DATE,
+    vertical_jump       INTEGER NOT NULL,
+    fat_percentage      INTEGER NOT NULL,
+    bench_press_weight  INTEGER NOT NULL,
+    squat_weight        INTEGER NOT NULL,
+    sprint_speed        NUMERIC NOT NULL,
+    weight              INTEGER NOT NULL,
+    height              INTEGER NOT NULL,
+    wingspan            INTEGER NOT NULL,
+    date_of_measurement DATE NOT NULL,
     id_player           INTEGER NOT NULL,
     PRIMARY KEY (id_physical_metrics)
 );

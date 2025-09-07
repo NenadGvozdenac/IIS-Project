@@ -47,8 +47,7 @@
 
         <!-- Players Table -->
         <div class="table-container">
-          <div v-if="loading" class="loading">Loading players...</div>
-          <table v-else class="players-table">
+          <table class="players-table">
             <thead>
               <tr>
                 <th>First Name</th>
@@ -57,7 +56,8 @@
                 <th>Position</th>
                 <th>Nationality</th>
                 <th>Height (cm)</th>
-                <th>Weight (kg)</th>
+                <th>Wingspan (cm)</th>
+                <th>Vertical Jump (cm)</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -69,7 +69,8 @@
                 <td>{{ player.position }}</td>
                 <td>{{ player.nationality }}</td>
                 <td>{{ player.height }}</td>
-                <td>{{ player.weight }}</td>
+                <td>{{ player.wingspan }}</td>
+                <td>{{ player.verticalJump }}</td>
                 <td>
                   <button @click="viewPlayer(player)" class="btn btn-sm btn-primary">View</button>
                   <button @click="editPlayer(player)" class="btn btn-sm btn-secondary">Edit</button>
@@ -92,18 +93,13 @@ const router = useRouter()
 
 const players = ref([])
 const loading = ref(true)
-
-// Sample data for demonstration - replace with API call
-const samplePlayers = [
-  {
-    id: 1,
-    firstName: 'LeBron',
     lastName: 'James',
     dateOfBirth: '1984-12-30',
     position: 'Small Forward',
     nationality: 'USA',
     height: 206,
-    weight: 113
+    wingspan: 214,
+    verticalJump: 97
   },
   {
     id: 2,
@@ -113,7 +109,8 @@ const samplePlayers = [
     position: 'Point Guard',
     nationality: 'USA',
     height: 191,
-    weight: 84
+    wingspan: 193,
+    verticalJump: 91
   },
   {
     id: 3,
@@ -123,9 +120,87 @@ const samplePlayers = [
     position: 'Power Forward',
     nationality: 'Greece',
     height: 211,
-    weight: 110
+    wingspan: 224,
+    verticalJump: 97
+  },
+  {
+    id: 4,
+    firstName: 'Kevin',
+    lastName: 'Durant',
+    dateOfBirth: '1988-09-29',
+    position: 'Small Forward',
+    nationality: 'USA',
+    height: 208,
+    wingspan: 228,
+    verticalJump: 86
+  },
+  {
+    id: 5,
+    firstName: 'Luka',
+    lastName: 'Dončić',
+    dateOfBirth: '1999-02-28',
+    position: 'Point Guard',
+    nationality: 'Slovenia',
+    height: 201,
+    wingspan: 218,
+    verticalJump: 71
+  },
+  {
+    id: 6,
+    firstName: 'Joel',
+    lastName: 'Embiid',
+    dateOfBirth: '1994-03-16',
+    position: 'Center',
+    nationality: 'Cameroon',
+    height: 213,
+    wingspan: 226,
+    verticalJump: 81
+  },
+  {
+    id: 7,
+    firstName: 'Jayson',
+    lastName: 'Tatum',
+    dateOfBirth: '1998-03-03',
+    position: 'Small Forward',
+    nationality: 'USA',
+    height: 203,
+    wingspan: 209,
+    verticalJump: 94
+  },
+  {
+    id: 8,
+    firstName: 'Nikola',
+    lastName: 'Jokić',
+    dateOfBirth: '1995-02-19',
+    position: 'Center',
+    nationality: 'Serbia',
+    height: 211,
+    wingspan: 215,
+    verticalJump: 61
+  },
+  {
+    id: 9,
+    firstName: 'Damian',
+    lastName: 'Lillard',
+    dateOfBirth: '1990-07-15',
+    position: 'Point Guard',
+    nationality: 'USA',
+    height: 188,
+    wingspan: 201,
+    verticalJump: 94
+  },
+  {
+    id: 10,
+    firstName: 'Anthony',
+    lastName: 'Davis',
+    dateOfBirth: '1993-03-11',
+    position: 'Power Forward',
+    nationality: 'USA',
+    height: 208,
+    wingspan: 228,
+    verticalJump: 89
   }
-]
+])
 
 const filters = ref({
   name: '',
@@ -133,44 +208,24 @@ const filters = ref({
   nationality: ''
 })
 
-onMounted(async () => {
-  await loadPlayers()
-})
-
-const loadPlayers = async () => {
-  try {
-    loading.value = true
-    // Try to load from API, fallback to sample data
-    try {
-      const apiPlayers = await getAllPlayers()
-      players.value = Array.isArray(apiPlayers) ? apiPlayers : []
-    } catch (error) {
-      console.warn('Using sample data:', error)
-      players.value = samplePlayers
-    }
-  } catch (error) {
-    console.error('Error loading players:', error)
-    players.value = samplePlayers
-  } finally {
-    loading.value = false
-  }
-}
-
 const filteredPlayers = computed(() => {
-  if (!Array.isArray(players.value)) {
-    return []
-  }
-  
   return players.value.filter(player => {
     const nameMatch = !filters.value.name || 
-      (player.firstName + ' ' + player.lastName).toLowerCase().includes(filters.value.name.toLowerCase())
-    const positionMatch = !filters.value.position || player.position === filters.value.position
+      `${player.firstName} ${player.lastName}`.toLowerCase().includes(filters.value.name.toLowerCase())
+    
+    const positionMatch = !filters.value.position || 
+      player.position === filters.value.position
+    
     const nationalityMatch = !filters.value.nationality || 
-      (player.nationality && player.nationality.toLowerCase().includes(filters.value.nationality.toLowerCase()))
+      player.nationality.toLowerCase().includes(filters.value.nationality.toLowerCase())
     
     return nameMatch && positionMatch && nationalityMatch
   })
 })
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString()
+}
 
 const clearFilters = () => {
   filters.value = {
@@ -180,10 +235,6 @@ const clearFilters = () => {
   }
 }
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString()
-}
-
 const viewPlayer = (player) => {
   router.push(`/scout/player/${player.id}`)
 }
@@ -191,6 +242,10 @@ const viewPlayer = (player) => {
 const editPlayer = (player) => {
   router.push(`/scout/player/${player.id}/edit`)
 }
+
+onMounted(() => {
+  // Any initialization logic
+})
 </script>
 
 <style scoped>
@@ -200,6 +255,7 @@ const editPlayer = (player) => {
 }
 
 .main-content {
+  margin-left: 0;
   padding: var(--spacing-xl);
 }
 
@@ -221,14 +277,6 @@ const editPlayer = (player) => {
 .page-header p {
   color: var(--color-text-light);
   font-size: 1.125rem;
-}
-
-.loading {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--color-text-light);
-  background: white;
-  border-radius: var(--border-radius);
 }
 
 .filters-section {

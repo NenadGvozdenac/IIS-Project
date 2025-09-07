@@ -28,6 +28,8 @@ import Metrics from '../views/scout/Metrics.vue'
 import Sessions from '../views/scout/Sessions.vue'
 import PlayerAnalysis from '../views/scout/PlayerAnalysis.vue'
 import PlayerRecommendations from '../views/scout/PlayerRecommendations.vue'
+import PlayerProfile from '../views/scout/PlayerProfile.vue'
+import EditPlayer from '../views/scout/EditPlayer.vue'
 
 const routes = [
   {
@@ -193,6 +195,30 @@ const routes = [
     path: '/scout/recommendations',
     name: 'PlayerRecommendations',
     component: PlayerRecommendations,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/player/:id',
+    name: 'PlayerProfile',
+    component: PlayerProfile,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/player/:id/edit',
+    name: 'EditPlayer',
+    component: EditPlayer,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/player/:id',
+    name: 'PlayerProfile',
+    component: PlayerProfile,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/player/:id/edit',
+    name: 'EditPlayer',
+    component: EditPlayer,
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
   }
 ]

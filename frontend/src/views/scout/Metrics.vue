@@ -1,6 +1,5 @@
 <template>
   <div class="scout-page">
-    <ScoutNavbar />
     <div class="main-content">
       <div class="container">
         <div class="page-header">
@@ -16,7 +15,6 @@
 </template>
 
 <script setup>
-import ScoutNavbar from '../../components/scout/ScoutNavbar.vue'
 </script>
 
 <style scoped>

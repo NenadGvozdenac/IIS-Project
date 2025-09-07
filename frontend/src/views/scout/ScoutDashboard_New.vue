@@ -143,7 +143,7 @@ const loadPlayers = async () => {
     // Try to load from API, fallback to sample data
     try {
       const apiPlayers = await getAllPlayers()
-      players.value = Array.isArray(apiPlayers) ? apiPlayers : []
+      players.value = apiPlayers
     } catch (error) {
       console.warn('Using sample data:', error)
       players.value = samplePlayers
@@ -157,16 +157,12 @@ const loadPlayers = async () => {
 }
 
 const filteredPlayers = computed(() => {
-  if (!Array.isArray(players.value)) {
-    return []
-  }
-  
   return players.value.filter(player => {
     const nameMatch = !filters.value.name || 
       (player.firstName + ' ' + player.lastName).toLowerCase().includes(filters.value.name.toLowerCase())
     const positionMatch = !filters.value.position || player.position === filters.value.position
     const nationalityMatch = !filters.value.nationality || 
-      (player.nationality && player.nationality.toLowerCase().includes(filters.value.nationality.toLowerCase()))
+      player.nationality.toLowerCase().includes(filters.value.nationality.toLowerCase())
     
     return nameMatch && positionMatch && nationalityMatch
   })
