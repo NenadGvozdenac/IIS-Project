@@ -121,7 +121,7 @@ onMounted(() => {
     return;
   }
   else if(userInfo && userInfo.userRole === 'club manager') {
-    router.replace('/club-manager/dashboard');
+    router.replace('/club-manager/matches');
     return;
   }
   else if(userInfo && userInfo.userRole === 'team manager') {
