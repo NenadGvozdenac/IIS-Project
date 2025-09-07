@@ -1570,3 +1570,108 @@ $$ LANGUAGE plpgsql;
 -- - Obična utakmica, nizak price_factor (4.0), time_factor (0.4) 
 -- - Min: 1000, Max: 4000 dinara
 -- SELECT calculate_ticket_price(3, 1);
+
+-- Insert sample data for session types
+INSERT INTO session_type (type) VALUES 
+    ('Training'),
+    ('Match Analysis'),
+    ('Physical Test'),
+    ('Individual Session'),
+    ('Team Practice');
+
+-- Insert sample data for session statuses
+INSERT INTO session_status (status) VALUES 
+    ('Scheduled'),
+    ('In Progress'),
+    ('Completed'),
+    ('Cancelled'),
+    ('Postponed');
+
+-- Insert sample data for metric types
+INSERT INTO metric_type (type) VALUES 
+    ('Physical'),
+    ('Technical'),
+    ('Tactical'),
+    ('Mental');
+
+-- Insert sample metrics
+-- Physical metrics (is_permanent = 1 for permanent metrics)
+INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
+    ('Sprint Speed', 1, 10, 5, 1),  -- Marija Jankovic (scouting manager)
+    ('Vertical Jump', 1, 8, 5, 1),
+    ('Endurance', 1, 9, 5, 1),
+    ('Agility', 1, 7, 5, 1),
+    ('Ball Handling', 1, 9, 5, 2),  -- Technical
+    ('Shooting Accuracy', 1, 10, 5, 2),
+    ('Passing Accuracy', 1, 8, 5, 2),
+    ('Defensive Positioning', 1, 7, 5, 3),  -- Tactical
+    ('Court Vision', 1, 9, 5, 3),
+    ('Decision Making', 1, 8, 5, 3),
+    ('Concentration', 1, 6, 5, 4),  -- Mental
+    ('Motivation', 1, 7, 5, 4);
+
+-- Insert seasonal metrics (is_permanent = 0)
+INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
+    ('Match Performance', 0, 10, 5, 2),
+    ('Team Chemistry', 0, 8, 5, 3),
+    ('Injury Recovery', 0, 7, 5, 1),
+    ('Season Form', 0, 9, 5, 4);
+
+-- Insert sample sessions for some players
+-- Sessions for Nikola Jovic (id_player = 1)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player, note) VALUES 
+    ('2024-12-01', '2024-12-01', 3, 1, 5, 1, 'Excellent training session. Showed great improvement in ball handling.'),
+    ('2024-12-05', '2024-12-05', 3, 3, 5, 1, 'Physical fitness test completed. Results above average.'),
+    ('2024-12-10', '2024-12-10', 3, 4, 5, 1, 'Individual shooting practice. Worked on 3-point consistency.');
+
+-- Sessions for Aleksa Avramovic (id_player = 2)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player, note) VALUES 
+    ('2024-12-02', '2024-12-02', 3, 1, 5, 2, 'Good defensive drills. Needs work on offensive positioning.'),
+    ('2024-12-08', NULL, 2, 2, 5, 2, 'Match analysis in progress. Reviewing game footage from last match.');
+
+-- Sessions for Uros Trifunovic (id_player = 3)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player, note) VALUES 
+    ('2024-12-03', '2024-12-03', 3, 5, 5, 3, 'Team practice session. Great teamwork and communication.'),
+    ('2024-12-12', NULL, 1, 1, 5, 3, 'Scheduled training for tomorrow.');
+
+-- Sessions for Balsa Koprivica (id_player = 4)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player, note) VALUES 
+    ('2024-12-04', '2024-12-04', 3, 3, 5, 4, 'Physical testing complete. Excellent results in all categories.'),
+    ('2024-12-15', NULL, 1, 4, 5, 4, 'Individual session scheduled to work on post moves.');
+
+-- Insert sample session metrics for completed sessions
+-- Session 1 (Nikola Jovic training)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('8.5', 1, 5),   -- Ball Handling: 8.5/10
+    ('7.2', 1, 6),   -- Shooting Accuracy: 7.2/10
+    ('9.0', 1, 11);  -- Concentration: 9.0/10
+
+-- Session 2 (Nikola Jovic physical test)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('4.8', 2, 1),   -- Sprint Speed: 4.8 seconds
+    ('85', 2, 2),    -- Vertical Jump: 85 cm
+    ('9.5', 2, 3);   -- Endurance: 9.5/10
+
+-- Session 3 (Nikola Jovic individual shooting)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('8.8', 3, 6),   -- Shooting Accuracy: 8.8/10
+    ('85%', 3, 13);  -- Match Performance: 85%
+
+-- Session 4 (Aleksa Avramovic training)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('8.0', 4, 8),   -- Defensive Positioning: 8.0/10
+    ('7.5', 4, 9),   -- Court Vision: 7.5/10
+    ('6.8', 4, 7);   -- Passing Accuracy: 6.8/10
+
+-- Session 6 (Uros Trifunovic team practice)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('9.2', 6, 14),  -- Team Chemistry: 9.2/10
+    ('8.5', 6, 9),   -- Court Vision: 8.5/10
+    ('8.0', 6, 10);  -- Decision Making: 8.0/10
+
+-- Session 7 (Balsa Koprivica physical test)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+    ('5.1', 7, 1),   -- Sprint Speed: 5.1 seconds
+    ('92', 7, 2),    -- Vertical Jump: 92 cm
+    ('9.8', 7, 3),   -- Endurance: 9.8/10
+    ('8.5', 7, 4);   -- Agility: 8.5/10

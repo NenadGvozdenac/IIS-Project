@@ -131,8 +131,11 @@ export const getAllPlayers = async () => {
     // Map backend field names to frontend field names for each player
     return data.map(player => ({
       id: player.idPlayer,
+      idPlayer: player.idPlayer, // Keep original for compatibility
       firstName: player.name,
       lastName: player.surname,
+      name: player.name, // Keep original for compatibility
+      surname: player.surname, // Keep original for compatibility
       dateOfBirth: player.birthday,
       weight: player.weight,
       height: player.height,

@@ -26,6 +26,7 @@ import ScoutDashboard from '../views/scout/ScoutDashboard.vue'
 import CreatePlayer from '../views/scout/CreatePlayer.vue'
 import Metrics from '../views/scout/Metrics.vue'
 import Sessions from '../views/scout/Sessions.vue'
+import SessionEdit from '../views/scout/SessionEdit.vue'
 import PlayerAnalysis from '../views/scout/PlayerAnalysis.vue'
 import PlayerRecommendations from '../views/scout/PlayerRecommendations.vue'
 import PlayerProfile from '../views/scout/PlayerProfile.vue'
@@ -183,6 +184,12 @@ const routes = [
     path: '/scout/sessions',
     name: 'Sessions',
     component: Sessions,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/sessions/:id/edit',
+    name: 'SessionEdit',
+    component: SessionEdit,
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
   },
   {

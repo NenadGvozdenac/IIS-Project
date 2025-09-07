@@ -53,31 +53,43 @@
             <!-- Right Column - Physical Metrics -->
             <div class="info-column">
               <h3>Physical Metrics</h3>
-              <div v-if="physicalMetrics.length > 0">
-                <div v-for="metric in physicalMetrics" :key="metric.id" class="metrics-entry">
-                  <div class="metrics-date">
-                    <small>Recorded: {{ formatDate(metric.createdAt) }}</small>
-                  </div>
-                  <div class="info-group" v-if="metric.wingspan">
-                    <label>Wingspan</label>
-                    <span>{{ metric.wingspan }} cm</span>
-                  </div>
-                  <div class="info-group" v-if="metric.verticalJump">
-                    <label>Vertical Jump</label>
-                    <span>{{ metric.verticalJump }} cm</span>
-                  </div>
-                  <div class="info-group" v-if="metric.speed">
-                    <label>Speed</label>
-                    <span>{{ metric.speed }} m/s</span>
-                  </div>
-                  <div class="info-group" v-if="metric.agility">
-                    <label>Agility Score</label>
-                    <span>{{ metric.agility }}/10</span>
-                  </div>
+              <div v-if="mostRecentMetrics" class="metrics-entry">
+                <div class="metrics-date">
+                  <small>Last updated: {{ formatDate(mostRecentMetrics.dateOfMeasurement) }}</small>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.wingspan && mostRecentMetrics.wingspan > 0">
+                  <label>Wingspan</label>
+                  <span>{{ mostRecentMetrics.wingspan }} cm</span>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.verticalJump && mostRecentMetrics.verticalJump > 0">
+                  <label>Vertical Jump</label>
+                  <span>{{ mostRecentMetrics.verticalJump }} cm</span>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.sprintSpeed && mostRecentMetrics.sprintSpeed > 0">
+                  <label>Sprint Speed</label>
+                  <span>{{ mostRecentMetrics.sprintSpeed }} s</span>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.fatPercentage && mostRecentMetrics.fatPercentage > 0">
+                  <label>Body Fat</label>
+                  <span>{{ mostRecentMetrics.fatPercentage }}%</span>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.benchPressWeight && mostRecentMetrics.benchPressWeight > 0">
+                  <label>Bench Press</label>
+                  <span>{{ mostRecentMetrics.benchPressWeight }} kg</span>
+                </div>
+                <div class="info-group" v-if="mostRecentMetrics.squatWeight && mostRecentMetrics.squatWeight > 0">
+                  <label>Squat Weight</label>
+                  <span>{{ mostRecentMetrics.squatWeight }} kg</span>
+                </div>
+                <!-- Show message if no meaningful metrics are available -->
+                <div v-if="!hasValidMetrics(mostRecentMetrics)" class="no-valid-metrics">
+                  <p>No detailed physical measurements recorded yet.</p>
+                  <p><small>Only basic measurements (height/weight) are available.</small></p>
                 </div>
               </div>
               <div v-else class="no-metrics">
                 <p>No physical metrics recorded yet.</p>
+                <p><small>Basic measurements (height/weight) are shown in the left column.</small></p>
               </div>
             </div>
           </div>
@@ -97,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlayerById } from '../../services/player_service.js'
 import { getPhysicalMetricsByPlayerId } from '../../services/physical_metrics_service.js'
@@ -112,6 +124,26 @@ const error = ref(null)
 
 const playerId = route.params.id
 
+// Computed property to get the most recent metrics
+const mostRecentMetrics = computed(() => {
+  console.log('Computing most recent metrics from:', physicalMetrics.value)
+  
+  if (!physicalMetrics.value || physicalMetrics.value.length === 0) {
+    console.log('No physical metrics available')
+    return null
+  }
+  
+  // Sort by date of measurement and get the most recent
+  const sorted = [...physicalMetrics.value].sort((a, b) => {
+    const dateA = new Date(a.dateOfMeasurement || a.createdAt)
+    const dateB = new Date(b.dateOfMeasurement || b.createdAt)
+    return dateB - dateA // Most recent first
+  })
+  
+  console.log('Most recent metrics:', sorted[0])
+  return sorted[0]
+})
+
 onMounted(async () => {
   await loadPlayerData()
 })
@@ -124,11 +156,14 @@ const loadPlayerData = async () => {
     // Load player basic info
     const playerData = await getPlayerById(playerId)
     player.value = playerData
+    console.log('Loaded player data:', playerData)
     
     // Load physical metrics
     try {
       const metricsData = await getPhysicalMetricsByPlayerId(playerId)
-      physicalMetrics.value = Array.isArray(metricsData) ? metricsData : [metricsData]
+      console.log('Raw metrics data received:', metricsData)
+      physicalMetrics.value = Array.isArray(metricsData) ? metricsData : (metricsData ? [metricsData] : [])
+      console.log('Processed physical metrics:', physicalMetrics.value)
     } catch (metricsError) {
       console.warn('No physical metrics found:', metricsError)
       physicalMetrics.value = []
@@ -159,6 +194,14 @@ const calculateAge = (dateOfBirth) => {
   }
   
   return age
+}
+
+const hasValidMetrics = (metrics) => {
+  if (!metrics) return false
+  
+  // Check if any meaningful metric (other than basic height/weight) exists and is > 0
+  const validFields = ['wingspan', 'verticalJump', 'sprintSpeed', 'fatPercentage', 'benchPressWeight', 'squatWeight']
+  return validFields.some(field => metrics[field] && metrics[field] > 0)
 }
 
 const editPlayer = () => {
@@ -276,10 +319,16 @@ const goBack = () => {
   font-style: italic;
 }
 
-.no-metrics {
+.no-metrics, .no-valid-metrics {
   text-align: center;
   padding: var(--spacing-xl);
   color: var(--color-text-light);
+}
+
+.no-valid-metrics {
+  background: #f9fafb;
+  border-radius: var(--border-radius);
+  border: 1px dashed var(--color-border);
 }
 
 .actions {
@@ -320,6 +369,12 @@ const goBack = () => {
 
 .btn-secondary:hover {
   background-color: var(--color-secondary-dark);
+}
+
+.btn-small {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  margin-top: var(--spacing-md);
 }
 
 @media (max-width: 768px) {

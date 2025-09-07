@@ -35,21 +35,21 @@ const handleApiResponse = async (response) => {
   return result; // Return as-is if not wrapped in Result<T>
 };
 
-// Field mapping between frontend (camelCase) and backend (PascalCase)
+// Field mapping between frontend (camelCase) and backend (camelCase from JSON)
 const fieldMapping = {
   // Frontend -> Backend
-  id: 'IdPhysicalMetrics',
-  verticalJump: 'VerticalJump', 
-  fatPercentage: 'FatPercentage',
-  benchPressWeight: 'BenchPressWeight',
-  squatWeight: 'SquatWeight',
-  sprintSpeed: 'SprintSpeed',  // This is now decimal in backend
-  weight: 'Weight',
-  height: 'Height',
-  wingspan: 'Wingspan',
-  dateOfMeasurement: 'DateOfMeasurement',
-  playerId: 'IdPlayer',
-  playerName: 'PlayerName'
+  id: 'idPhysicalMetrics',
+  verticalJump: 'verticalJump', 
+  fatPercentage: 'fatPercentage',
+  benchPressWeight: 'benchPressWeight',
+  squatWeight: 'squatWeight',
+  sprintSpeed: 'sprintSpeed',  // This is now decimal in backend
+  weight: 'weight',
+  height: 'height',
+  wingspan: 'wingspan',
+  dateOfMeasurement: 'dateOfMeasurement',
+  playerId: 'idPlayer',  // This is the key fix - backend uses 'idPlayer' not 'IdPlayer'
+  playerName: 'playerName'
 };
 
 // Reverse mapping for response transformation
@@ -68,12 +68,17 @@ function transformToBackend(frontendData) {
 }
 
 function transformFromBackend(backendData) {
-  const frontendData = {};
-  for (const [backKey, frontKey] of Object.entries(reverseFieldMapping)) {
-    if (backendData.hasOwnProperty(backKey)) {
-      frontendData[frontKey] = backendData[backKey];
-    }
-  }
+  console.log('transformFromBackend input:', backendData);
+  
+  // Since the backend JSON response already uses camelCase, we can mostly use it directly
+  // Just need to map idPlayer to playerId for consistency
+  const frontendData = {
+    ...backendData,
+    playerId: backendData.idPlayer,
+    id: backendData.idPhysicalMetrics
+  };
+  
+  console.log('transformFromBackend output:', frontendData);
   return frontendData;
 }
 
@@ -133,13 +138,18 @@ export const getAllPhysicalMetrics = async () => {
     });
 
     const data = await handleApiResponse(response);
+    console.log('Raw data from backend:', data);
     
     // Transform backend response to frontend format
     if (Array.isArray(data)) {
-      return data.map(transformFromBackend);
+      const transformed = data.map(transformFromBackend);
+      console.log('Transformed data:', transformed);
+      return transformed;
     }
     
-    return data ? [transformFromBackend(data)] : [];
+    const transformed = data ? [transformFromBackend(data)] : [];
+    console.log('Transformed single item:', transformed);
+    return transformed;
   } catch (error) {
     console.error('Error fetching physical metrics:', error);
     throw error;
@@ -202,7 +212,16 @@ export const createPhysicalMetrics = async (playerId, metricsData) => {
 export const getPhysicalMetricsByPlayerId = async (playerId) => {
   try {
     const allMetrics = await getAllPhysicalMetrics();
-    return allMetrics.filter(metric => metric.playerId === parseInt(playerId));
+    console.log('All metrics from API:', allMetrics);
+    console.log('Looking for playerId:', parseInt(playerId));
+    
+    const filtered = allMetrics.filter(metric => {
+      console.log('Metric playerId:', metric.playerId, 'Type:', typeof metric.playerId);
+      return metric.playerId === parseInt(playerId);
+    });
+    
+    console.log('Filtered metrics for player:', filtered);
+    return filtered;
   } catch (error) {
     console.error('Error fetching physical metrics for player:', error);
     throw error;

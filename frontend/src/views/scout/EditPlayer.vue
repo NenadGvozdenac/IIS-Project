@@ -47,7 +47,7 @@
                   <select id="nationality" v-model="player.idNationality" required>
                     <option value="">Select Nationality</option>
                     <option v-for="nationality in nationalities" :key="nationality.id" :value="nationality.id">
-                      {{ nationality.state }}
+                      {{ nationality.name }}
                     </option>
                   </select>
                 </div>
@@ -89,20 +89,37 @@
                   <input id="squatWeight" v-model="newMetrics.squatWeight" type="number" min="20" max="400" />
                 </div>
                 
-                <!-- Existing Physical Metrics -->
-                <div v-if="existingMetrics.length > 0" class="existing-metrics">
-                  <h4>Previous Metrics</h4>
-                  <div v-for="metric in existingMetrics" :key="metric.id" class="metric-entry">
-                    <div class="metric-date">
-                      <small>{{ formatDate(metric.dateOfMeasurement) }}</small>
-                    </div>
-                    <div class="metric-values">
-                      <span v-if="metric.wingspan">Wingspan: {{ metric.wingspan }}cm</span>
-                      <span v-if="metric.verticalJump">Jump: {{ metric.verticalJump }}cm</span>
-                      <span v-if="metric.sprintSpeed">Speed: {{ metric.sprintSpeed }}s</span>
-                      <span v-if="metric.fatPercentage">Body Fat: {{ metric.fatPercentage }}%</span>
-                      <span v-if="metric.benchPressWeight">Bench: {{ metric.benchPressWeight }}kg</span>
-                      <span v-if="metric.squatWeight">Squat: {{ metric.squatWeight }}kg</span>
+                <!-- Physical Metrics Section -->
+                <div class="physical-metrics-section">
+                  <h4>Physical Metrics History</h4>
+                  
+                  <!-- No metrics message -->
+                  <div v-if="existingMetrics.length === 0" class="no-metrics-message">
+                    <p>No physical metrics recorded for this player yet.</p>
+                  </div>
+                  
+                  <!-- Existing Physical Metrics -->
+                  <div v-else class="existing-metrics">
+                    <div v-for="metric in existingMetrics" :key="metric.id" class="metric-entry">
+                      <div class="metric-date">
+                        <strong>{{ formatDate(metric.dateOfMeasurement) }}</strong>
+                      </div>
+                      <div class="metric-values">
+                        <div class="metric-row">
+                          <span v-if="metric.height">Height: {{ metric.height }}cm</span>
+                          <span v-if="metric.weight">Weight: {{ metric.weight }}kg</span>
+                          <span v-if="metric.wingspan">Wingspan: {{ metric.wingspan }}cm</span>
+                        </div>
+                        <div class="metric-row">
+                          <span v-if="metric.verticalJump">Vertical Jump: {{ metric.verticalJump }}cm</span>
+                          <span v-if="metric.sprintSpeed">Sprint Speed: {{ metric.sprintSpeed }}s</span>
+                          <span v-if="metric.fatPercentage">Body Fat: {{ metric.fatPercentage }}%</span>
+                        </div>
+                        <div class="metric-row">
+                          <span v-if="metric.benchPressWeight">Bench Press: {{ metric.benchPressWeight }}kg</span>
+                          <span v-if="metric.squatWeight">Squat: {{ metric.squatWeight }}kg</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -357,10 +374,35 @@ const goBack = () => {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-.existing-metrics {
+/* Physical Metrics Section */
+.physical-metrics-section {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
+}
+
+.physical-metrics-section h4 {
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.no-metrics-message {
+  padding: var(--spacing-lg);
+  background: #f8f9fa;
+  border-radius: var(--border-radius);
+  text-align: center;
+  color: var(--color-text-light);
+}
+
+.no-metrics-message p {
+  margin: 0;
+  font-style: italic;
+}
+
+.existing-metrics {
+  margin-top: var(--spacing-md);
 }
 
 .existing-metrics h4 {
@@ -371,34 +413,44 @@ const goBack = () => {
 
 .metric-entry {
   background: var(--color-surface);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   border-radius: var(--border-radius);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--color-border);
 }
 
 .metric-date {
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.metric-date small {
-  color: var(--color-text-light);
-  font-style: italic;
-  font-size: 0.75rem;
+.metric-date strong {
+  color: var(--color-primary);
+  font-size: 0.875rem;
 }
 
 .metric-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.metric-row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
 }
 
-.metric-values span {
+.metric-row span {
   background: white;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius);
   font-size: 0.875rem;
-  color: var(--color-text-light);
+  color: var(--color-text);
   border: 1px solid var(--color-border);
+  min-width: 120px;
+  text-align: center;
 }
 
 .form-actions {
