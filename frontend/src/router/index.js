@@ -22,6 +22,12 @@ import MatchDetails from '../views/teammanager/MatchDetails.vue'
 import MatchDetailsClubManager from '../views/clubmanager/MatchDetailsClubManager.vue'
 import Players from '../views/teammanager/Players.vue'
 import TravelInfos from '../views/clubmanager/TravelInfos.vue'
+import ScoutDashboard from '../views/scout/ScoutDashboard.vue'
+import CreatePlayer from '../views/scout/CreatePlayer.vue'
+import Metrics from '../views/scout/Metrics.vue'
+import Sessions from '../views/scout/Sessions.vue'
+import PlayerAnalysis from '../views/scout/PlayerAnalysis.vue'
+import PlayerRecommendations from '../views/scout/PlayerRecommendations.vue'
 
 const routes = [
   {
@@ -152,6 +158,42 @@ const routes = [
     name: 'ClubManagerTravel',
     component: TravelInfos,
     meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/scout',
+    name: 'ScoutDashboard',
+    component: ScoutDashboard,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/create-player',
+    name: 'CreatePlayer',
+    component: CreatePlayer,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/metrics',
+    name: 'Metrics',
+    component: Metrics,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/sessions',
+    name: 'Sessions',
+    component: Sessions,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/analysis',
+    name: 'PlayerAnalysis',
+    component: PlayerAnalysis,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/scout/recommendations',
+    name: 'PlayerRecommendations',
+    component: PlayerRecommendations,
+    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
   }
 ]
 
@@ -163,11 +205,37 @@ const router = createRouter({
 // Navigation guard to check authentication
 router.beforeEach((to, _, next) => {
   const token = localStorage.getItem('token')
+  const userData = getUserData()
+  
+  // If user is logged in and trying to access root or login/register, redirect to their dashboard
+  if ((to.path === '/' || to.path === '/login' || to.path === '/register') && token && userData) {
+    if (userData.userRole === 'scouting manager') {
+      next('/scout')
+      return
+    } else if (userData.userRole === 'customer') {
+      next('/customer-dashboard')
+      return
+    } else if (userData.userRole === 'team manager') {
+      next('/team-manager/matches')
+      return
+    } else if (userData.userRole === 'club manager') {
+      next('/club-manager/matches')
+      return
+    } else {
+      next('/dashboard')
+      return
+    }
+  }
+
+  // If scout tries to access general dashboard, redirect to scout dashboard
+  if (to.path === '/dashboard' && token && userData && userData.userRole === 'scouting manager') {
+    next('/scout')
+    return
+  }
   
   if (to.meta.requiresAuth && !token) {
     next('/login')
   } else if (to.meta.requiresAdmin) {
-    const userData = getUserData()
     if (!userData || userData.userRole !== 'admin') {
       next('/dashboard') // Redirect to dashboard if not admin
     } else {
@@ -175,12 +243,22 @@ router.beforeEach((to, _, next) => {
     }
   } 
   else if (to.meta.requiresRole) {
-  const userData = getUserData()
-  if (!userData || userData.userRole !== to.meta.requiresRole) {
-    next('/dashboard')
-  } else {
-    next()
-  }
+    if (!userData || userData.userRole !== to.meta.requiresRole) {
+      // Redirect to appropriate dashboard based on user role
+      if (userData && userData.userRole === 'scouting manager') {
+        next('/scout')
+      } else if (userData && userData.userRole === 'customer') {
+        next('/customer-dashboard')
+      } else if (userData && userData.userRole === 'team manager') {
+        next('/team-manager/matches')
+      } else if (userData && userData.userRole === 'club manager') {
+        next('/club-manager/matches')
+      } else {
+        next('/dashboard')
+      }
+    } else {
+      next()
+    }
   }
   else {
     next()

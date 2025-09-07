@@ -121,6 +121,10 @@ onMounted(() => {
     router.replace('/club-manager/matches');
     return;
   }
+  else if(userInfo && userInfo.userRole === 'scouting manager') {
+    router.replace('/scout');
+    return;
+  }
 });
 </script>
 

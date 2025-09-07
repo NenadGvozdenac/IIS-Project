@@ -71,7 +71,42 @@
 </template>
 
 <script setup>
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getUserData } from '../services/auth_service'
 
+const router = useRouter()
+const userInfo = getUserData()
+
+const isAuthenticated = computed(() => {
+  return localStorage.getItem('token') !== null
+})
+
+const userName = computed(() => {
+  return userInfo?.userName || 'User'
+})
+
+onMounted(() => {
+  // If user is authenticated, redirect them to their appropriate dashboard
+  if (isAuthenticated.value && userInfo) {
+    if (userInfo.userRole === 'scouting manager') {
+      router.replace('/scout')
+      return
+    } else if (userInfo.userRole === 'customer') {
+      router.replace('/customer-dashboard')
+      return
+    } else if (userInfo.userRole === 'team manager') {
+      router.replace('/team-manager/matches')
+      return
+    } else if (userInfo.userRole === 'club manager') {
+      router.replace('/club-manager/matches')
+      return
+    } else {
+      router.replace('/dashboard')
+      return
+    }
+  }
+})
 </script>
 
 <style scoped>
