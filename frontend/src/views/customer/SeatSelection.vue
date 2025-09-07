@@ -229,7 +229,7 @@ export default {
                     if (!this.selectedMatch) {
                         this.error = 'Match not found.';
                         setTimeout(() => {
-                            this.$router.push('/customer-dashboard');
+                            this.$router.push('/customer/dashboard');
                         }, 2000);
                     }
                 }
@@ -405,7 +405,7 @@ export default {
         },
 
         goBack() {
-            this.$router.push('/customer-dashboard');
+            this.$router.push('/customer/dashboard');
         },
 
         clearError() {

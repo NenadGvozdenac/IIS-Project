@@ -13,6 +13,14 @@
             class="nav-link admin-link">
             Zones & Seats
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/seasons"
+            class="nav-link club-owner-link">
+            Seasons
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/competitions"
+            class="nav-link club-owner-link">
+            Competitions
+          </router-link>
           <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst"
             class="nav-link analyst-link">
             Data analysis
@@ -166,6 +174,17 @@ const isCustomer = () => {
 .admin-link:hover {
   background-color: #fcd34d;
   color: #78350f;
+}
+
+.club-owner-link {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.club-owner-link:hover {
+  background-color: #e9d5ff;
+  color: #6d28d9;
 }
 
 .analyst-link {

@@ -371,7 +371,7 @@ CREATE TABLE seat (
     "row"     INTEGER NOT NULL,
     "number"  INTEGER NOT NULL,
     type      VARCHAR(255) NOT NULL,
-    direction VARCHAR(255) NOT NULL,
+    direction VARCHAR(255) NOT NULL CHECK (direction in ('east', 'north', 'south', 'west')),
     status    VARCHAR(255) NOT NULL CHECK (status in ('enabled', 'disabled', 'empty')),
     id_zone   INTEGER,
     PRIMARY KEY (id_seat)

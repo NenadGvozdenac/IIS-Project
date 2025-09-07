@@ -25,12 +25,6 @@ public class CreateCompetitionHandler : IRequestHandler<CreateCompetitionCommand
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            if (request.NumberOfMatches <= 0)
-            {
-                return Task.FromResult(Result<CreateCompetitionResponse>.Failure("Number of matches must be greater than 0")
-                    .WithCode((int)ResultCode.BadRequest));
-            }
-
             if (request.EndedAt.HasValue && request.EndedAt < request.StartedAt)
             {
                 return Task.FromResult(Result<CreateCompetitionResponse>.Failure("End date cannot be before start date")

@@ -70,6 +70,10 @@ export function getUserData() {
     return userData;
 }
 
+export function getAuthToken() {
+    return localStorage.getItem('token');
+}
+
 export function logout() {
     localStorage.removeItem('token');
     

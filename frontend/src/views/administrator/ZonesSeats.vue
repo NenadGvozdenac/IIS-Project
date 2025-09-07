@@ -360,16 +360,16 @@
                     <div class="form-group">
                         <label for="seatType">Type</label>
                         <input id="seatType" v-model="seatForm.type" type="text" class="form-control" readonly
-                            value="regular" />
+                            value="standard" />
                     </div>
                     <div class="form-group">
                         <label for="seatDirection">Direction *</label>
                         <select id="seatDirection" v-model="seatForm.direction" class="form-control" required>
                             <option value="">Select direction</option>
-                            <option value="North">North</option>
-                            <option value="South">South</option>
-                            <option value="East">East</option>
-                            <option value="West">West</option>
+                            <option value="north">north</option>
+                            <option value="south">south</option>
+                            <option value="east">east</option>
+                            <option value="west">west</option>
                         </select>
                     </div>
 
@@ -810,7 +810,7 @@ const openCreateSeatModal = () => {
     seatForm.value = {
         row: null,
         number: null,
-        type: 'regular',
+        type: 'standard',
         direction: '',
         status: '',
         idZone: null
@@ -835,7 +835,7 @@ const closeSeatModal = () => {
     seatForm.value = {
         row: null,
         number: null,
-        type: 'regular',
+        type: 'standard',
         direction: '',
         status: '',
         idZone: null
@@ -843,6 +843,41 @@ const closeSeatModal = () => {
 }; const saveSeat = async () => {
     try {
         loading.value = true;
+
+        // Check for duplicate seat when creating a new seat
+        if (!isEditingSeat.value) {
+            const existingSeat = seats.value.find(seat => 
+                seat.row === seatForm.value.row && 
+                seat.number === seatForm.value.number && 
+                seat.direction === seatForm.value.direction &&
+                seat.idZone === seatForm.value.idZone
+            );
+            
+            if (existingSeat) {
+                const zoneName = getZoneName(seatForm.value.idZone);
+                alert(`A seat with row ${seatForm.value.row}, number ${seatForm.value.number}, direction ${seatForm.value.direction}, and zone ${zoneName} already exists.`);
+                loading.value = false;
+                return;
+            }
+        }
+
+        // Check for duplicate seat when editing (exclude current seat from check)
+        if (isEditingSeat.value) {
+            const existingSeat = seats.value.find(seat => 
+                seat.idSeat !== seatForm.value.idSeat && // Exclude current seat
+                seat.row === seatForm.value.row && 
+                seat.number === seatForm.value.number && 
+                seat.direction === seatForm.value.direction &&
+                seat.idZone === seatForm.value.idZone
+            );
+            
+            if (existingSeat) {
+                const zoneName = getZoneName(seatForm.value.idZone);
+                alert(`Cannot update seat: A seat with row ${seatForm.value.row}, number ${seatForm.value.number}, direction ${seatForm.value.direction}, and zone ${zoneName} already exists.`);
+                loading.value = false;
+                return;
+            }
+        }
 
         if (isEditingSeat.value) {
             await SeatService.updateSeat(seatForm.value.idSeat, {

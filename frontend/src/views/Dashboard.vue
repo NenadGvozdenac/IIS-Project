@@ -116,9 +116,12 @@ onMounted(() => {
   else if(userInfo && userInfo.userRole === 'admin') {
     router.replace('/admin/dashboard');
     return;
+  } else if(userInfo && userInfo.userRole === 'club owner') {
+    router.replace('/club-owner/dashboard');
+    return;
   }
   else if(userInfo && userInfo.userRole === 'club manager') {
-    router.replace('/club-owner/dashboard');
+    router.replace('/club-manager/dashboard');
     return;
   }
   else if(userInfo && userInfo.userRole === 'team manager') {
