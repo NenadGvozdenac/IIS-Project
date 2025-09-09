@@ -37,4 +37,21 @@ export class PurchaseOfferService {
             throw error.response?.data || error;
         }
     }
+
+    static async checkSeasonTicketConflict(seatId, matchDate) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `${TICKETS_URL}/PurchaseOffers/season-ticket-conflict/seat/${seatId}/match-date/${matchDate}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }

@@ -9,6 +9,7 @@ using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.Remove
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetSeasonTicketBySeat;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetIndividualTicketBySeat;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetUserPurchaseHistory;
+using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.CheckSeasonTicketConflict;
 
 namespace ticket_service.src.Tickets.API.Controllers;
 
@@ -83,6 +84,14 @@ public class PurchaseOffersController : BaseController
     public async Task<ActionResult> GetUserPurchaseHistory(int userId)
     {
         var query = new GetUserPurchaseHistoryQuery(userId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("season-ticket-conflict/seat/{seatId}/match-date/{matchDate}")]
+    public async Task<ActionResult> CheckSeasonTicketConflict(int seatId, string matchDate)
+    {
+        var query = new CheckSeasonTicketConflictQuery(seatId, matchDate);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

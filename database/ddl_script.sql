@@ -150,6 +150,7 @@ CREATE TABLE cart_item (
     id_purchase_offer   INTEGER NOT NULL,
     added_at            DATE NOT NULL,
     price               NUMERIC(10,2) NOT NULL,
+    valid_from          DATE,
     PRIMARY KEY (id_cart, id_purchase_offer)
 );
 
@@ -984,6 +985,76 @@ CREATE TRIGGER trigger_create_match_tracking_for_match
     EXECUTE FUNCTION create_match_tracking_for_match();
 
 -- KRAJ TRIGGERA #4
+
+-- TRIGGER #5 - Set valid_from for cart items when cart is purchased
+-- For individual tickets: valid_from = NULL (always valid)
+-- For season tickets: valid_from = day after last conflicting individual ticket OR purchase date
+CREATE OR REPLACE FUNCTION set_cart_item_valid_from()
+RETURNS TRIGGER AS $$
+DECLARE
+    item_record RECORD;
+    latest_match_date DATE;
+BEGIN
+    -- Only process when cart status changes to 'bought'
+    IF OLD.status != 'bought' AND NEW.status = 'bought' THEN
+        -- Process each cart item
+        FOR item_record IN 
+            SELECT ci.id_cart, ci.id_purchase_offer, po.type, po.id_seat
+            FROM cart_item ci
+            JOIN purchase_offer po ON ci.id_purchase_offer = po.id_purchase_offer
+            WHERE ci.id_cart = NEW.id_cart
+        LOOP
+            -- If it's an individual ticket, leave valid_from as NULL (always valid)
+            IF item_record.type = 'individual ticket' THEN
+                UPDATE cart_item 
+                SET valid_from = NULL 
+                WHERE id_cart = item_record.id_cart 
+                AND id_purchase_offer = item_record.id_purchase_offer;
+            
+            -- If it's a season ticket, calculate when it becomes valid
+            ELSIF item_record.type = 'season ticket' THEN
+                -- Find the latest match date for this seat that has individual tickets already bought
+                SELECT MAX(m.scheduled_at::DATE)
+                INTO latest_match_date
+                FROM match m
+                JOIN individual_ticket it ON it.id_match = m.id_match
+                JOIN purchase_offer po_individual ON po_individual.id_purchase_offer = it.id_purchase_offer
+                WHERE po_individual.id_seat = item_record.id_seat
+                AND po_individual.type = 'individual ticket'
+                AND po_individual.status = 'bought'
+                AND m.scheduled_at > CURRENT_TIMESTAMP;
+                
+                -- Season ticket becomes valid after the last individual ticket expires
+                IF latest_match_date IS NOT NULL THEN
+                    UPDATE cart_item 
+                    SET valid_from = latest_match_date + INTERVAL '1 day'
+                    WHERE id_cart = item_record.id_cart 
+                    AND id_purchase_offer = item_record.id_purchase_offer;
+                ELSE
+                    -- No conflicting individual tickets, season ticket is valid immediately
+                    UPDATE cart_item 
+                    SET valid_from = CURRENT_DATE
+                    WHERE id_cart = item_record.id_cart 
+                    AND id_purchase_offer = item_record.id_purchase_offer;
+                END IF;
+                
+                -- Season tickets coexist with individual tickets
+                -- Individual tickets remain valid for their specific matches
+                -- Season tickets become valid after individual tickets expire
+            END IF;
+        END LOOP;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_cart_item_valid_from
+    AFTER UPDATE ON cart
+    FOR EACH ROW
+    EXECUTE FUNCTION set_cart_item_valid_from();
+
+-- KRAJ TRIGGERA #5
 
 -- DML DATA INSERTION
 

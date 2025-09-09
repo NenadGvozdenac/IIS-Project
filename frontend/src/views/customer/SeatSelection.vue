@@ -75,6 +75,10 @@
                             <span>Selected</span>
                         </div>
                         <div class="legend-item">
+                            <div class="seat-icon season-ticket"></div>
+                            <span>Season Ticket</span>
+                        </div>
+                        <div class="legend-item">
                             <div class="seat-icon unavailable"></div>
                             <span>Unavailable</span>
                         </div>
@@ -88,7 +92,7 @@
                                 <div class="seats-in-row">
                                     <div v-for="seat in groupedSeats[row]" :key="seat.idSeat" @click="selectSeat(seat)"
                                         :class="['seat', getSeatStatus(seat)]"
-                                        :title="`Row ${seat.seatRow}, Seat ${seat.seatNumber}`">
+                                        :title="getSeatTooltip(seat)">
                                         {{ seat.seatNumber }}
                                     </div>
                                 </div>
@@ -180,6 +184,7 @@ export default {
             seats: [],
             groupedSeats: {},
             seatOffers: {}, // New: store offers for each seat
+            seasonTicketConflicts: {}, // New: store season ticket conflicts for each seat
             selectedSeat: null,
             currentOffer: null,
             loadingZones: false,
@@ -259,6 +264,7 @@ export default {
             this.selectedSeat = null;
             this.currentOffer = null;
             this.seatOffers = {}; // Reset seat offers
+            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
             // Note: Don't load seats yet, wait for side selection
         },
 
@@ -267,6 +273,7 @@ export default {
             this.selectedSeat = null;
             this.currentOffer = null;
             this.seatOffers = {}; // Reset seat offers
+            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
             this.loadSeats(); // Load seats for the selected side
         },
 
@@ -299,12 +306,26 @@ export default {
         },
 
         async checkSeatOffers() {
-            // Reset seat offers
+            // Reset seat offers and conflicts
             this.seatOffers = {};
+            this.seasonTicketConflicts = {};
             
             // Check offers for each seat
             const offerPromises = this.seats.map(async (seat) => {
                 try {
+                    // First check if there's a season ticket conflict
+                    const conflictResponse = await PurchaseOfferService.checkSeasonTicketConflict(
+                        seat.idSeat, 
+                        this.selectedMatch.scheduledAt
+                    );
+                    
+                    if (conflictResponse.isSuccess && conflictResponse.value.hasConflict) {
+                        // Seat is covered by season ticket, mark as unavailable
+                        this.seasonTicketConflicts[seat.idSeat] = conflictResponse.value;
+                        return;
+                    }
+                    
+                    // If no season ticket conflict, check for individual ticket offer
                     const response = await PurchaseOfferService.getIndividualTicketOffer(
                         this.selectedZone.idZone,
                         seat.seatRow,
@@ -342,6 +363,13 @@ export default {
         },
 
         async selectSeat(seat) {
+            // Check if seat is covered by season ticket
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                const conflict = this.seasonTicketConflicts[seat.idSeat];
+                this.error = `This seat is not available - ${conflict.conflictReason}`;
+                return;
+            }
+            
             // Check if seat has an available offer
             if (!this.seatOffers[seat.idSeat]) {
                 return; // No offer available, can't select
@@ -385,6 +413,11 @@ export default {
                 return 'selected';
             }
             
+            // Check if seat is covered by season ticket
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                return 'season-ticket';
+            }
+            
             // Check if there's an available offer for this seat
             const hasOffer = this.seatOffers[seat.idSeat];
             if (hasOffer && seat.seatStatus === 'enabled') {
@@ -392,6 +425,17 @@ export default {
             }
             
             return 'unavailable';
+        },
+
+        getSeatTooltip(seat) {
+            const baseInfo = `Row ${seat.seatRow}, Seat ${seat.seatNumber}`;
+            
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                const conflict = this.seasonTicketConflicts[seat.idSeat];
+                return `${baseInfo} - ${conflict.conflictReason}`;
+            }
+            
+            return baseInfo;
         },
 
         formatMatchDate(dateString) {
@@ -689,6 +733,11 @@ export default {
     border-color: var(--color-error);
 }
 
+.seat-icon.season-ticket {
+    background: #8B5CF6;
+    border-color: #7C3AED;
+}
+
 /* Stadium View */
 .stadium-view {
     max-width: 800px;
@@ -766,6 +815,18 @@ export default {
     border-color: var(--color-error);
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+.seat.season-ticket {
+    background: #8B5CF6; /* Purple color for season tickets */
+    border-color: #7C3AED;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.seat.season-ticket:hover {
+    background: #A78BFA;
+    border-color: #8B5CF6;
 }
 
 /* Purchase Summary */
