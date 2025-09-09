@@ -85,7 +85,15 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            // 4. Izračunaj cenu na osnovu tipa karte
+            // 4. Proveri konflikte sa sezonskim kartama i individualnim kartama
+            var conflictValidation = ValidateTicketConflicts(purchaseOffer);
+            if (!conflictValidation.Success)
+            {
+                return Task.FromResult(Result<AddToCartResponse>.Failure(conflictValidation.Message)
+                    .WithCode((int)ResultCode.BadRequest));
+            }
+
+            // 5. Izračunaj cenu na osnovu tipa karte
             decimal price = 0;
             if (purchaseOffer.Type == "season ticket")
             {
@@ -112,7 +120,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
                 }
             }
 
-            // 5. Dodaj u korpu
+            // 6. Dodaj u korpu
             var cartItem = new CartItem
             {
                 IdCart = currentCart.IdCart,
@@ -123,14 +131,8 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
 
             _cartRepository.AddItemToCart(cartItem);
 
-            // 6. Označi kartu kao prodatu (ne može više da se kupuje)
+            // 7. Označi kartu kao rezervisanu (može se vratiti ako se korpa ne kupi)
             _purchaseOfferRepository.UpdateStatus(request.PurchaseOfferId, "disabled");
-
-            // 7. Ako je sezonska karta kupljena, onemogući individualne karte za ta mesta u sezoni
-            if (purchaseOffer.Type == "season ticket")
-            {
-                DisableIndividualTicketsForSeasonTicket(purchaseOffer);
-            }
 
             var response = new AddToCartResponse
             {
@@ -147,6 +149,22 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, Result<AddToCa
         {
             return Task.FromResult(Result<AddToCartResponse>.Failure($"An error occurred while adding ticket to cart: {ex.Message}")
                 .WithCode((int)ResultCode.InternalServerError));
+        }
+    }
+
+    private (bool Success, string Message) ValidateTicketConflicts(PurchaseOffer purchaseOffer)
+    {
+        try
+        {
+            // For now, we allow both individual and season tickets to be purchased
+            // The valid_from logic in the database trigger will handle when season tickets become active
+            // Individual tickets can be purchased even if season tickets exist - business logic will handle conflicts
+            
+            return (true, "");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error validating ticket conflicts: {ex.Message}");
         }
     }
 

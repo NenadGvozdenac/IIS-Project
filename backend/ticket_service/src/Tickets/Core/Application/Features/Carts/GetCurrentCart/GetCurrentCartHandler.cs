@@ -50,6 +50,7 @@ public class GetCurrentCartHandler : IRequestHandler<GetCurrentCartQuery, Result
                     IdPurchaseOffer = ci.IdPurchaseOffer,
                     AddedAt = ci.AddedAt,
                     Price = ci.Price,
+                    ValidFrom = ci.ValidFrom,
                     PurchaseOfferName = ci.IdPurchaseOfferNavigation?.Name,
                     PurchaseOfferDescription = ci.IdPurchaseOfferNavigation?.Description
                 }).ToList()

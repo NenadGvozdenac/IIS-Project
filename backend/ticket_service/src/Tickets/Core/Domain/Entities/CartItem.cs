@@ -13,6 +13,8 @@ public partial class CartItem
 
     public decimal Price { get; set; }
 
+    public DateOnly? ValidFrom { get; set; }
+
     public virtual Cart IdCartNavigation { get; set; } = null!;
 
     public virtual PurchaseOffer IdPurchaseOfferNavigation { get; set; } = null!;
