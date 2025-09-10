@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
+import { TICKETS_URL } from '../const_service.js';
 
-export class ZoneService {
-    static async getAllZones() {
+export class SeatService {
+    static async getAllSeats() {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/zones`, {
+            const response = await axios.get(`${TICKETS_URL}/seats`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -16,10 +16,10 @@ export class ZoneService {
         }
     }
 
-    static async getZoneById(id) {
+    static async getSeatById(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/zones/${id}`, {
+            const response = await axios.get(`${TICKETS_URL}/seats/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -30,10 +30,10 @@ export class ZoneService {
         }
     }
 
-    static async createZone(zoneData) {
+    static async createSeat(seatData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${TICKETS_URL}/zones`, zoneData, {
+            const response = await axios.post(`${TICKETS_URL}/seats`, seatData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -45,10 +45,10 @@ export class ZoneService {
         }
     }
 
-    static async updateZone(id, zoneData) {
+    static async updateSeat(id, seatData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.put(`${TICKETS_URL}/zones/${id}`, zoneData, {
+            const response = await axios.put(`${TICKETS_URL}/seats/${id}`, seatData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -60,10 +60,24 @@ export class ZoneService {
         }
     }
 
-    static async deleteZone(id) {
+    static async deleteSeat(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${TICKETS_URL}/zones/${id}`, {
+            const response = await axios.delete(`${TICKETS_URL}/seats/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
+
+    static async getSeatsByZone(zoneId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${TICKETS_URL}/seats/zone/${zoneId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

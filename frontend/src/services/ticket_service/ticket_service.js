@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
+import { TICKETS_URL } from '../const_service.js';
 
 export class TicketService {
     static async printTicket(ticketId) {

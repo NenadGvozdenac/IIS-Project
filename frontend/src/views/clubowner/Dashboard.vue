@@ -108,7 +108,7 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue';
-import { AdminService } from '../../services/admin_service';
+import { AdminService } from '../../services/ticket_service/admin_service';
 import Chart from 'chart.js/auto';
 
 // Reactive data

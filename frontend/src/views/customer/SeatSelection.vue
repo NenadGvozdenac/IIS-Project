@@ -161,10 +161,10 @@
 </template>
 
 <script>
-import { ZoneService } from '../../services/zone_service.js';
-import { SeatService } from '../../services/seat_service.js';
-import { PurchaseOfferService } from '../../services/purchase_offer_service.js';
-import { MatchService } from '../../services/match_service.js';
+import { ZoneService } from '../../services/ticket_service/zone_service.js';
+import { SeatService } from '../../services/ticket_service/seat_service.js';
+import { PurchaseOfferService } from '../../services/ticket_service/purchase_offer_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 export default {

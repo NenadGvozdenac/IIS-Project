@@ -281,9 +281,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CreditCardService } from '../../services/credit_card_service.js';
-import { MatchService } from '../../services/match_service.js';
-import { TicketPrintService } from '../../services/ticket_print_service.js';
+import { CreditCardService } from '../../services/ticket_service/credit_card_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
+import { TicketPrintService } from '../../services/ticket_service/ticket_print_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 // Router

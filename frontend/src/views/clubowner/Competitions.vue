@@ -189,7 +189,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { CompetitionService } from '../../services/competition_service.js';
+import { CompetitionService } from '../../services/ticket_service/competition_service.js';
 
 // Reactive data
 const competitions = ref([]);

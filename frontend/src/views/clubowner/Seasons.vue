@@ -175,7 +175,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { SeasonService } from '../../services/season_service.js';
+import { SeasonService } from '../../services/ticket_service/season_service.js';
 
 // Reactive data
 const seasons = ref([]);

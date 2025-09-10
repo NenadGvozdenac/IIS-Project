@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
-import { getUserData } from './auth_service.js';
+import { TICKETS_URL } from '../const_service.js';
+import { getUserData } from '../auth_service.js';
 
 export class CartService {
     static async getCurrentCart() {

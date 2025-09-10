@@ -107,8 +107,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { MatchService } from '../../services/match_service.js';
-import { TicketPrintService } from '../../services/ticket_print_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
+import { TicketPrintService } from '../../services/ticket_service/ticket_print_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 // Reactive data
