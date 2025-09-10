@@ -92,6 +92,7 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.Price)
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
+            entity.Property(e => e.ValidFrom).HasColumnName("valid_from");
 
             entity.HasOne(d => d.IdCartNavigation).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.IdCart)

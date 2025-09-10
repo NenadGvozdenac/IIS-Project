@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
+import { TICKETS_URL } from '../const_service.js';
 
-export class SeasonService {
-    static async getAllSeasons() {
+export class CompetitionService {
+    static async getAllCompetitions() {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/Seasons`, {
+            const response = await axios.get(`${TICKETS_URL}/Competitions`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -16,10 +16,10 @@ export class SeasonService {
         }
     }
 
-    static async getSeasonById(id) {
+    static async getCompetitionById(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/Seasons/${id}`, {
+            const response = await axios.get(`${TICKETS_URL}/Competitions/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -30,10 +30,10 @@ export class SeasonService {
         }
     }
 
-    static async createSeason(seasonData) {
+    static async createCompetition(competitionData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${TICKETS_URL}/Seasons`, seasonData, {
+            const response = await axios.post(`${TICKETS_URL}/Competitions`, competitionData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -45,10 +45,10 @@ export class SeasonService {
         }
     }
 
-    static async updateSeason(id, seasonData) {
+    static async updateCompetition(id, competitionData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.put(`${TICKETS_URL}/seasons/${id}`, seasonData, {
+            const response = await axios.put(`${TICKETS_URL}/Competitions/${id}`, competitionData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -60,10 +60,10 @@ export class SeasonService {
         }
     }
 
-    static async deleteSeason(id) {
+    static async deleteCompetition(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${TICKETS_URL}/seasons/${id}`, {
+            const response = await axios.delete(`${TICKETS_URL}/Competitions/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

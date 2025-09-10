@@ -24,11 +24,11 @@ public class GetSeasonTicketBySeatHandler : IRequestHandler<GetSeasonTicketBySea
     {
         try
         {
-            // 1. Pronađi sedište po zoni, redu i broju
-            var seat = _seatRepository.GetByZoneAndPosition(request.ZoneId, request.Row, request.Number);
+            // 1. Pronađi sedište po zoni, redu, broju i smeru
+            var seat = _seatRepository.GetByZoneAndPositionAndDirection(request.ZoneId, request.Row, request.Number, request.Direction);
             if (seat == null)
             {
-                return Task.FromResult(Result<GetSeasonTicketBySeatResponse>.Failure($"Seat not found in zone {request.ZoneId}, row {request.Row}, number {request.Number}")
+                return Task.FromResult(Result<GetSeasonTicketBySeatResponse>.Failure($"Seat not found in zone {request.ZoneId}, row {request.Row}, number {request.Number}, direction {request.Direction}")
                     .WithCode((int)ResultCode.NotFound));
             }
 

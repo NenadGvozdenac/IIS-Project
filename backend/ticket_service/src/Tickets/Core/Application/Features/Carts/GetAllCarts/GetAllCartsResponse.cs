@@ -21,4 +21,5 @@ public class CartItemResponse
     public int IdPurchaseOffer { get; set; }
     public DateOnly AddedAt { get; set; }
     public decimal Price { get; set; }
+    public DateOnly? ValidFrom { get; set; }
 }

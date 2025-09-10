@@ -40,7 +40,8 @@ public class GetAllCartsHandler : IRequestHandler<GetAllCartsQuery, Result<List<
                     IdCart = ci.IdCart,
                     IdPurchaseOffer = ci.IdPurchaseOffer,
                     AddedAt = ci.AddedAt,
-                    Price = ci.Price
+                    Price = ci.Price,
+                    ValidFrom = ci.ValidFrom
                 }).ToList()
             }).ToList();
 

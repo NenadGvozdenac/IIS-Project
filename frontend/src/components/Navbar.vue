@@ -38,6 +38,7 @@
           </template>
           <template v-else>
             <router-link v-if="isCustomer()" to="/profile" class="btn btn-ghost">Profile</router-link>
+            <router-link v-if="isCustomer()" to="/seasonal-tickets" class="btn btn-ghost">Season Tickets</router-link>
             <router-link v-if="isCustomer()" to="/cart" class="btn btn-ghost">Cart</router-link>
             <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
             <button @click="handleLogout" class="btn btn-secondary">Logout</button>

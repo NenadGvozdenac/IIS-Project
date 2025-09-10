@@ -9,6 +9,8 @@ using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.Remove
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetSeasonTicketBySeat;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetIndividualTicketBySeat;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetUserPurchaseHistory;
+using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.CheckSeasonTicketConflict;
+using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetExistingSeasonTickets;
 
 namespace ticket_service.src.Tickets.API.Controllers;
 
@@ -63,10 +65,10 @@ public class PurchaseOffersController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpGet("season-ticket/zone/{zoneId}/row/{row}/seat/{number}/season/{seasonId}")]
-    public async Task<ActionResult> GetSeasonTicketBySeat(int zoneId, int row, int number, int seasonId)
+    [HttpGet("season-ticket/zone/{zoneId}/row/{row}/seat/{number}/direction/{direction}/season/{seasonId}")]
+    public async Task<ActionResult> GetSeasonTicketBySeat(int zoneId, int row, int number, string direction, int seasonId)
     {
-        var query = new GetSeasonTicketBySeatQuery(zoneId, row, number, seasonId);
+        var query = new GetSeasonTicketBySeatQuery(zoneId, row, number, direction, seasonId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
@@ -83,6 +85,22 @@ public class PurchaseOffersController : BaseController
     public async Task<ActionResult> GetUserPurchaseHistory(int userId)
     {
         var query = new GetUserPurchaseHistoryQuery(userId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("season-ticket-conflict/seat/{seatId}/match-date/{matchDate}")]
+    public async Task<ActionResult> CheckSeasonTicketConflict(int seatId, string matchDate)
+    {
+        var query = new CheckSeasonTicketConflictQuery(seatId, matchDate);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("existing-season-tickets/zone/{zoneId}/season/{seasonId}")]
+    public async Task<ActionResult> GetExistingSeasonTickets(int zoneId, int seasonId)
+    {
+        var query = new GetExistingSeasonTicketsQuery(zoneId, seasonId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

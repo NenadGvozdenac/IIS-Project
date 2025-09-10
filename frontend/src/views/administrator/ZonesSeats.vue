@@ -408,8 +408,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { ZoneService } from '../../services/zone_service.js';
-import { SeatService } from '../../services/seat_service.js';
+import { ZoneService } from '../../services/ticket_service/zone_service.js';
+import { SeatService } from '../../services/ticket_service/seat_service.js';
 
 // Reactive data
 const activeTab = ref('zones');

@@ -179,7 +179,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { MatchService } from '../../services/match_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 const router = useRouter();

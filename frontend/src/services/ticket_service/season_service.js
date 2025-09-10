@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
+import { TICKETS_URL } from '../const_service.js';
 
-export class SeatService {
-    static async getAllSeats() {
+export class SeasonService {
+    static async getAllSeasons() {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/seats`, {
+            const response = await axios.get(`${TICKETS_URL}/Seasons`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -16,10 +16,10 @@ export class SeatService {
         }
     }
 
-    static async getSeatById(id) {
+    static async getSeasonById(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/seats/${id}`, {
+            const response = await axios.get(`${TICKETS_URL}/Seasons/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -30,10 +30,10 @@ export class SeatService {
         }
     }
 
-    static async createSeat(seatData) {
+    static async createSeason(seasonData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${TICKETS_URL}/seats`, seatData, {
+            const response = await axios.post(`${TICKETS_URL}/Seasons`, seasonData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -45,10 +45,10 @@ export class SeatService {
         }
     }
 
-    static async updateSeat(id, seatData) {
+    static async updateSeason(id, seasonData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.put(`${TICKETS_URL}/seats/${id}`, seatData, {
+            const response = await axios.put(`${TICKETS_URL}/seasons/${id}`, seasonData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -60,24 +60,10 @@ export class SeatService {
         }
     }
 
-    static async deleteSeat(id) {
+    static async deleteSeason(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${TICKETS_URL}/seats/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error;
-        }
-    }
-
-    static async getSeatsByZone(zoneId) {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/seats/zone/${zoneId}`, {
+            const response = await axios.delete(`${TICKETS_URL}/seasons/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

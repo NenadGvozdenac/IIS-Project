@@ -15,4 +15,5 @@ public interface IPurchaseOfferRepository
     IEnumerable<PurchaseOffer> GetSeasonTicketsBySeat(int seatId, int seasonId);
     IEnumerable<PurchaseOffer> GetIndividualTicketsBySeat(int seatId);
     IEnumerable<PurchaseOffer> GetPurchaseHistoryByUserId(int userId);
+    IEnumerable<PurchaseOffer> GetExistingSeasonTicketsByZoneAndSeason(int zoneId, int seasonId);
 }

@@ -46,7 +46,8 @@ public class GetCartByIdHandler : IRequestHandler<GetCartByIdQuery, Result<GetCa
                     IdCart = ci.IdCart,
                     IdPurchaseOffer = ci.IdPurchaseOffer,
                     AddedAt = ci.AddedAt,
-                    Price = ci.Price
+                    Price = ci.Price,
+                    ValidFrom = ci.ValidFrom
                 }).ToList()
             };
 

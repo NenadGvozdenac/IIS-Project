@@ -53,12 +53,14 @@ public class GetUserPurchaseHistoryHandler : IRequestHandler<GetUserPurchaseHist
                     price = 0; // Individual tickets imaju cenu 0 za sada
                 }
 
-                // Dohvati purchase date iz cart items
+                // Dohvati purchase date i valid_from iz cart items
                 var cartItem = po.CartItems.FirstOrDefault();
+                DateOnly? validFrom = null;
                 if (cartItem != null)
                 {
                     purchaseDate = cartItem.AddedAt;
                     price = cartItem.Price; // Koristi cenu iz cart item-a
+                    validFrom = cartItem.ValidFrom; // Get when the ticket becomes valid
                 }
 
                 return new GetUserPurchaseHistoryResponse
@@ -74,6 +76,7 @@ public class GetUserPurchaseHistoryHandler : IRequestHandler<GetUserPurchaseHist
                     IdSeat = po.IdSeat,
                     Price = price,
                     PurchaseDate = purchaseDate,
+                    ValidFrom = validFrom,
                     SeatRow = po.IdSeatNavigation.Row,
                     SeatNumber = po.IdSeatNavigation.Number,
                     SeatType = po.IdSeatNavigation.Type,

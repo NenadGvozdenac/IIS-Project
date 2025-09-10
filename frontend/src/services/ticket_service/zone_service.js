@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { TICKETS_URL } from './const_service.js';
+import { TICKETS_URL } from '../const_service.js';
 
-export class CompetitionService {
-    static async getAllCompetitions() {
+export class ZoneService {
+    static async getAllZones() {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/Competitions`, {
+            const response = await axios.get(`${TICKETS_URL}/zones`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -16,10 +16,10 @@ export class CompetitionService {
         }
     }
 
-    static async getCompetitionById(id) {
+    static async getZoneById(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${TICKETS_URL}/Competitions/${id}`, {
+            const response = await axios.get(`${TICKETS_URL}/zones/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -30,10 +30,10 @@ export class CompetitionService {
         }
     }
 
-    static async createCompetition(competitionData) {
+    static async createZone(zoneData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${TICKETS_URL}/Competitions`, competitionData, {
+            const response = await axios.post(`${TICKETS_URL}/zones`, zoneData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -45,10 +45,10 @@ export class CompetitionService {
         }
     }
 
-    static async updateCompetition(id, competitionData) {
+    static async updateZone(id, zoneData) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.put(`${TICKETS_URL}/Competitions/${id}`, competitionData, {
+            const response = await axios.put(`${TICKETS_URL}/zones/${id}`, zoneData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -60,10 +60,10 @@ export class CompetitionService {
         }
     }
 
-    static async deleteCompetition(id) {
+    static async deleteZone(id) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${TICKETS_URL}/Competitions/${id}`, {
+            const response = await axios.delete(`${TICKETS_URL}/zones/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

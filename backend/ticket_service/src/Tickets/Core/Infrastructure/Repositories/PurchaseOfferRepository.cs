@@ -114,4 +114,24 @@ public class PurchaseOfferRepository : IPurchaseOfferRepository
             .Where(po => po.CartItems.Any(ci => ci.IdCartNavigation.IdUser == userId) && po.Status == "bought")
             .ToList();
     }
+
+    public IEnumerable<PurchaseOffer> GetExistingSeasonTicketsByZoneAndSeason(int zoneId, int seasonId)
+    {
+        return _ticketDbContext.PurchaseOffers
+            .Include(po => po.IdSeatNavigation)
+            .Include(po => po.CartItems)
+            .ThenInclude(ci => ci.IdCartNavigation)
+            .Where(po => po.Type == "season ticket" 
+                      && po.IdSeatNavigation.IdZone == zoneId
+                      && (po.Status == "bought" || po.Status == "enabled")) // Include both bought and available season tickets
+            .Join(_ticketDbContext.SeasonTickets,
+                po => po.IdPurchaseOffer,
+                st => st.IdPurchaseOffer,
+                (po, st) => new { PurchaseOffer = po, SeasonTicket = st })
+            .Where(x => x.SeasonTicket.IdSeason == seasonId)
+            .Where(x => x.PurchaseOffer.CartItems.Any(ci => 
+                ci.IdCartNavigation.Status == "bought" || ci.IdCartNavigation.Status == "active")) // Include both bought and active carts
+            .Select(x => x.PurchaseOffer)
+            .ToList();
+    }
 }

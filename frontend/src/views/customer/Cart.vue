@@ -174,8 +174,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CartService } from '../../services/cart_service.js';
-import { CreditCardService } from '../../services/credit_card_service.js';
+import { CartService } from '../../services/ticket_service/cart_service.js';
+import { CreditCardService } from '../../services/ticket_service/credit_card_service.js';
 
 const router = useRouter();
 
