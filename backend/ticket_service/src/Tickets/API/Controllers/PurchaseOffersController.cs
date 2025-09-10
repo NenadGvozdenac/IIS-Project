@@ -65,10 +65,10 @@ public class PurchaseOffersController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpGet("season-ticket/zone/{zoneId}/row/{row}/seat/{number}/season/{seasonId}")]
-    public async Task<ActionResult> GetSeasonTicketBySeat(int zoneId, int row, int number, int seasonId)
+    [HttpGet("season-ticket/zone/{zoneId}/row/{row}/seat/{number}/direction/{direction}/season/{seasonId}")]
+    public async Task<ActionResult> GetSeasonTicketBySeat(int zoneId, int row, int number, string direction, int seasonId)
     {
-        var query = new GetSeasonTicketBySeatQuery(zoneId, row, number, seasonId);
+        var query = new GetSeasonTicketBySeatQuery(zoneId, row, number, direction, seasonId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

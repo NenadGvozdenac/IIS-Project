@@ -35,17 +35,17 @@ public class CheckSeasonTicketConflictHandler : IRequestHandler<CheckSeasonTicke
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            // Find all season tickets for this seat that are bought
+            // Find all season tickets for this seat that are bought OR in active carts
             var seasonTickets = _purchaseOfferRepository.GetAll()
                 .Where(po => po.IdSeat == request.SeatId && 
                            po.Type == "season ticket" && 
-                           po.Status == "bought");
+                           (po.Status == "bought" || po.Status == "enabled"));
 
             foreach (var seasonTicketOffer in seasonTickets)
             {
                 // Check if this season ticket is valid for the match date
                 var cartItems = _cartRepository.GetAll()
-                    .Where(c => c.Status == "bought")
+                    .Where(c => c.Status == "bought" || c.Status == "active") // Check both bought and active carts
                     .SelectMany(c => c.CartItems)
                     .Where(ci => ci.IdPurchaseOffer == seasonTicketOffer.IdPurchaseOffer);
 
@@ -57,12 +57,25 @@ public class CheckSeasonTicketConflictHandler : IRequestHandler<CheckSeasonTicke
                         var seasonTicket = _seasonTicketRepository.GetByPurchaseOfferId(seasonTicketOffer.IdPurchaseOffer);
                         
                         response.HasConflict = true;
-                        response.ConflictReason = "This seat is covered by an active season ticket";
-                        response.SeasonTicketValidFrom = cartItem.ValidFrom?.ToDateTime(TimeOnly.MinValue);
                         
-                        // Try to get season ticket holder info
+                        // Determine conflict reason based on cart status
                         var cart = _cartRepository.GetAll()
                             .FirstOrDefault(c => c.CartItems.Any(ci => ci.IdPurchaseOffer == seasonTicketOffer.IdPurchaseOffer));
+                        
+                        if (cart?.Status == "bought")
+                        {
+                            response.ConflictReason = "This seat is covered by an active season ticket";
+                        }
+                        else if (cart?.Status == "active")
+                        {
+                            response.ConflictReason = "This seat is reserved by a season ticket in someone's cart";
+                        }
+                        else
+                        {
+                            response.ConflictReason = "This seat is not available";
+                        }
+                        
+                        response.SeasonTicketValidFrom = cartItem.ValidFrom?.ToDateTime(TimeOnly.MinValue);
                         
                         if (cart?.IdUserNavigation != null)
                         {

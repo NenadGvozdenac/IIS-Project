@@ -72,11 +72,11 @@ export class PurchaseOfferService {
         }
     }
 
-    static async getSeasonTicketBySeat(zoneId, row, number, seasonId) {
+    static async getSeasonTicketBySeat(zoneId, row, number, direction, seasonId) {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `${TICKETS_URL}/PurchaseOffers/season-ticket/zone/${zoneId}/row/${row}/seat/${number}/season/${seasonId}`,
+                `${TICKETS_URL}/PurchaseOffers/season-ticket/zone/${zoneId}/row/${row}/seat/${number}/direction/${direction}/season/${seasonId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`

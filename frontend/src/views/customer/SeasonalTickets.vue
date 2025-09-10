@@ -400,6 +400,7 @@ export default {
                     this.selectedZone.idZone,
                     seat.seatRow,
                     seat.seatNumber,
+                    seat.seatDirection,
                     this.currentSeason.idSeason
                 );
                 if (response.isSuccess) {
