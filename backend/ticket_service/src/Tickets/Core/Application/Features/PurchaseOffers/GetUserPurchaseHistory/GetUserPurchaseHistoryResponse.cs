@@ -13,6 +13,7 @@ public class GetUserPurchaseHistoryResponse
     public int IdSeat { get; set; }
     public decimal Price { get; set; }
     public DateOnly PurchaseDate { get; set; }
+    public DateOnly? ValidFrom { get; set; } // When the ticket becomes valid (important for season tickets)
     
     // Seat information
     public int SeatRow { get; set; }
