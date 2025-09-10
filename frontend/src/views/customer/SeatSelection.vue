@@ -225,7 +225,7 @@ export default {
                             this.error = 'This match has already taken place. Ticket sales are no longer available.';
                             // Redirect back to dashboard after a delay
                             setTimeout(() => {
-                                this.$router.push('/customer-dashboard');
+                                this.$router.push('/customer/dashboard');
                             }, 3000);
                             return;
                         }

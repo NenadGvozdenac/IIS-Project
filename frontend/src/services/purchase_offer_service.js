@@ -88,4 +88,21 @@ export class PurchaseOfferService {
             throw error.response?.data || error;
         }
     }
+
+    static async getExistingSeasonTickets(zoneId, seasonId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `${TICKETS_URL}/PurchaseOffers/existing-season-tickets/zone/${zoneId}/season/${seasonId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }

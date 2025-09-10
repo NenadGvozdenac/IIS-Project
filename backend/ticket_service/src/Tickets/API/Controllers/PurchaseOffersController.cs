@@ -10,6 +10,7 @@ using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetSea
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetIndividualTicketBySeat;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetUserPurchaseHistory;
 using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.CheckSeasonTicketConflict;
+using ticket_service.src.Tickets.Core.Application.Features.PurchaseOffers.GetExistingSeasonTickets;
 
 namespace ticket_service.src.Tickets.API.Controllers;
 
@@ -92,6 +93,14 @@ public class PurchaseOffersController : BaseController
     public async Task<ActionResult> CheckSeasonTicketConflict(int seatId, string matchDate)
     {
         var query = new CheckSeasonTicketConflictQuery(seatId, matchDate);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("existing-season-tickets/zone/{zoneId}/season/{seasonId}")]
+    public async Task<ActionResult> GetExistingSeasonTickets(int zoneId, int seasonId)
+    {
+        var query = new GetExistingSeasonTicketsQuery(zoneId, seasonId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

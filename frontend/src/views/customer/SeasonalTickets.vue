@@ -4,14 +4,13 @@
             <!-- Header -->
             <div class="header-section">
                 <button @click="goBack" class="back-btn">
-                    < Back to Dashboard
-                </button>
-                <div class="match-info">
-                    <h1>Season Tickets</h1>
-                    <div class="match-details">
-                        <span class="match-date">Purchase season tickets for the current active season</span>
-                    </div>
-                </div>
+                    < Back to Dashboard </button>
+                        <div class="match-info">
+                            <h1>Season Tickets</h1>
+                            <div class="match-details">
+                                <span class="match-date">Purchase season tickets for the current active season</span>
+                            </div>
+                        </div>
             </div>
 
             <!-- Current Season Info -->
@@ -128,7 +127,8 @@
                         </div>
                         <div class="detail-row">
                             <span class="label">Seat:</span>
-                            <span class="value">Row {{ selectedSeat.seatRow }}, Seat {{ selectedSeat.seatNumber }}</span>
+                            <span class="value">Row {{ selectedSeat.seatRow }}, Seat {{ selectedSeat.seatNumber
+                                }}</span>
                         </div>
                         <div class="detail-row">
                             <span class="label">Type:</span>
@@ -140,7 +140,7 @@
                         </div>
                         <div class="detail-row total">
                             <span class="label">Season Price:</span>
-                            <span class="value price">${{ selectedSeasonTicket.price.toFixed(2) }}</span>
+                            <span class="value price">{{ selectedSeasonTicket.price.toFixed(2) }} RSD</span>
                         </div>
                     </div>
 
@@ -202,6 +202,7 @@ export default {
             seats: [],
             allSeatsInZone: [], // All seats in the selected zone (not filtered by side)
             seasonTickets: [],
+            takenSeasonTickets: {}, // Map of taken seats: "row-seatNumber" -> true
             selectedZone: null,
             selectedSide: null,
             selectedSeat: null,
@@ -281,15 +282,47 @@ export default {
             }
         },
 
+        async loadExistingSeasonTicketsForZone(zoneId) {
+            if (!this.currentSeason) return {};
+
+            try {
+                // Get existing season tickets for this zone and season
+                const response = await PurchaseOfferService.getExistingSeasonTickets(
+                    zoneId, 
+                    this.currentSeason.idSeason
+                );
+                
+                if (response.isSuccess) {
+                    // Create a map of taken seats: "row-seatNumber-direction" -> true
+                    const takenSeats = {};
+                    response.value.forEach(seasonTicket => {
+                        const key = `${seasonTicket.seatRow}-${seasonTicket.seatNumber}-${seasonTicket.seatDirection}`;
+                        takenSeats[key] = true;
+                    });
+                    return takenSeats;
+                }
+            } catch (error) {
+                console.error('Error loading existing season tickets:', error);
+            }
+            
+            return {};
+        },
+
         async selectZone(zone) {
             this.selectedZone = zone;
             this.selectedSide = null;
             this.selectedSeat = null;
             this.selectedSeasonTicket = null;
             this.groupedSeats = {};
+
+            // Load all seats for this zone and existing season tickets
+            const [, takenSeats] = await Promise.all([
+                this.loadAllSeatsForZone(),
+                this.loadExistingSeasonTicketsForZone(zone.idZone)
+            ]);
             
-            // Load all seats for this zone to show accurate counts
-            await this.loadAllSeatsForZone();
+            // Store the taken seats information
+            this.takenSeasonTickets = takenSeats || {};
         },
 
         async loadAllSeatsForZone() {
@@ -321,7 +354,7 @@ export default {
 
             try {
                 this.loadingSeats = true;
-                
+
                 // If we already have all seats for the zone, filter them
                 if (this.allSeatsInZone && this.allSeatsInZone.length > 0) {
                     this.seats = this.allSeatsInZone.filter(seat =>
@@ -337,7 +370,7 @@ export default {
                         );
                     }
                 }
-                
+
                 this.groupSeats();
                 console.log('Loaded seats for side:', this.selectedSide, 'Count:', this.seats.length);
             } catch (error) {
@@ -359,7 +392,7 @@ export default {
 
         async selectSeat(seat) {
             const status = this.getSeatStatus(seat);
-            if (status === 'unavailable' || status === 'occupied') {
+            if (status === 'unavailable' || status === 'season-ticket') {
                 return;
             }
 
@@ -386,16 +419,22 @@ export default {
             if (this.selectedSeat && this.selectedSeat.idSeat === seat.idSeat) {
                 return 'selected';
             }
-            
-            // Check if seat has a season ticket conflict
+
+            // Check if seat has an existing season ticket
+            const seatKey = `${seat.seatRow}-${seat.seatNumber}-${seat.seatDirection}`;
+            if (this.takenSeasonTickets[seatKey]) {
+                return 'season-ticket';
+            }
+
+            // Check if seat has a season ticket conflict or is occupied
             if (seat.seatStatus === 'occupied' || seat.hasSeasonTicket) {
                 return 'season-ticket';
             }
-            
+
             if (seat.seatStatus === 'unavailable') {
                 return 'unavailable';
             }
-            
+
             return 'available';
         },
 
@@ -447,8 +486,8 @@ export default {
                     this.selectedSeasonTicket = null;
                     // Clear success message after 3 seconds
                     setTimeout(() => {
-                        this.successMessage = null;
-                    }, 3000);
+                        this.$router.push('/cart');
+                    }, 500);
                 }
             } catch (error) {
                 console.error('Error adding to cart:', error);
@@ -473,13 +512,13 @@ export default {
 
         formatSeasonDateRange(season) {
             if (!season) return '';
-            
+
             const startDate = this.formatDate(season.startedAt);
-            
+
             if (!season.endedAt) {
                 return `${startDate} - Ongoing`;
             }
-            
+
             const endDate = this.formatDate(season.endedAt);
             return `${startDate} - ${endDate}`;
         }
