@@ -75,10 +75,6 @@
                             <span>Selected</span>
                         </div>
                         <div class="legend-item">
-                            <div class="seat-icon season-ticket"></div>
-                            <span>Season Ticket</span>
-                        </div>
-                        <div class="legend-item">
                             <div class="seat-icon unavailable"></div>
                             <span>Unavailable</span>
                         </div>
@@ -363,11 +359,9 @@ export default {
         },
 
         async selectSeat(seat) {
-            // Check if seat is covered by season ticket
+            // Check if seat is covered by season ticket - silently prevent selection
             if (this.seasonTicketConflicts[seat.idSeat]) {
-                const conflict = this.seasonTicketConflicts[seat.idSeat];
-                this.error = `This seat is not available - ${conflict.conflictReason}`;
-                return;
+                return; // No message needed, seat is already shown as unavailable
             }
             
             // Check if seat has an available offer
@@ -413,9 +407,9 @@ export default {
                 return 'selected';
             }
             
-            // Check if seat is covered by season ticket
+            // Check if seat is covered by season ticket - treat as unavailable
             if (this.seasonTicketConflicts[seat.idSeat]) {
-                return 'season-ticket';
+                return 'unavailable';
             }
             
             // Check if there's an available offer for this seat
@@ -733,11 +727,6 @@ export default {
     border-color: var(--color-error);
 }
 
-.seat-icon.season-ticket {
-    background: #8B5CF6;
-    border-color: #7C3AED;
-}
-
 /* Stadium View */
 .stadium-view {
     max-width: 800px;
@@ -815,18 +804,6 @@ export default {
     border-color: var(--color-error);
     cursor: not-allowed;
     opacity: 0.6;
-}
-
-.seat.season-ticket {
-    background: #8B5CF6; /* Purple color for season tickets */
-    border-color: #7C3AED;
-    cursor: not-allowed;
-    opacity: 0.8;
-}
-
-.seat.season-ticket:hover {
-    background: #A78BFA;
-    border-color: #8B5CF6;
 }
 
 /* Purchase Summary */

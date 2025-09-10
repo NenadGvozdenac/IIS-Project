@@ -86,10 +86,6 @@
                             <span>Selected</span>
                         </div>
                         <div class="legend-item">
-                            <div class="seat-icon season-ticket"></div>
-                            <span>Season Ticket Taken</span>
-                        </div>
-                        <div class="legend-item">
                             <div class="seat-icon unavailable"></div>
                             <span>Unavailable</span>
                         </div>
@@ -392,7 +388,7 @@ export default {
 
         async selectSeat(seat) {
             const status = this.getSeatStatus(seat);
-            if (status === 'unavailable' || status === 'season-ticket') {
+            if (status === 'unavailable') {
                 return;
             }
 
@@ -423,12 +419,12 @@ export default {
             // Check if seat has an existing season ticket
             const seatKey = `${seat.seatRow}-${seat.seatNumber}-${seat.seatDirection}`;
             if (this.takenSeasonTickets[seatKey]) {
-                return 'season-ticket';
+                return 'unavailable';
             }
 
             // Check if seat has a season ticket conflict or is occupied
             if (seat.seatStatus === 'occupied' || seat.hasSeasonTicket) {
-                return 'season-ticket';
+                return 'unavailable';
             }
 
             if (seat.seatStatus === 'unavailable') {
@@ -805,11 +801,6 @@ export default {
     border-color: var(--color-error);
 }
 
-.seat-icon.season-ticket {
-    background: #8B5CF6;
-    border-color: #7C3AED;
-}
-
 /* Stadium View */
 .stadium-view {
     max-width: 800px;
@@ -887,18 +878,6 @@ export default {
     border-color: var(--color-error);
     cursor: not-allowed;
     opacity: 0.6;
-}
-
-.seat.season-ticket {
-    background: #8B5CF6;
-    border-color: #7C3AED;
-    cursor: not-allowed;
-    opacity: 0.8;
-}
-
-.seat.season-ticket:hover {
-    background: #A78BFA;
-    border-color: #8B5CF6;
 }
 
 /* Purchase Summary */
