@@ -8,6 +8,7 @@ import Profile from '../views/customer/Profile.vue'
 import MyTickets from '../views/customer/MyTickets.vue'
 import Cart from '../views/customer/Cart.vue'
 import SeatSelection from '../views/customer/SeatSelection.vue'
+import SeasonalTickets from '../views/customer/SeasonalTickets.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
@@ -101,6 +102,12 @@ const routes = [
     path: '/seat-selection/:matchId',
     name: 'SeatSelection',
     component: SeatSelection,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
+  },
+  {
+    path: '/seasonal-tickets',
+    name: 'SeasonalTickets',
+    component: SeasonalTickets,
     meta: { requiresAuth: true, requiresRole: 'customer' }
   },
   {

@@ -54,4 +54,38 @@ export class PurchaseOfferService {
             throw error.response?.data || error;
         }
     }
+
+    static async getSeasonTickets() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `${TICKETS_URL}/PurchaseOffers/season-tickets`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
+
+    static async getSeasonTicketBySeat(zoneId, row, number, seasonId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `${TICKETS_URL}/PurchaseOffers/season-ticket/zone/${zoneId}/row/${row}/seat/${number}/season/${seasonId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }

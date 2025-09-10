@@ -4,13 +4,25 @@
             <!-- Header -->
             <div class="header-section">
                 <button @click="goBack" class="back-btn">
-                    < Back to Matches
+                    < Back to Dashboard
                 </button>
-                <div class="match-info" v-if="selectedMatch">
-                    <h1>{{ selectedMatch.name }}</h1>
+                <div class="match-info">
+                    <h1>Season Tickets</h1>
                     <div class="match-details">
-                        <span class="match-date">{{ formatMatchDate(selectedMatch.scheduledAt) }}</span>
-                        <span class="match-venue">{{ selectedMatch.hall }}, {{ selectedMatch.city }}</span>
+                        <span class="match-date">Purchase season tickets for the current active season</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Season Info -->
+            <div v-if="currentSeason" class="header-section">
+                <div class="match-info">
+                    <h2>{{ currentSeason.name }}</h2>
+                    <div class="match-details">
+                        <span class="match-date">{{ formatSeasonDateRange(currentSeason) }}</span>
+                        <span class="match-venue" :class="['status', currentSeason.isActive ? 'active' : 'inactive']">
+                            {{ currentSeason.isActive ? 'Active Season' : 'Inactive Season' }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -57,7 +69,7 @@
 
             <!-- Seat Selection -->
             <div v-if="selectedZone && selectedSide" class="seat-selection-section">
-                <h2>Select a Seat in {{ selectedZone.name }} - {{ selectedSide.charAt(0).toUpperCase() + selectedSide.slice(1) }} Side</h2>
+                <h2>Select a Seat for Season Ticket</h2>
 
                 <div v-if="loadingSeats" class="loading-state">
                     <div class="spinner"></div>
@@ -76,7 +88,7 @@
                         </div>
                         <div class="legend-item">
                             <div class="seat-icon season-ticket"></div>
-                            <span>Season Ticket</span>
+                            <span>Season Ticket Taken</span>
                         </div>
                         <div class="legend-item">
                             <div class="seat-icon unavailable"></div>
@@ -91,8 +103,7 @@
                                 <div class="row-label">Row {{ row }}</div>
                                 <div class="seats-in-row">
                                     <div v-for="seat in groupedSeats[row]" :key="seat.idSeat" @click="selectSeat(seat)"
-                                        :class="['seat', getSeatStatus(seat)]"
-                                        :title="getSeatTooltip(seat)">
+                                        :class="['seat', getSeatStatus(seat)]" :title="getSeatTooltip(seat)">
                                         {{ seat.seatNumber }}
                                     </div>
                                 </div>
@@ -107,30 +118,29 @@
             </div>
 
             <!-- Purchase Summary -->
-            <div v-if="selectedSeat && currentOffer" class="purchase-summary">
+            <div v-if="selectedSeat && selectedSeasonTicket" class="purchase-summary">
                 <div class="summary-card">
                     <h3>Purchase Summary</h3>
                     <div class="offer-details">
                         <div class="detail-row">
-                            <span class="label">Match:</span>
-                            <span class="value">{{ currentOffer.matchName }}</span>
-                        </div>
-                        <div class="detail-row">
                             <span class="label">Zone:</span>
-                            <span class="value">{{ currentOffer.zoneName }}</span>
+                            <span class="value">{{ selectedZone.name }}</span>
                         </div>
                         <div class="detail-row">
                             <span class="label">Seat:</span>
-                            <span class="value">Row {{ currentOffer.seatRow }}, Seat {{ currentOffer.seatNumber
-                                }}</span>
+                            <span class="value">Row {{ selectedSeat.seatRow }}, Seat {{ selectedSeat.seatNumber }}</span>
                         </div>
                         <div class="detail-row">
                             <span class="label">Type:</span>
-                            <span class="value">{{ currentOffer.seatType }}</span>
+                            <span class="value">{{ selectedSeat.seatType }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Direction:</span>
+                            <span class="value">{{ selectedSeat.seatDirection }}</span>
                         </div>
                         <div class="detail-row total">
-                            <span class="label">Total Price:</span>
-                            <span class="value price">{{ currentOffer.price.toFixed(2) }} RSD</span>
+                            <span class="label">Season Price:</span>
+                            <span class="value price">${{ selectedSeasonTicket.price.toFixed(2) }}</span>
                         </div>
                     </div>
 
@@ -141,6 +151,17 @@
                         </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Loading States -->
+            <div v-if="loadingSeason" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading season information...</p>
+            </div>
+
+            <div v-if="!currentSeason && !loadingSeason" class="no-seats">
+                <p>There is currently no active season for purchasing season tickets.</p>
+                <button @click="goBack" class="btn btn-primary">Go Back</button>
             </div>
 
             <!-- Error Messages -->
@@ -168,30 +189,32 @@
 import { ZoneService } from '../../services/zone_service.js';
 import { SeatService } from '../../services/seat_service.js';
 import { PurchaseOfferService } from '../../services/purchase_offer_service.js';
-import { MatchService } from '../../services/match_service.js';
+import { SeasonService } from '../../services/season_service.js';
+import { CartService } from '../../services/cart_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 export default {
-    name: 'SeatSelection',
+    name: 'SeasonalTickets',
     data() {
         return {
-            matchId: null,
-            selectedMatch: null,
+            currentSeason: null,
             zones: [],
+            seats: [],
+            allSeatsInZone: [], // All seats in the selected zone (not filtered by side)
+            seasonTickets: [],
             selectedZone: null,
             selectedSide: null,
-            availableSides: ['north', 'east', 'south', 'west'],
-            seats: [],
-            groupedSeats: {},
-            seatOffers: {}, // New: store offers for each seat
-            seasonTicketConflicts: {}, // New: store season ticket conflicts for each seat
             selectedSeat: null,
-            currentOffer: null,
+            selectedSeasonTicket: null,
+            availableSides: ['north', 'east', 'south', 'west'],
+            groupedSeats: {},
+            loadingSeason: false,
             loadingZones: false,
             loadingSeats: false,
             addingToCart: false,
             error: null,
-            successMessage: null
+            successMessage: null,
+            userData: getUserData()
         };
     },
     computed: {
@@ -200,211 +223,162 @@ export default {
         }
     },
     async mounted() {
-        this.matchId = this.$route.params.matchId;
-        if (this.matchId) {
-            await this.loadMatchDetails();
-            // Only load zones if we have a valid match that hasn't passed
-            if (this.selectedMatch && !this.error) {
-                await this.loadZones();
-            }
+        await this.loadCurrentSeason();
+        if (this.currentSeason) {
+            await Promise.all([
+                this.loadZones(),
+                this.loadSeasonTickets()
+            ]);
         }
     },
     methods: {
-        async loadMatchDetails() {
+        goBack() {
+            this.$router.push('/customer/dashboard');
+        },
+
+        goToCart() {
+            this.closeSuccessModal();
+            this.$router.push('/cart');
+        },
+
+        async loadCurrentSeason() {
             try {
-                const matches = await MatchService.getMatchesInOurHall();
-                if (matches.isSuccess) {
-                    this.selectedMatch = matches.value.find(m => m.idMatch == this.matchId);
-                    
-                    // Check if match has already passed
-                    if (this.selectedMatch && this.selectedMatch.scheduledAt) {
-                        const matchDate = new Date(this.selectedMatch.scheduledAt);
-                        const now = new Date();
-                        
-                        if (matchDate <= now) {
-                            this.error = 'This match has already taken place. Ticket sales are no longer available.';
-                            // Redirect back to dashboard after a delay
-                            setTimeout(() => {
-                                this.$router.push('/customer-dashboard');
-                            }, 3000);
-                            return;
-                        }
-                    }
-                    
-                    if (!this.selectedMatch) {
-                        this.error = 'Match not found.';
-                        setTimeout(() => {
-                            this.$router.push('/customer/dashboard');
-                        }, 2000);
-                    }
+                this.loadingSeason = true;
+                const response = await SeasonService.getAllSeasons();
+                if (response.isSuccess) {
+                    const activeSeason = response.value.find(season => season.isActive);
+                    this.currentSeason = activeSeason;
                 }
             } catch (error) {
-                this.error = 'Failed to load match details';
+                console.error('Error loading current season:', error);
+            } finally {
+                this.loadingSeason = false;
             }
         },
 
         async loadZones() {
-            this.loadingZones = true;
             try {
+                this.loadingZones = true;
                 const response = await ZoneService.getAllZones();
-                debugger
                 if (response.isSuccess) {
                     this.zones = response.value.zones;
                 }
             } catch (error) {
-                this.error = 'Failed to load zones';
+                console.error('Error loading zones:', error);
             } finally {
                 this.loadingZones = false;
             }
         },
 
-        async selectZone(zone) {
-            this.selectedZone = zone;
-            this.selectedSide = null; // Reset side selection
-            this.selectedSeat = null;
-            this.currentOffer = null;
-            this.seatOffers = {}; // Reset seat offers
-            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
-            // Note: Don't load seats yet, wait for side selection
-        },
-
-        selectSide(side) {
-            this.selectedSide = side;
-            this.selectedSeat = null;
-            this.currentOffer = null;
-            this.seatOffers = {}; // Reset seat offers
-            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
-            this.loadSeats(); // Load seats for the selected side
-        },
-
-        async loadSeats() {
-            if (!this.selectedZone || !this.selectedSide) return;
-            
-            this.loadingSeats = true;
+        async loadSeasonTickets() {
             try {
-                const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
+                const response = await PurchaseOfferService.getSeasonTickets();
                 if (response.isSuccess) {
-                    // Filter seats by the selected side using the correct field name
-                    console.log('Selected side:', this.selectedSide);
-                    console.log('Total seats from API:', response.value.length);
-                    console.log('Sample seat data:', response.value[0]);
-                    
-                    this.seats = response.value.filter(seat => {
-                        console.log(`Seat ${seat.seatRow}-${seat.seatNumber}: direction="${seat.seatDirection}", selectedSide="${this.selectedSide}", match=${seat.seatDirection === this.selectedSide}`);
-                        return seat.seatDirection === this.selectedSide;
-                    });
-                    
-                    console.log('Filtered seats count:', this.seats.length);
-                    this.groupSeats();
-                    await this.checkSeatOffers();
+                    this.seasonTickets = response.value;
                 }
             } catch (error) {
-                this.error = 'Failed to load seats';
+                console.error('Error loading season tickets:', error);
+            }
+        },
+
+        async selectZone(zone) {
+            this.selectedZone = zone;
+            this.selectedSide = null;
+            this.selectedSeat = null;
+            this.selectedSeasonTicket = null;
+            this.groupedSeats = {};
+            
+            // Load all seats for this zone to show accurate counts
+            await this.loadAllSeatsForZone();
+        },
+
+        async loadAllSeatsForZone() {
+            if (!this.selectedZone) return;
+
+            try {
+                this.loadingSeats = true;
+                const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
+                if (response.isSuccess) {
+                    // Store all seats for the zone (not filtered by side)
+                    this.allSeatsInZone = response.value;
+                }
+            } catch (error) {
+                console.error('Error loading all seats for zone:', error);
             } finally {
                 this.loadingSeats = false;
             }
         },
 
-        async checkSeatOffers() {
-            // Reset seat offers and conflicts
-            this.seatOffers = {};
-            this.seasonTicketConflicts = {};
-            
-            // Check offers for each seat
-            const offerPromises = this.seats.map(async (seat) => {
-                try {
-                    // First check if there's a season ticket conflict
-                    const conflictResponse = await PurchaseOfferService.checkSeasonTicketConflict(
-                        seat.idSeat, 
-                        this.selectedMatch.scheduledAt
+        selectSide(side) {
+            this.selectedSide = side;
+            this.selectedSeat = null;
+            this.selectedSeasonTicket = null;
+            this.loadSeats();
+        },
+
+        async loadSeats() {
+            if (!this.selectedZone || !this.selectedSide) return;
+
+            try {
+                this.loadingSeats = true;
+                
+                // If we already have all seats for the zone, filter them
+                if (this.allSeatsInZone && this.allSeatsInZone.length > 0) {
+                    this.seats = this.allSeatsInZone.filter(seat =>
+                        seat.seatDirection === this.selectedSide
                     );
-                    
-                    if (conflictResponse.isSuccess && conflictResponse.value.hasConflict) {
-                        // Seat is covered by season ticket, mark as unavailable
-                        this.seasonTicketConflicts[seat.idSeat] = conflictResponse.value;
-                        return;
-                    }
-                    
-                    // If no season ticket conflict, check for individual ticket offer
-                    const response = await PurchaseOfferService.getIndividualTicketOffer(
-                        this.selectedZone.idZone,
-                        seat.seatRow,
-                        seat.seatNumber,
-                        this.selectedSide,
-                        this.matchId
-                    );
-                    
+                } else {
+                    // Fallback: load seats from API
+                    const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
                     if (response.isSuccess) {
-                        this.seatOffers[seat.idSeat] = response.value;
+                        this.allSeatsInZone = response.value;
+                        this.seats = response.value.filter(seat =>
+                            seat.seatDirection === this.selectedSide
+                        );
                     }
-                } catch (error) {
-                    // If there's no offer for this seat, it will remain unavailable
-                    console.log(`No offer available for seat ${seat.seatRow}-${seat.seatNumber} on ${this.selectedSide} side`);
                 }
-            });
-            
-            await Promise.all(offerPromises);
+                
+                this.groupSeats();
+                console.log('Loaded seats for side:', this.selectedSide, 'Count:', this.seats.length);
+            } catch (error) {
+                console.error('Error loading seats:', error);
+            } finally {
+                this.loadingSeats = false;
+            }
         },
 
         groupSeats() {
             this.groupedSeats = {};
             this.seats.forEach(seat => {
-                const row = seat.seatRow;
-                if (!this.groupedSeats[row]) {
-                    this.groupedSeats[row] = [];
+                if (!this.groupedSeats[seat.seatRow]) {
+                    this.groupedSeats[seat.seatRow] = [];
                 }
-                this.groupedSeats[row].push(seat);
-            });
-
-            // Sort seats in each row by seat number
-            Object.keys(this.groupedSeats).forEach(row => {
-                this.groupedSeats[row].sort((a, b) => parseInt(a.seatNumber) - parseInt(b.seatNumber));
+                this.groupedSeats[seat.seatRow].push(seat);
             });
         },
 
         async selectSeat(seat) {
-            // Check if seat is covered by season ticket
-            if (this.seasonTicketConflicts[seat.idSeat]) {
-                const conflict = this.seasonTicketConflicts[seat.idSeat];
-                this.error = `This seat is not available - ${conflict.conflictReason}`;
+            const status = this.getSeatStatus(seat);
+            if (status === 'unavailable' || status === 'occupied') {
                 return;
-            }
-            
-            // Check if seat has an available offer
-            if (!this.seatOffers[seat.idSeat]) {
-                return; // No offer available, can't select
             }
 
             this.selectedSeat = seat;
-            this.currentOffer = this.seatOffers[seat.idSeat];
-        },
 
-        async addToCart() {
-            if (!this.currentOffer) return;
-
-            this.addingToCart = true;
+            // Find the corresponding season ticket offer
             try {
-                const userData = getUserData();
-                const response = await PurchaseOfferService.addToCart(
-                    this.currentOffer.idPurchaseOffer,
-                    userData.userID
+                const response = await PurchaseOfferService.getSeasonTicketBySeat(
+                    this.selectedZone.idZone,
+                    seat.seatRow,
+                    seat.seatNumber,
+                    this.currentSeason.idSeason
                 );
-
-                if (response.isSuccess || response.code === 200) {
-                    this.successMessage = 'Ticket added to cart successfully!';
-                    // Reset selection after adding to cart
-                    this.selectedSeat = null;
-                    this.currentOffer = null;
-
-                    // Optionally redirect to cart after a delay
-                    setTimeout(() => {
-                        this.$router.push('/cart');
-                    }, 500);
+                if (response.isSuccess) {
+                    this.selectedSeasonTicket = response.value;
                 }
             } catch (error) {
-                this.error = error.error || 'Failed to add ticket to cart';
-            } finally {
-                this.addingToCart = false;
+                console.error('Error loading season ticket for seat:', error);
+                this.selectedSeasonTicket = null;
             }
         },
 
@@ -413,51 +387,33 @@ export default {
                 return 'selected';
             }
             
-            // Check if seat is covered by season ticket
-            if (this.seasonTicketConflicts[seat.idSeat]) {
+            // Check if seat has a season ticket conflict
+            if (seat.seatStatus === 'occupied' || seat.hasSeasonTicket) {
                 return 'season-ticket';
             }
             
-            // Check if there's an available offer for this seat
-            const hasOffer = this.seatOffers[seat.idSeat];
-            if (hasOffer && seat.seatStatus === 'enabled') {
-                return 'available';
+            if (seat.seatStatus === 'unavailable') {
+                return 'unavailable';
             }
             
-            return 'unavailable';
+            return 'available';
         },
 
         getSeatTooltip(seat) {
-            const baseInfo = `Row ${seat.seatRow}, Seat ${seat.seatNumber}`;
-            
-            if (this.seasonTicketConflicts[seat.idSeat]) {
-                const conflict = this.seasonTicketConflicts[seat.idSeat];
-                return `${baseInfo} - ${conflict.conflictReason}`;
+            const status = this.getSeatStatus(seat);
+
+            switch (status) {
+                case 'unavailable':
+                    return 'Seat is not available';
+                case 'occupied':
+                    return 'Season ticket already purchased for this seat';
+                case 'selected':
+                    return 'Currently selected';
+                case 'available':
+                    return `Row ${seat.seatRow}, Seat ${seat.seatNumber} - Click to select`;
+                default:
+                    return '';
             }
-            
-            return baseInfo;
-        },
-
-        formatMatchDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        },
-
-        goBack() {
-            this.$router.push('/customer/dashboard');
-        },
-
-        clearError() {
-            this.error = null;
-        },
-
-        clearSuccess() {
-            this.successMessage = null;
         },
 
         getSideIcon(side) {
@@ -471,22 +427,101 @@ export default {
         },
 
         getSideSeatsCount(side) {
-            if (!this.selectedZone) return 0;
+            if (!this.selectedZone || !this.allSeatsInZone) return 0;
+            return this.allSeatsInZone.filter(seat =>
+                seat.seatDirection === side
+            ).length;
+        },
+
+        async addToCart() {
+            if (!this.selectedSeasonTicket || !this.userData) {
+                return;
+            }
+
+            try {
+                this.addingToCart = true;
+                const response = await CartService.addToCart(this.selectedSeasonTicket.idPurchaseOffer, this.userData.userId);
+                if (response.isSuccess) {
+                    this.successMessage = 'Season ticket has been added to your cart successfully!';
+                    this.selectedSeat = null;
+                    this.selectedSeasonTicket = null;
+                    // Clear success message after 3 seconds
+                    setTimeout(() => {
+                        this.successMessage = null;
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                this.error = 'Failed to add season ticket to cart. Please try again.';
+            } finally {
+                this.addingToCart = false;
+            }
+        },
+
+        clearError() {
+            this.error = null;
+        },
+
+        clearSuccess() {
+            this.successMessage = null;
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString();
+        },
+
+        formatSeasonDateRange(season) {
+            if (!season) return '';
             
-            // Calculate expected seats per side based on zone capacity
-            const totalCapacity = this.selectedZone.maximumCapacity;
-            const seatsPerSide = totalCapacity / 4;
-            return Math.floor(seatsPerSide);
+            const startDate = this.formatDate(season.startedAt);
+            
+            if (!season.endedAt) {
+                return `${startDate} - Ongoing`;
+            }
+            
+            const endDate = this.formatDate(season.endedAt);
+            return `${startDate} - ${endDate}`;
         }
     }
 };
 </script>
 
 <style scoped>
+/* CSS Variables - matching SeatSelection.vue */
+:root {
+    --color-primary: #2563eb;
+    --color-secondary: #64748b;
+    --color-success: #10b981;
+    --color-error: #ef4444;
+    --color-text: #1f2937;
+    --color-text-light: #6b7280;
+    --color-surface: #f9fafb;
+    --color-border: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+}
+
+/* Main Container */
 .seat-selection {
+    min-height: 100vh;
+    background: var(--color-surface);
     padding: var(--spacing-xl) 0;
-    min-height: calc(100vh - 200px);
-    background-color: var(--color-surface);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
 }
 
 /* Header Section */
@@ -526,6 +561,13 @@ export default {
     font-weight: 600;
 }
 
+.match-info h2 {
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
 .match-details {
     display: flex;
     gap: var(--spacing-xl);
@@ -535,6 +577,7 @@ export default {
 
 /* Zone and Seat Selection Sections */
 .zone-selection-section,
+.side-selection-section,
 .seat-selection-section {
     background: white;
     border-radius: var(--radius-lg);
@@ -545,6 +588,7 @@ export default {
 }
 
 .zone-selection-section h2,
+.side-selection-section h2,
 .seat-selection-section h2 {
     color: var(--color-text);
     margin-bottom: var(--spacing-lg);
@@ -604,6 +648,11 @@ export default {
     font-weight: 600;
 }
 
+.zone-details {
+    color: var(--color-text-light);
+    font-size: 0.875rem;
+}
+
 .zone-capacity {
     color: var(--color-text-light);
     display: flex;
@@ -613,22 +662,6 @@ export default {
 }
 
 /* Side Selection Styles */
-.side-selection-section {
-    background: white;
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--color-border);
-}
-
-.side-selection-section h2 {
-    color: var(--color-text);
-    margin-bottom: var(--spacing-lg);
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
 .sides-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -818,7 +851,7 @@ export default {
 }
 
 .seat.season-ticket {
-    background: #8B5CF6; /* Purple color for season tickets */
+    background: #8B5CF6;
     border-color: #7C3AED;
     cursor: not-allowed;
     opacity: 0.8;
@@ -880,6 +913,40 @@ export default {
 .detail-row.total .value.price {
     color: var(--color-success);
     font-size: 1.125rem;
+}
+
+.purchase-actions {
+    margin-top: var(--spacing-md);
+}
+
+.btn {
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.btn-primary:disabled {
+    background: var(--color-secondary);
+    cursor: not-allowed;
+}
+
+.btn-large {
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: 1rem;
 }
 
 /* Loading State */
