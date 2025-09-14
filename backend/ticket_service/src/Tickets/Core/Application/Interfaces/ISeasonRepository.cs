@@ -11,4 +11,5 @@ public interface ISeasonRepository
     bool Delete(int id);
     bool ExistsByName(string name);
     bool ExistsByName(string name, int excludeId);
+    bool ReleaseSeasonCards(int seasonId);
 }

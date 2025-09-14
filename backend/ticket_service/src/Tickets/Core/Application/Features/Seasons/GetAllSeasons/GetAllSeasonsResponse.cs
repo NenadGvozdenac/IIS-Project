@@ -9,4 +9,6 @@ public class GetAllSeasonsResponse
     public int MatchesCount { get; set; }
     public int SeasonTicketsCount { get; set; }
     public bool IsActive { get; set; }
+    public bool TicketsForSale { get; set; }
+    public DateTime? TicketsWentOnSale { get; set; }
 }

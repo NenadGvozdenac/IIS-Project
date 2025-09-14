@@ -21,6 +21,14 @@
             class="nav-link club-owner-link">
             Competitions
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/upcoming-matches"
+            class="nav-link club-owner-link">
+            Upcoming Matches
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/season-tickets"
+            class="nav-link club-owner-link">
+            Season Tickets
+          </router-link>
           <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst"
             class="nav-link analyst-link">
             Data analysis

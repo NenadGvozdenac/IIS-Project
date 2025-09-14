@@ -11,5 +11,7 @@ public partial class SeasonTicket
 
     public int TicketPrice { get; set; }
 
+    public virtual PurchaseOffer IdPurchaseOfferNavigation { get; set; } = null!;
+
     public virtual Season IdSeasonNavigation { get; set; } = null!;
 }

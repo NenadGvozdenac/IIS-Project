@@ -64,4 +64,16 @@ public class SeasonRepository : ISeasonRepository
     {
         return _ticketDbContext.Seasons.Any(s => s.Name == name && s.IdSeason != excludeId);
     }
+
+    public bool ReleaseSeasonCards(int seasonId)
+    {
+        var season = _ticketDbContext.Seasons.Find(seasonId);
+        if (season == null) return false;
+
+        season.TicketsForSale = true;
+        season.TicketsWentOnSale = DateTime.UtcNow;
+
+        _ticketDbContext.SaveChanges();
+        return true;
+    }
 }

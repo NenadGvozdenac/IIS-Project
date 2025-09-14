@@ -6,6 +6,7 @@ using ticket_service.src.Tickets.Core.Application.Features.Seasons.GetAllSeasons
 using ticket_service.src.Tickets.Core.Application.Features.Seasons.GetSeasonById;
 using ticket_service.src.Tickets.Core.Application.Features.Seasons.UpdateSeason;
 using ticket_service.src.Tickets.Core.Application.Features.Seasons.DeleteSeason;
+using ticket_service.src.Tickets.Core.Application.Features.Seasons.EnableSeasonCards;
 
 namespace ticket_service.src.Tickets.API.Controllers;
 
@@ -65,6 +66,22 @@ public class SeasonsController : BaseController
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
+
+    [HttpPost("{id}/enable-tickets")]
+    public async Task<ActionResult> EnableSeasonTickets(int id, [FromBody] EnableSeasonTicketsRequest request)
+    {
+        var command = new EnableSeasonTicketsCommand 
+        { 
+            IdSeason = id,
+            ZonePrices = request.ZonePrices.Select(zp => new ZonePricing
+            {
+                ZoneId = zp.ZoneId,
+                Price = zp.Price
+            }).ToList()
+        };
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
 }
 
 public class UpdateSeasonRequest
@@ -72,4 +89,15 @@ public class UpdateSeasonRequest
     public DateOnly StartedAt { get; set; }
     public DateOnly? EndedAt { get; set; }
     public string Name { get; set; } = null!;
+}
+
+public class EnableSeasonTicketsRequest
+{
+    public List<ZonePricingDto> ZonePrices { get; set; } = new List<ZonePricingDto>();
+}
+
+public class ZonePricingDto
+{
+    public int ZoneId { get; set; }
+    public int Price { get; set; } // Price in cents
 }

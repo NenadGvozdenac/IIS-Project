@@ -12,4 +12,5 @@ public interface ISeatRepository
     Seat Create(Seat seat);
     Seat Update(Seat seat);
     bool Delete(int id);
+    IEnumerable<Seat> GetEnabledSeats();
 }
