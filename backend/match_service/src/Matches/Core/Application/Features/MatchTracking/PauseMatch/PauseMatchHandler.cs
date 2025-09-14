@@ -2,6 +2,7 @@ using MediatR;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Infrastructure;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
+using match_service.src.Matches.Core.Application.Utilities;
 
 namespace match_service.src.Matches.Core.Application.Features.MatchTracking.PauseMatch;
 
@@ -41,10 +42,8 @@ public class PauseMatchHandler : IRequestHandler<PauseMatchCommand, Result<Pause
 
             var now = DateTime.UtcNow;
 
-            // Calculate elapsed time in current period (excluding previous pauses)
-            var periodElapsed = (int)(now - matchTracking.PeriodStartTime.Value).TotalSeconds;
-            var totalPreviousPauses = matchTracking.TotalPauseTimeInPeriod ?? 0;
-            var netElapsedTime = Math.Max(0, periodElapsed - totalPreviousPauses);
+            // Calculate elapsed time in current period using the utility
+            var netElapsedTime = PeriodTimeCalculator.CalculateElapsedPeriodTime(matchTracking) ?? 0;
 
             // Update tracking state
             matchTracking.PeriodStatus = "paused";

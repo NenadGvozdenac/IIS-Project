@@ -33,12 +33,10 @@ public class EndPeriodHandler : IRequestHandler<EndPeriodCommand, Result<EndPeri
 
             var now = DateTime.UtcNow;
 
-            // Set period status based on whether it's the last period
-            matchTracking.PeriodStatus = isLastPeriod ? "finished" : "paused";
+            // Set period status as finished
+            matchTracking.PeriodStatus = "finished";
             
-            // Reset period-specific timers
-            matchTracking.ElapsedPeriodTime = 0;
-            matchTracking.TotalPauseTimeInPeriod = 0;
+            // Preserve elapsed period time and update last update time
             matchTracking.LastUpdateTime = now;
             
             // Clear pause time since period is ending

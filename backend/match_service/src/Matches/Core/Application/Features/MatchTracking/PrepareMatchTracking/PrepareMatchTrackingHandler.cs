@@ -55,8 +55,9 @@ namespace match_service.src.Matches.Core.Application.Features.MatchTracking.Prep
                     return Task.FromResult(Result<PrepareMatchTrackingResponse>.Failure($"Cannot prepare match. Current status: {matchTracking.TrackingStatus}"));
                 }
 
-                // Update tracking status to 'preparation'
+                // Update tracking status to 'preparation' and set initial period status
                 matchTracking.TrackingStatus = "preparation";
+                matchTracking.PeriodStatus = "upcoming"; // Set initial period status
                 matchTracking.LastUpdateTime = DateTime.UtcNow;
                 
                 // Set analyst ID if provided

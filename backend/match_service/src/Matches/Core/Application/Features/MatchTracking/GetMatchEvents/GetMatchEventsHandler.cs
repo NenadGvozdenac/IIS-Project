@@ -46,7 +46,8 @@ namespace match_service.src.Matches.Core.Application.Features.MatchTracking.GetM
                         PeriodTime = pe.PeriodTime,
                         Notes = pe.Notes,
                         PlayerId = pe.IdPlayer,
-                        PlayerName = pe.Id?.IdPlayerNavigation?.Name
+                        PlayerName = pe.Id?.IdPlayerNavigation?.Name + " " + pe.Id?.IdPlayerNavigation?.Surname,
+                        TeamId = pe.IdTeam
                     });
                 }
 

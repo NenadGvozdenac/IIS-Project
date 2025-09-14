@@ -3,6 +3,7 @@ using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Infrastructure;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Domain.Entities;
+using match_service.src.Matches.Core.Application.Utilities;
 
 namespace match_service.src.Matches.Core.Application.Features.MatchTracking.Timeout;
 
@@ -57,10 +58,11 @@ public class TimeoutHandler : IRequestHandler<TimeoutCommand, Result<TimeoutResp
 
             var now = DateTime.UtcNow;
 
-            // Calculate elapsed time in current period (excluding previous pauses)
-            var periodElapsed = (int)(now - matchTracking.PeriodStartTime.Value).TotalSeconds;
-            var totalPreviousPauses = matchTracking.TotalPauseTimeInPeriod ?? 0;
-            var netElapsedTime = Math.Max(0, periodElapsed - totalPreviousPauses);
+            // Calculate elapsed time in current period using the utility
+            var netElapsedTime = PeriodTimeCalculator.CalculateElapsedPeriodTime(matchTracking) ?? 0;
+            
+            // Calculate remaining time for the event
+            var remainingPeriodTime = PeriodTimeCalculator.CalculateRemainingPeriodTime(matchTracking);
 
             // Update tracking state - set to paused due to timeout
             matchTracking.PeriodStatus = "paused";
@@ -75,7 +77,7 @@ public class TimeoutHandler : IRequestHandler<TimeoutCommand, Result<TimeoutResp
                 Notes = $"Timeout called by {team.Name}",
                 Type = "timeout",
                 Period = matchTracking.CurrentPeriod,
-                PeriodTime = netElapsedTime,
+                PeriodTime = remainingPeriodTime, // Use remaining time as per new logic
                 IdTeam = request.TeamId,
                 IdMatch = request.MatchId
             };

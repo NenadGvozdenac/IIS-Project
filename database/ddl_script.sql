@@ -232,7 +232,7 @@ CREATE TABLE match_tracking (
     tracking_status            VARCHAR(20) CHECK (tracking_status IN ('active', 'finished', 'preparation', 'upcoming')),
     period_duration            INTEGER,
     current_period             VARCHAR(20) CHECK (current_period IN ('1', '2', '3', '4', 'end')),
-    period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused')),
+    period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused', 'upcoming')),
     period_start_time          TIMESTAMP WITH TIME ZONE,
     elapsed_period_time        INTEGER,
     last_pause_start_time      TIMESTAMP WITH TIME ZONE,
@@ -434,7 +434,7 @@ CREATE TABLE team_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout')),
+    type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout', 'formation', 'defense')),
     period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
     period_time   INTEGER,
     id_team       INTEGER NOT NULL,
@@ -966,7 +966,7 @@ BEGIN
         'upcoming',                              -- tracking_status
         600,                                     -- period_duration (600 seconds default)
         '1',                                     -- current_period
-        'active',                                -- period_status
+        'upcoming',                              -- period_status
         NULL,                                    -- period_start_time
         0,                                       -- elapsed_period_time
         NULL,                                    -- last_pause_start_time

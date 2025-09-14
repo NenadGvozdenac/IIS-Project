@@ -3,6 +3,7 @@ using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Infrastructure;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Domain.Entities;
+using match_service.src.Matches.Core.Application.Utilities;
 
 namespace match_service.src.Matches.Core.Application.Features.TeamMemberMatch.PlayerSubstitution;
 
@@ -73,14 +74,8 @@ public class PlayerSubstitutionHandler : IRequestHandler<PlayerSubstitutionComma
             // Create personal events for substitution
             var substitutionTime = DateTime.UtcNow;
             
-            // Calculate elapsed time in current period for event tracking
-            int? periodTime = null;
-            if (matchTracking.PeriodStartTime.HasValue)
-            {
-                var periodElapsed = (int)(substitutionTime - matchTracking.PeriodStartTime.Value).TotalSeconds;
-                var totalPreviousPauses = matchTracking.TotalPauseTimeInPeriod ?? 0;
-                periodTime = Math.Max(0, periodElapsed - totalPreviousPauses);
-            }
+            // Calculate remaining time in current period for event tracking
+            var periodTime = PeriodTimeCalculator.CalculateRemainingPeriodTime(matchTracking);
             
             // Event for player going out
             var playerOutEvent = new PersonalEvent

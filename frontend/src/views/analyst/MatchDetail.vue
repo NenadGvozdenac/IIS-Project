@@ -272,7 +272,7 @@
                 <span class="event-description">{{ event.description }}</span>
               </div>
             </div>
-            <button class="add-custom-event-btn">Add custom event</button>
+            <button class="add-custom-event-btn" @click="openAddCustomEventModal">Add custom event</button>
           </div>
         </div>
       </div>
@@ -434,6 +434,18 @@
     @close="closeSubstitutionModal"
     @substitute="handleSubstitution"
   />
+
+  <!-- Add Custom Event Modal -->
+  <AddCustomEventModal
+    :is-visible="showAddCustomEventModal"
+    :match-id="match?.idMatch"
+    :our-team-players="fullOurTeamStats"
+    :opponent-team-players="fullOpponentTeamStats"
+    :opponent-team-name="opponentTeam"
+    :opponent-team-id="2"
+    @close="closeAddCustomEventModal"
+    @event-created="onEventCreated"
+  />
 </template>
 
 <script setup>
@@ -443,6 +455,7 @@ import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
 import PlayerSubstitutionModal from '../../components/PlayerSubstitutionModal.vue'
 import StartingFiveModal from '../../components/StartingFiveModal.vue'
+import AddCustomEventModal from '../../components/AddCustomEventModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -542,6 +555,9 @@ const dismissRecommendation = (recommendationId) => {
 // Starting Five Modal
 const showStartingFiveModal = ref(false)
 
+// Custom Event Modal
+const showAddCustomEventModal = ref(false)
+
 // Substitution Modal
 const showSubstitutionModal = ref(false)
 const substitutionTeamId = ref(null)
@@ -556,6 +572,29 @@ const openStartingFiveModal = () => {
 
 const closeStartingFiveModal = () => {
   showStartingFiveModal.value = false
+}
+
+// Custom Event Modal functions
+const openAddCustomEventModal = () => {
+  showAddCustomEventModal.value = true
+}
+
+const closeAddCustomEventModal = () => {
+  showAddCustomEventModal.value = false
+}
+
+const onEventCreated = (newEvent) => {
+  // Add the new event to the chronology
+  gameEvents.value.unshift({
+    id: newEvent.id,
+    time: currentTime.value,
+    description: `${newEvent.category.toUpperCase()}: ${newEvent.type}${newEvent.notes ? ' - ' + newEvent.notes : ''}`
+  })
+  //console.log('New custom event added:', newEvent)
+  
+  // Refresh the match events from backend
+  const matchId = route.params.id
+  fetchMatchEvents(matchId)
 }
 
 // Handle starting five submission from modal component
@@ -724,7 +763,8 @@ const updateLocalPlayerStates = (substitutionData) => {
 const fetchMatchEvents = async (matchId) => {
   try {
     const response = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
-    
+
+    console.log('RESPONSE.data.value.events:', response.data.value.events)
     if (response.data?.isSuccess && response.data?.value?.events) {
       // Map backend response to UI format
       gameEvents.value = response.data.value.events.map(event => ({
@@ -733,7 +773,7 @@ const fetchMatchEvents = async (matchId) => {
         description: formatEventDescription(event)
       }))
       
-      console.log('Events loaded:', gameEvents.value.length)
+      console.log('Events loaded:', gameEvents.value)
     }
   } catch (err) {
     console.error('Error fetching match events:', err)
@@ -747,7 +787,8 @@ const formatEventTime = (event) => {
   if (event.period && event.periodTime !== null) {
     const minutes = Math.floor(event.periodTime / 60)
     const seconds = event.periodTime % 60
-    return `${minutes}:${seconds.toString().padStart(2, '0')} ${event.period}Q`
+    // Show period first (e.g. "2Q 5:34")
+    return `${event.period}Q ${minutes}:${seconds.toString().padStart(2, '0')}`
   }
   // Fallback to creation time
   const date = new Date(event.creationTime)
@@ -756,26 +797,27 @@ const formatEventTime = (event) => {
 
 // Helper function to format event description
 const formatEventDescription = (event) => {
+  // For personal events show: "Player Name - <type/notes>"
+  if (event.eventType === 'personal' && event.playerName) {
+    const base = event.type || 'Event'
+    return event.notes ? `${event.playerName} - ${base} - ${event.notes}` : `${event.playerName} - ${base}`
+  }
+
+  // For team events show: "Team Name - <type/notes>"
+  if (event.eventType === 'team' && event.teamName) {
+    const base = event.type || 'Event'
+    return event.notes ? `${event.teamName} - ${base} - ${event.notes}` : `${event.teamName} - ${base}`
+  }
+
+  // Default behavior: prefer player name if present, otherwise show type and notes
   let description = ''
-  
-  // Add player name if available
   if (event.playerName) {
     description += event.playerName + ' '
   }
-  
-  // Add team name for team events
-  if (event.eventType === 'team' && event.teamName && !event.playerName) {
-    description += event.teamName + ' '
-  }
-  
-  // Add event type/action
   description += event.type || 'Event'
-  
-  // Add notes if available
   if (event.notes) {
     description += ' - ' + event.notes
   }
-  
   return description
 }
 
@@ -933,15 +975,57 @@ const recordAction = (action) => {
 }
 
 // Formation selection
-const selectFormation = (formation) => {
+const selectFormation = async (formation) => {
   selectedFormation.value = formation
   console.log('Selected formation:', formation)
+  
+  // Create team event for formation change
+  try {
+    const matchId = route.params.id
+    const eventData = {
+      matchId: parseInt(matchId),
+      category: 'team',
+      type: 'formation',
+      notes: formation,
+      teamId: 1 // Our team (Partizan)
+    }
+    
+    const response = await axios.post(`${MATCHES_URL}/ChronologicalEvent`, eventData)
+    
+    if (response.data?.isSuccess) {
+      // Refresh the match events from backend
+      fetchMatchEvents(matchId)
+    }
+  } catch (error) {
+    console.error('Error creating formation event:', error)
+  }
 }
 
 // Defense selection
-const selectDefense = (defense) => {
+const selectDefense = async (defense) => {
   selectedDefense.value = defense
   console.log('Selected defense:', defense)
+  
+  // Create team event for defense change
+  try {
+    const matchId = route.params.id
+    const eventData = {
+      matchId: parseInt(matchId),
+      category: 'team',
+      type: 'defense',
+      notes: defense,
+      teamId: 1 // Our team (Partizan)
+    }
+    
+    const response = await axios.post(`${MATCHES_URL}/ChronologicalEvent`, eventData)
+    
+    if (response.data?.isSuccess) {
+      // Refresh the match events from backend
+      fetchMatchEvents(matchId)
+    }
+  } catch (error) {
+    console.error('Error creating defense event:', error)
+  }
 }
 
 // Game control functions

@@ -48,8 +48,8 @@ public class NextPeriodHandler : IRequestHandler<NextPeriodCommand, Result<NextP
             matchTracking.TotalPauseTimeInPeriod = 0;
             matchTracking.LastPauseStartTime = null;
             
-            // Set period as active (ready to play)
-            matchTracking.PeriodStatus = "active";
+            // Set period as upcoming (waiting to start)
+            matchTracking.PeriodStatus = "upcoming";
 
             _matchTrackingRepository.Update(matchTracking);
             _context.SaveChanges();
