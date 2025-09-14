@@ -28,7 +28,9 @@ public class GetAllSeasonsHandler : IRequestHandler<GetAllSeasonsQuery, Result<L
                 Name = s.Name,
                 MatchesCount = s.Matches.Count,
                 SeasonTicketsCount = s.SeasonTickets.Count,
-                IsActive = s.StartedAt <= currentDate && (!s.EndedAt.HasValue || s.EndedAt >= currentDate)
+                IsActive = s.StartedAt <= currentDate && (!s.EndedAt.HasValue || s.EndedAt >= currentDate),
+                TicketsForSale = s.TicketsForSale,
+                TicketsWentOnSale = s.TicketsWentOnSale
             }).ToList();
 
             return Task.FromResult(Result<List<GetAllSeasonsResponse>>.Success(response));

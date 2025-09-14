@@ -24,19 +24,6 @@ public class DeleteSeasonHandler : IRequestHandler<DeleteSeasonCommand, Result<D
                     .WithCode((int)ResultCode.NotFound));
             }
 
-            // Check if season has associated matches or season tickets
-            if (season.Matches.Any())
-            {
-                return Task.FromResult(Result<DeleteSeasonResponse>.Failure("Cannot delete season that has associated matches")
-                    .WithCode((int)ResultCode.BadRequest));
-            }
-
-            if (season.SeasonTickets.Any())
-            {
-                return Task.FromResult(Result<DeleteSeasonResponse>.Failure("Cannot delete season that has associated season tickets")
-                    .WithCode((int)ResultCode.BadRequest));
-            }
-
             var deleted = _seasonRepository.Delete(request.IdSeason);
             if (!deleted)
             {

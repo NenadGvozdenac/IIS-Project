@@ -348,9 +348,11 @@ CREATE TABLE request (
 
 CREATE TABLE season (
     id_season  SERIAL NOT NULL,
+    name       VARCHAR(255) NOT NULL,
     started_at DATE NOT NULL,
     ended_at   DATE,
-    name       VARCHAR(255) NOT NULL,
+    tickets_for_sale        BOOLEAN NOT NULL DEFAULT FALSE,
+    tickets_went_on_sale    TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     PRIMARY KEY (id_season)
 );
 
@@ -587,7 +589,7 @@ ALTER TABLE cart_item
 ALTER TABLE cart_item
     ADD CONSTRAINT fk_cart_item_purchase_offer 
         FOREIGN KEY (id_purchase_offer)
-        REFERENCES purchase_offer (id_purchase_offer);
+        REFERENCES purchase_offer (id_purchase_offer) ON DELETE CASCADE;
 
 ALTER TABLE cart
     ADD CONSTRAINT fk_cart_user 
@@ -609,6 +611,11 @@ ALTER TABLE individual_ticket
         FOREIGN KEY (id_match)
         REFERENCES match (id_match);
 
+ALTER TABLE individual_ticket
+    ADD CONSTRAINT fk_individual_ticket_purchase_offer 
+        FOREIGN KEY (id_purchase_offer)
+        REFERENCES purchase_offer (id_purchase_offer) ON DELETE CASCADE;
+
 ALTER TABLE management_member_request
     ADD CONSTRAINT fk_mgmt_mem_req_management 
         FOREIGN KEY (id_management_member)
@@ -627,7 +634,7 @@ ALTER TABLE match
 ALTER TABLE match
     ADD CONSTRAINT fk_match_season 
         FOREIGN KEY (id_season)
-        REFERENCES season (id_season);
+        REFERENCES season (id_season) ON DELETE CASCADE;
 
 ALTER TABLE match
     ADD CONSTRAINT fk_match_team 
@@ -697,7 +704,7 @@ ALTER TABLE player
 ALTER TABLE purchase_offer
     ADD CONSTRAINT fk_purchase_offer_seat 
         FOREIGN KEY (id_seat)
-        REFERENCES seat (id_seat);
+        REFERENCES seat (id_seat) ON DELETE CASCADE;
 
 ALTER TABLE request
     ADD CONSTRAINT fk_request_match 
@@ -717,12 +724,17 @@ ALTER TABLE season_metrics
 ALTER TABLE season_ticket
     ADD CONSTRAINT fk_season_ticket_season 
         FOREIGN KEY (id_season)
-        REFERENCES season (id_season);
+        REFERENCES season (id_season) ON DELETE CASCADE;
+
+ALTER TABLE season_ticket
+    ADD CONSTRAINT fk_season_ticket_purchase_offer 
+        FOREIGN KEY (id_purchase_offer)
+        REFERENCES purchase_offer (id_purchase_offer) ON DELETE CASCADE;
 
 ALTER TABLE seat
     ADD CONSTRAINT fk_seat_zone 
         FOREIGN KEY (id_zone)
-        REFERENCES zone (id_zone);
+        REFERENCES zone (id_zone) ON DELETE CASCADE;
 
 ALTER TABLE sent_request
     ADD CONSTRAINT fk_sent_request_agency 
@@ -1086,8 +1098,8 @@ INSERT INTO position (name) VALUES
     ('Center');
 
 -- Insert current season (2025/26)
-INSERT INTO season (started_at, name) VALUES 
-    ('2025-09-01', '2025/26 Season');
+INSERT INTO season (started_at, name, tickets_for_sale, tickets_went_on_sale) VALUES
+    ('2025-09-01', '2025/26 Season', TRUE, '2025-09-01 19:00:00+01');
 
 -- Insert Partizan team
 INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
