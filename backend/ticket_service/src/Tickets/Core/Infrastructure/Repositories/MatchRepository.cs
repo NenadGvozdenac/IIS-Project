@@ -41,4 +41,24 @@ public class MatchRepository : IMatchRepository
             .Where(m => m.IsInOurHall)
             .ToList();
     }
+
+    public IEnumerable<Match> GetUpcomingMatchesWithinDays(int days)
+    {
+        var currentDate = DateTime.UtcNow;
+        var endDate = currentDate.AddDays(days);
+        
+        return _ticketDbContext.Matches
+            .Include(m => m.IdCompetitionNavigation)
+            .Include(m => m.IdSeasonNavigation)
+            .Include(m => m.IdTeamNavigation)
+            .Where(m => m.ScheduledAt >= currentDate && m.ScheduledAt <= endDate)
+            .OrderBy(m => m.ScheduledAt)
+            .ToList();
+    }
+
+    public void Update(Match match)
+    {
+        _ticketDbContext.Matches.Update(match);
+        _ticketDbContext.SaveChanges();
+    }
 }
