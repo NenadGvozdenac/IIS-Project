@@ -101,7 +101,6 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdPurchaseOfferNavigation).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.IdPurchaseOffer)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_cart_item_purchase_offer");
         });
 
@@ -166,6 +165,10 @@ public partial class TicketDbContext : DbContext
                 .HasForeignKey(d => d.IdMatch)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_individual_ticket_match");
+
+            entity.HasOne(d => d.IdPurchaseOfferNavigation).WithOne(p => p.IndividualTicket)
+                .HasForeignKey<IndividualTicket>(d => d.IdPurchaseOffer)
+                .HasConstraintName("fk_individual_ticket_purchase_offer");
         });
 
         modelBuilder.Entity<Match>(entity =>
@@ -206,7 +209,6 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.Matches)
                 .HasForeignKey(d => d.IdSeason)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_season");
 
             entity.HasOne(d => d.IdTeamNavigation).WithMany(p => p.Matches)
@@ -241,7 +243,6 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdSeatNavigation).WithMany(p => p.PurchaseOffers)
                 .HasForeignKey(d => d.IdSeat)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_purchase_offer_seat");
         });
 
@@ -273,9 +274,12 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.IdSeason).HasColumnName("id_season");
             entity.Property(e => e.TicketPrice).HasColumnName("ticket_price");
 
+            entity.HasOne(d => d.IdPurchaseOfferNavigation).WithOne(p => p.SeasonTicket)
+                .HasForeignKey<SeasonTicket>(d => d.IdPurchaseOffer)
+                .HasConstraintName("fk_season_ticket_purchase_offer");
+
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.SeasonTickets)
                 .HasForeignKey(d => d.IdSeason)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_season_ticket_season");
         });
 
@@ -301,6 +305,7 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdZoneNavigation).WithMany(p => p.Seats)
                 .HasForeignKey(d => d.IdZone)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_seat_zone");
         });
 

@@ -26,4 +26,8 @@ public partial class PurchaseOffer
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     public virtual Seat IdSeatNavigation { get; set; } = null!;
+
+    public virtual IndividualTicket? IndividualTicket { get; set; }
+
+    public virtual SeasonTicket? SeasonTicket { get; set; }
 }

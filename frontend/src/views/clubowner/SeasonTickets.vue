@@ -2,6 +2,11 @@
     <div class="season-tickets">
         <h1>Season Tickets Management</h1>
 
+        <!-- Don't refresh warning when any operation is in progress -->
+        <div v-if="isAnyOperationInProgress" class="refresh-warning">
+            ⚠️ Operation in progress - Don't refresh the page!
+        </div>
+
         <div v-if="loading" class="loading">
             Loading seasons...
         </div>
@@ -26,7 +31,7 @@
 
                 <div class="season-actions">
                     <button v-if="!season.ticketsForSale" 
-                            :disabled="seasonTicketsEnabled(season)"
+                            :disabled="seasonTicketsEnabled(season) || isAnyOperationInProgress"
                             @click="openPricingModal(season)" 
                             class="enable-tickets-btn">
                         <span v-if="enableLoading === season.idSeason">Enabling...</span>
@@ -47,8 +52,12 @@
                 <div class="modal-header">
                     <h3>Set Season Ticket Prices</h3>
                     <div class="header-actions">
-                        <button @click="setDefaultPrices" class="default-btn" :disabled="!canEnableTickets || enableLoading">Set Default Prices</button>
-                        <button @click="closePricingModal" class="close-btn">&times;</button>
+                        <button @click="setDefaultPrices" 
+                                :disabled="isAnyOperationInProgress"
+                                class="default-btn">Set Default Prices</button>
+                        <button @click="closePricingModal" 
+                                :disabled="enableLoading"
+                                class="close-btn">&times;</button>
                     </div>
                 </div>
 
@@ -68,6 +77,7 @@
                                 <input type="number" 
                                        step="100" 
                                        min="0" 
+                                       :disabled="isAnyOperationInProgress"
                                        v-model.number="zonePrices[zone.idZone]"
                                        placeholder="e.g., 15000" />
                             </div>
@@ -78,10 +88,9 @@
                 <div class="modal-footer">
                     <button @click="closePricingModal" class="cancel-btn">Cancel</button>
                     <button @click="enableSeasonTickets" 
-                            :disabled="!canEnableTickets || enableLoading"
+                            :disabled="!canEnableTickets"
                             class="enable-btn">
-                        <span v-if="enableLoading">Processing...</span>
-                        <span v-else>Enable Season Tickets</span>
+                        Enable Season Tickets
                     </button>
                 </div>
             </div>
@@ -234,17 +243,7 @@ export default {
 
         const setDefaultPrices = () => {
             zones.value.forEach(zone => {
-                // Set different default prices based on zone rank or name
-                let defaultPrice = 15000 // 150.00 EUR default
-                
-                if (zone.name.toLowerCase().includes('vip') || zone.rank === 1) {
-                    defaultPrice = 25000 // 250.00 EUR for VIP
-                } else if (zone.name.toLowerCase().includes('premium') || zone.rank === 2) {
-                    defaultPrice = 18000 // 180.00 EUR for Premium
-                } else if (zone.rank >= 3) {
-                    defaultPrice = 10000 // 100.00 EUR for standard zones
-                }
-                
+                let defaultPrice = 15000
                 zonePrices.value[zone.idZone] = defaultPrice
             })
         }
@@ -258,30 +257,36 @@ export default {
             })
         })
 
+        const isAnyOperationInProgress = computed(() => {
+            return loading.value || zonesLoading.value || enableLoading.value !== null
+        })
+
         const enableSeasonTickets = async () => {
             if (!selectedSeason.value || !canEnableTickets.value) return
 
-            try {
-                enableLoading.value = selectedSeason.value.idSeason
+            // Store values before closing modal
+            const seasonId = selectedSeason.value.idSeason
+            const zonePricesArray = zones.value.map(zone => ({
+                zoneId: zone.idZone,
+                price: zonePrices.value[zone.idZone]
+            }))
 
-                // Prepare zone prices in the format expected by the API
-                const zonePricesArray = zones.value.map(zone => ({
-                    zoneId: zone.idZone,
-                    price: zonePrices.value[zone.idZone]
-                }))
+            try {
+                enableLoading.value = seasonId
+
+                // Close modal immediately
+                closePricingModal()
 
                 // Enable season tickets
-                await SeasonService.enableSeasonTickets(selectedSeason.value.idSeason, zonePricesArray)
+                await SeasonService.enableSeasonTickets(seasonId, zonePricesArray)
 
                 // Update the season in our local data
-                const seasonIndex = seasons.value.findIndex(s => s.idSeason === selectedSeason.value.idSeason)
+                const seasonIndex = seasons.value.findIndex(s => s.idSeason === seasonId)
                 if (seasonIndex !== -1) {
                     seasons.value[seasonIndex].ticketsForSale = true
                     seasons.value[seasonIndex].ticketsWentOnSale = new Date().toISOString()
                 }
 
-                // Close modal and show success
-                closePricingModal()
                 alert('Season tickets have been successfully enabled!')
 
             } catch (err) {
@@ -306,6 +311,7 @@ export default {
             selectedSeason,
             zonePrices,
             canEnableTickets,
+            isAnyOperationInProgress,
             formatDate,
             formatDateRange,
             getSeasonStatusClass,
@@ -331,6 +337,19 @@ h1 {
     color: #333;
     margin-bottom: 30px;
     text-align: center;
+}
+
+.refresh-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .loading {
@@ -518,8 +537,13 @@ h1 {
     transition: background-color 0.3s ease;
 }
 
-.default-btn:hover {
+.default-btn:hover:not(:disabled) {
     background-color: #0056b3;
+}
+
+.default-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
 }
 
 .close-btn {
@@ -587,7 +611,13 @@ h1 {
     font-size: 16px;
 }
 
-.pricing-input input:focus {
+.pricing-input input:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.pricing-input input:focus:not(:disabled) {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
