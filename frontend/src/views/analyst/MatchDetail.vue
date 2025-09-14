@@ -196,21 +196,28 @@
               <div 
                 v-for="player in activeOurPlayers" 
                 :key="player.id"
-                class="player-card"
+                class="player-card modern-card"
                 :class="{ 'selected': selectedPlayer?.id === player.id && selectedPlayer?.team === 'our' }"
                 @click="selectPlayer(player, 'our')"
               >
-                <div class="player-info">
-                  <div class="player-name">{{ player.name }}</div>
-                  <div class="player-number">#{{ player.number }}</div>
-                  <div class="player-stats">
-                    <div class="time-fouls">
-                      <span>in game: {{ player.timeInGame }}</span>
-                      <div class="fouls">
-                        <span v-for="foul in player.fouls" :key="foul" class="foul-dot">●</span>
-                      </div>
+                <div class="card-header">
+                  <span class="player-name">{{ player.name }}</span>
+                  <span class="player-number">#{{ player.number }}</span>
+                </div>
+                <div class="card-body">
+                  <div class="time-stat">
+                    <span class="label">in game:</span>
+                    <span class="value">{{ player.timeInGame }}</span>
+                  </div>
+                  <div class="fouls-stat">
+                    <span class="label">fouls:</span>
+                    <div class="foul-dots">
+                      <span v-for="foul in player.fouls" :key="foul" class="foul-dot">●</span>
                     </div>
-                    <div class="efficiency">eff: {{ player.eff }}</div>
+                  </div>
+                  <div class="eff-stat">
+                    <span class="label">eff:</span>
+                    <span class="value">{{ player.eff }}</span>
                   </div>
                 </div>
               </div>
@@ -256,21 +263,28 @@
               <div 
                 v-for="player in activeOpponentPlayers" 
                 :key="player.id"
-                class="player-card"
+                class="player-card modern-card"
                 :class="{ 'selected': selectedPlayer?.id === player.id && selectedPlayer?.team === 'opponent' }"
                 @click="selectPlayer(player, 'opponent')"
               >
-                <div class="player-info">
-                  <div class="player-name">{{ player.name }}</div>
-                  <div class="player-number">#{{ player.number }}</div>
-                  <div class="player-stats">
-                    <div class="time-fouls">
-                      <span>in game: {{ player.timeInGame }}</span>
-                      <div class="fouls">
-                        <span v-for="foul in player.fouls" :key="foul" class="foul-dot">●</span>
-                      </div>
+                <div class="card-header">
+                  <span class="player-name">{{ player.name }}</span>
+                  <span class="player-number">#{{ player.number }}</span>
+                </div>
+                <div class="card-body">
+                  <div class="time-stat">
+                    <span class="label">in game:</span>
+                    <span class="value">{{ player.timeInGame }}</span>
+                  </div>
+                  <div class="fouls-stat">
+                    <span class="label">fouls:</span>
+                    <div class="foul-dots">
+                      <span v-for="foul in player.fouls" :key="foul" class="foul-dot">●</span>
                     </div>
-                    <div class="efficiency">eff: {{ player.eff }}</div>
+                  </div>
+                  <div class="eff-stat">
+                    <span class="label">eff:</span>
+                    <span class="value">{{ player.eff }}</span>
                   </div>
                 </div>
               </div>
@@ -371,10 +385,10 @@
           <div class="team-stats-container">
             <h3>Partizan</h3>
             <div class="stats-table-wrapper">
-              <table class="stats-table">
+              <table class="stats-table modern-stats">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th class="player-header"># IGRAČ</th>
                     <th>EFF</th>
                     <th>FG</th>
                     <th>2P</th>
@@ -388,21 +402,53 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="player in fullOurTeamStats" :key="player.id">
-                    <td class="player-cell">
-                      <div class="player-name">{{ player.name }} (#{{ player.number }})</div>
-                      <!-- <div class="player-number">#{{ player.number }}</div> -->
+                  <tr 
+                    v-for="player in fullOurTeamStats" 
+                    :key="player.id"
+                    :class="{ 'active-player': player.isActive }"
+                  >
+                    <td class="player-info-cell">
+                      <div class="player-number">{{ player.number }}</div>
+                      <div class="player-details">
+                        <div class="player-name">{{ player.name }}</div>
+                        <div class="foul-dots">
+                          <span 
+                            v-for="foul in player.fouls" 
+                            :key="foul" 
+                            class="foul-dot"
+                          >●</span>
+                        </div>
+                      </div>
+                      <div class="status-container">
+                        <span v-if="player.isActive" class="status-badge active">Active</span>
+                        <span v-else class="status-badge bench">Bench</span>
+                      </div>
                     </td>
-                    <td>{{ player.eff }}</td>
-                    <td>{{ player.fg }}</td>
-                    <td>{{ player.twoP }}</td>
-                    <td>{{ player.threeP }}</td>
-                    <td>{{ player.ft }}</td>
-                    <td>{{ player.rebOff }}/{{ player.rebDef }}</td>
-                    <td>{{ player.assists }}</td>
-                    <td>{{ player.steals }}</td>
-                    <td>{{ player.blocks }}</td>
-                    <td>{{ player.points }}</td>
+                    <td class="efficiency-cell" :class="{ 'negative-eff': player.eff < 0 }">{{ player.eff }}</td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.fg }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.fg_made, player.fg_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.twoP }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.twoP_made, player.twoP_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.threeP }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.threeP_made, player.threeP_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.ft }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.ft_made, player.ft_attempts) }}%</div>
+                    </td>
+                    <td class="reb-cell">
+                      <div class="reb-total">{{ player.rebOff + player.rebDef }}</div>
+                      <div class="reb-breakdown">{{ player.rebOff }} {{ player.rebDef }}</div>
+                    </td>
+                    <td class="simple-stat">{{ player.assists }}</td>
+                    <td class="simple-stat">{{ player.steals }}</td>
+                    <td class="simple-stat">{{ player.blocks }}</td>
+                    <td class="points-cell">{{ player.points }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -413,10 +459,10 @@
           <div class="team-stats-container">
             <h3>{{ opponentTeam }}</h3>
             <div class="stats-table-wrapper">
-              <table class="stats-table">
+              <table class="stats-table modern-stats">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th class="player-header"># IGRAČ</th>
                     <th>EFF</th>
                     <th>FG</th>
                     <th>2P</th>
@@ -430,21 +476,53 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="player in fullOpponentTeamStats" :key="player.id">
-                    <td class="player-cell">
-                      <div class="player-name">{{ player.name }} (#{{ player.number }})</div>
-                      <!-- <div class="player-number">#{{ player.number }}</div> -->
+                  <tr 
+                    v-for="player in fullOpponentTeamStats" 
+                    :key="player.id"
+                    :class="{ 'active-player': player.isActive }"
+                  >
+                    <td class="player-info-cell">
+                      <div class="player-number">{{ player.number }}</div>
+                      <div class="player-details">
+                        <div class="player-name">{{ player.name }}</div>
+                        <div class="foul-dots">
+                          <span 
+                            v-for="foul in player.fouls" 
+                            :key="foul" 
+                            class="foul-dot"
+                          >●</span>
+                        </div>
+                      </div>
+                      <div class="status-container">
+                        <span v-if="player.isActive" class="status-badge active">Active</span>
+                        <span v-else class="status-badge bench">Bench</span>
+                      </div>
                     </td>
-                    <td>{{ player.eff }}</td>
-                    <td>{{ player.fg }}</td>
-                    <td>{{ player.twoP }}</td>
-                    <td>{{ player.threeP }}</td>
-                    <td>{{ player.ft }}</td>
-                    <td>{{ player.rebOff }}/{{ player.rebDef }}</td>
-                    <td>{{ player.assists }}</td>
-                    <td>{{ player.steals }}</td>
-                    <td>{{ player.blocks }}</td>
-                    <td>{{ player.points }}</td>
+                    <td class="efficiency-cell" :class="{ 'negative-eff': player.eff < 0 }">{{ player.eff }}</td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.fg }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.fg_made, player.fg_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.twoP }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.twoP_made, player.twoP_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.threeP }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.threeP_made, player.threeP_attempts) }}%</div>
+                    </td>
+                    <td class="stat-cell">
+                      <div class="stat-made-attempts">{{ player.ft }}</div>
+                      <div class="stat-percentage">{{ calculatePercentage(player.ft_made, player.ft_attempts) }}%</div>
+                    </td>
+                    <td class="reb-cell">
+                      <div class="reb-total">{{ player.rebOff + player.rebDef }}</div>
+                      <div class="reb-breakdown">{{ player.rebOff }} {{ player.rebDef }}</div>
+                    </td>
+                    <td class="simple-stat">{{ player.assists }}</td>
+                    <td class="simple-stat">{{ player.steals }}</td>
+                    <td class="simple-stat">{{ player.blocks }}</td>
+                    <td class="points-cell">{{ player.points }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1320,6 +1398,9 @@ const fetchTeamMembers = async (matchId) => {
     fullOurTeamStats.value = ourTeamMembers.map(convertToPlayerFormat)
     fullOpponentTeamStats.value = opponentTeamMembers.map(convertToPlayerFormat)
     
+    // Calculate comprehensive statistics from events
+    await calculatePlayerStatistics(matchId)
+    
     //console.log('Our team players:', activeOurPlayers.value)
     //console.log('Opponent team players:', activeOpponentPlayers.value)
     
@@ -1327,6 +1408,156 @@ const fetchTeamMembers = async (matchId) => {
     console.error('Error fetching team members:', err)
     // Keep hardcoded data as fallback
   }
+}
+
+// Calculate comprehensive player statistics from match events
+const calculatePlayerStatistics = async (matchId) => {
+  try {
+    // Fetch all events for this match
+    const eventsResponse = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
+    
+    if (!eventsResponse.data?.isSuccess || !eventsResponse.data?.value?.events) {
+      console.log('No events data available for statistics calculation')
+      return
+    }
+
+    const events = eventsResponse.data.value.events
+    console.log('Calculating statistics from events:', events.length)
+
+    // Initialize statistics for all players
+    const resetPlayerStats = (player) => {
+      player.points = 0
+      player.fg_made = 0
+      player.fg_attempts = 0
+      player.twoP_made = 0
+      player.twoP_attempts = 0
+      player.threeP_made = 0
+      player.threeP_attempts = 0
+      player.ft_made = 0
+      player.ft_attempts = 0
+      player.rebOff = 0
+      player.rebDef = 0
+      player.assists = 0
+      player.steals = 0
+      player.blocks = 0
+      player.turnovers = 0
+      player.fouls = 0
+    }
+
+    // Reset all player stats
+    fullOurTeamStats.value.forEach(resetPlayerStats)
+    fullOpponentTeamStats.value.forEach(resetPlayerStats)
+
+    // Process each event and update player statistics
+    events.forEach(event => {
+      if (event.eventType === 'personal' && event.playerId) {
+        // Find the player in either team
+        let player = fullOurTeamStats.value.find(p => p.id === event.playerId)
+        if (!player) {
+          player = fullOpponentTeamStats.value.find(p => p.id === event.playerId)
+        }
+
+        if (player) {
+          switch (event.type) {
+            case '+2p':
+              player.points += 2
+              player.twoP_made++
+              player.twoP_attempts++
+              player.fg_made++
+              player.fg_attempts++
+              break
+            case '2p':
+              player.twoP_attempts++
+              player.fg_attempts++
+              break
+            case '+3p':
+              player.points += 3
+              player.threeP_made++
+              player.threeP_attempts++
+              player.fg_made++
+              player.fg_attempts++
+              break
+            case '3p':
+              player.threeP_attempts++
+              player.fg_attempts++
+              break
+            case '+ft':
+              player.points += 1
+              player.ft_made++
+              player.ft_attempts++
+              break
+            case 'ft':
+              player.ft_attempts++
+              break
+            case 'reb of':
+              player.rebOff++
+              break
+            case 'reb def':
+              player.rebDef++
+              break
+            case 'assist':
+              player.assists++
+              break
+            case 'steal':
+              player.steals++
+              break
+            case 'block':
+              player.blocks++
+              break
+            case 'foul':
+              player.fouls++
+              break
+          }
+        }
+      }
+    })
+
+    // Calculate formatted statistics for display
+    fullOurTeamStats.value.forEach(calculateFormattedStats)
+    fullOpponentTeamStats.value.forEach(calculateFormattedStats)
+
+    console.log('Statistics calculated successfully')
+
+  } catch (error) {
+    console.error('Error calculating player statistics:', error)
+  }
+}
+
+// Helper function to calculate formatted statistics for display
+const calculateFormattedStats = (player) => {
+  // Field Goal percentage
+  player.fg = player.fg_attempts > 0 ? 
+    `${player.fg_made}/${player.fg_attempts}` : '0/0'
+  
+  // Two-point percentage
+  player.twoP = player.twoP_attempts > 0 ? 
+    `${player.twoP_made}/${player.twoP_attempts}` : '0/0'
+  
+  // Three-point percentage
+  player.threeP = player.threeP_attempts > 0 ? 
+    `${player.threeP_made}/${player.threeP_attempts}` : '0/0'
+  
+  // Free throw percentage
+  player.ft = player.ft_attempts > 0 ? 
+    `${player.ft_made}/${player.ft_attempts}` : '0/0'
+  
+  // Total rebounds
+  player.totalReb = player.rebOff + player.rebDef
+  
+  // Efficiency calculation (basic formula)
+  // EFF = (PTS + REB + AST + STL + BLK) - (FGA - FGM + FTA - FTM + TO)
+  const positive = player.points + player.totalReb + player.assists + player.steals + player.blocks
+  const negative = (player.fg_attempts - player.fg_made) + (player.ft_attempts - player.ft_made) + player.turnovers + player.fouls
+  player.eff = positive - negative
+  
+  // Efficiency for the EFF column in table
+  player.efficiency = player.eff
+}
+
+// Helper function to calculate shooting percentages
+const calculatePercentage = (made, attempts) => {
+  if (attempts === 0) return 0
+  return Math.round((made / attempts) * 100)
 }
 
 // Player selection
@@ -1383,6 +1614,9 @@ const recordAction = async (action, teamId) => {
       
       // Refresh events from backend to get updated chronology
       await fetchMatchEvents(matchId)
+      
+      // Refresh player statistics
+      await calculatePlayerStatistics(matchId)
     }
     
   } catch (error) {
@@ -1977,6 +2211,90 @@ onUnmounted(() => {
   background: white;
 }
 
+/* Modern Card Style */
+.player-card.modern-card {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  min-height: 80px;
+}
+
+.player-card.modern-card:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.player-card.modern-card.selected {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.modern-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.modern-card .player-name {
+  font-weight: bold;
+  font-size: 15px;
+  color: #333;
+  margin: 0;
+}
+
+.modern-card .player-number {
+  font-weight: 600;
+  font-size: 15px;
+  color: white;
+  margin: 0;
+}
+
+.modern-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modern-card .time-stat,
+.modern-card .fouls-stat,
+.modern-card .eff-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modern-card .label {
+  font-size: 15px;
+  color: #666;
+  font-weight: normal;
+}
+
+.modern-card .value {
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+}
+
+.modern-card .foul-dots {
+  display: flex;
+  gap: 1px;
+}
+
+.modern-card .foul-dot {
+  color: #000;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .player-card:hover {
   border-color: #1976d2;
 }
@@ -1994,14 +2312,9 @@ onUnmounted(() => {
 .player-name {
   font-weight: bold;
   font-size: 0.9rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
   color: #333;
-}
-
-.player-number {
-  font-size: 0.8rem;
-  color: #666;
-  margin-bottom: 0.5rem;
+  text-align: left;
 }
 
 .player-stats {
@@ -2014,11 +2327,6 @@ onUnmounted(() => {
 
 .fouls {
   margin-top: 0.2rem;
-}
-
-.foul-dot {
-  color: #333;
-  margin-right: 0.1rem;
 }
 
 .efficiency {
@@ -2664,4 +2972,263 @@ onUnmounted(() => {
     padding: 0.4rem 0.2rem;
   }
 }
+
+/* Enhanced Statistics Table Styles */
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.stats-table th {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+}
+
+.stats-table td {
+  border: 1px solid #dee2e6;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.stats-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.stats-table tr.active-player {
+  background-color: #e8f5e8;
+}
+
+.stats-table tr.active-player td {
+  font-weight: 500;
+}
+
+.player-cell {
+  text-align: left !important;
+  min-width: 140px;
+}
+
+.player-cell .player-name {
+  font-weight: 500;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.starter {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.bench {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.points {
+  font-weight: 600;
+  color: #007bff;
+}
+
+.efficiency {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.efficiency.negative-eff {
+  color: #dc3545;
+}
+
+/* Modern Basketball Stats Table */
+.modern-stats {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.modern-stats th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 11px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 8px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.modern-stats th.player-header {
+  text-align: left;
+  width: 200px;
+}
+
+.modern-stats td {
+  padding: 8px 8px;
+  vertical-align: middle;
+}
+
+.player-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.player-info-cell .player-details .player-name {
+  margin-bottom: 0
+}
+
+.player-number {
+  background: #007bff;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+span.player-number{
+  color: red;
+}
+
+.player-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-details .player-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foul-dots {
+  display: flex;
+  gap: 2px;
+}
+
+.foul-dot {
+  color: #dc3545;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.status-container {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.bench {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.efficiency-cell {
+  font-weight: 700;
+  font-size: 16px;
+  color: #28a745;
+  text-align: center;
+}
+
+.efficiency-cell.negative-eff {
+  color: #dc3545;
+}
+
+.stat-cell {
+  text-align: center;
+}
+
+.stat-made-attempts {
+  font-weight: 600;
+  font-size: 13px;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.stat-percentage {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.2;
+}
+
+.reb-cell {
+  text-align: center;
+}
+
+.reb-total {
+  font-weight: 600;
+  font-size: 14px;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.reb-breakdown {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.2;
+}
+
+.simple-stat {
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+  color: #212529;
+}
+
+.points-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #007bff;
+}
+
+.modern-stats tr:hover {
+  background-color: #f8f9fa;
+}
+
+.modern-stats tr.active-player {
+  background-color: #e8f5e8;
+}
+
+.modern-stats tr.active-player:hover {
+  background-color: #d4edda;
+}
+
 </style>
