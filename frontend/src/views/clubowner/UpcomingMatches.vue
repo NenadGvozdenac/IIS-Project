@@ -46,7 +46,7 @@
                 <div class="modal-header">
                     <h3>Set Pricing Parameters</h3>
                     <div class="header-actions">
-                        <button @click="setDefaultValues" class="default-btn">Set Default Values</button>
+                        <button @click="setDefaultValues" class="default-btn" :disabled="!canEnableTickets || enableLoading">Set Default Values</button>
                         <button @click="closePricingModal" class="close-btn">&times;</button>
                     </div>
                 </div>

@@ -73,4 +73,22 @@ export class SeasonService {
             throw error.response?.data || error;
         }
     }
+
+    static async enableSeasonTickets(seasonId, zonePrices) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(`${TICKETS_URL}/Seasons/${seasonId}/enable-tickets`, 
+                { zonePrices }, 
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }
