@@ -101,15 +101,18 @@ public partial class MatchDbContext : DbContext
 
             entity.ToTable("general_event");
 
+            entity.HasIndex(e => e.IdMatch, "idx_general_event_id_match");
+
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.CreationTime).HasColumnName("creation_time");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.Notes)
                 .HasMaxLength(255)
                 .HasColumnName("notes");
-            entity.Property(e => e.Role)
+            entity.Property(e => e.Period)
                 .HasMaxLength(20)
-                .HasColumnName("role");
+                .HasColumnName("period");
+            entity.Property(e => e.PeriodTime).HasColumnName("period_time");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .HasColumnName("type");
@@ -225,6 +228,8 @@ public partial class MatchDbContext : DbContext
 
             entity.ToTable("personal_event");
 
+            entity.HasIndex(e => e.IdMatch, "idx_personal_event_id_match");
+
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.CreationTime).HasColumnName("creation_time");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
@@ -233,9 +238,10 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.Notes)
                 .HasMaxLength(255)
                 .HasColumnName("notes");
-            entity.Property(e => e.Role)
+            entity.Property(e => e.Period)
                 .HasMaxLength(20)
-                .HasColumnName("role");
+                .HasColumnName("period");
+            entity.Property(e => e.PeriodTime).HasColumnName("period_time");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .HasColumnName("type");
@@ -371,6 +377,8 @@ public partial class MatchDbContext : DbContext
 
             entity.ToTable("team_event");
 
+            entity.HasIndex(e => e.IdMatch, "idx_team_event_id_match");
+
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.CreationTime).HasColumnName("creation_time");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
@@ -378,9 +386,10 @@ public partial class MatchDbContext : DbContext
             entity.Property(e => e.Notes)
                 .HasMaxLength(255)
                 .HasColumnName("notes");
-            entity.Property(e => e.Role)
+            entity.Property(e => e.Period)
                 .HasMaxLength(20)
-                .HasColumnName("role");
+                .HasColumnName("period");
+            entity.Property(e => e.PeriodTime).HasColumnName("period_time");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .HasColumnName("type");

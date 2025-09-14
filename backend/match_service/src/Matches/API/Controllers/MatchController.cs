@@ -4,7 +4,6 @@ using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Features.Match.GetAllMatches;
 using match_service.src.Matches.Core.Application.Features.Match.GetMatchById;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
-using match_service.src.Matches.Core.Application.Features.Match.StartMatch;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.PrepareMatchTracking;
 using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.GetTeamMembersByMatch;
 
@@ -45,14 +44,6 @@ public class MatchController : BaseController
         return CreateResponse(result);
     }
 
-    // [HttpPost("{matchId}/start")]
-    // public async Task<ActionResult> StartMatch(int matchId, [FromBody] StartMatchRequest request)
-    // {
-    //     var command = new StartMatchCommand(matchId, request.OurTeamPlayerIds, request.OpponentTeamPlayerIds);
-    //     var result = await _mediator.Send(command);
-    //     return CreateResponse(result);
-    // }
-
     [HttpGet("{matchId}/team-members")]
     public async Task<ActionResult> GetTeamMembersByMatch(int matchId, [FromQuery] int? teamId = null)
     {
@@ -68,21 +59,17 @@ public class MatchController : BaseController
         {
             MatchId = matchId,
             OurTeamPlayerIds = request.OurTeamPlayerIds,
-            OpponentTeamPlayerIds = request.OpponentTeamPlayerIds
+            OpponentTeamPlayerIds = request.OpponentTeamPlayerIds,
+            AnalystId = request.AnalystId
         };
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
 }
 
-public class StartMatchRequest
-{
-    public List<int> OurTeamPlayerIds { get; set; } = new List<int>();
-    public List<int> OpponentTeamPlayerIds { get; set; } = new List<int>();
-}
-
 public class PrepareMatchTrackingRequest
 {
     public List<int> OurTeamPlayerIds { get; set; } = new List<int>();
     public List<int> OpponentTeamPlayerIds { get; set; } = new List<int>();
+    public int? AnalystId { get; set; }
 }

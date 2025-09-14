@@ -105,7 +105,7 @@
           <div class="team-players-container">
             <div class="team-header">
               <h3>Partizan</h3>
-              <button class="substitution-btn">Substitution</button>
+              <button class="substitution-btn" @click="openSubstitutionModal(1, 'Partizan')">Substitution</button>
               <button class="undo-btn">UNDO</button>
             </div>
             <div class="active-players-grid">
@@ -165,7 +165,7 @@
           <div class="team-players-container">
             <div class="team-header">
               <h3>{{ opponentTeam }}</h3>
-              <button class="substitution-btn">Substitution</button>
+              <button class="substitution-btn" @click="openSubstitutionModal(match?.idTeam || 2, opponentTeam)">Substitution</button>
               <button class="undo-btn">UNDO</button>
             </div>
             <div class="active-players-grid">
@@ -311,14 +311,14 @@
                     </td>
                     <td>{{ player.eff }}</td>
                     <td>{{ player.fg }}</td>
-                    <td>{{ player.twop }}</td>
-                    <td>{{ player.threep }}</td>
+                    <td>{{ player.twoP }}</td>
+                    <td>{{ player.threeP }}</td>
                     <td>{{ player.ft }}</td>
                     <td>{{ player.rebOff }}/{{ player.rebDef }}</td>
-                    <td>{{ player.ast }}</td>
-                    <td>{{ player.stl }}</td>
-                    <td>{{ player.blk }}</td>
-                    <td>{{ player.pts }}</td>
+                    <td>{{ player.assists }}</td>
+                    <td>{{ player.steals }}</td>
+                    <td>{{ player.blocks }}</td>
+                    <td>{{ player.points }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -353,14 +353,14 @@
                     </td>
                     <td>{{ player.eff }}</td>
                     <td>{{ player.fg }}</td>
-                    <td>{{ player.twop }}</td>
-                    <td>{{ player.threep }}</td>
+                    <td>{{ player.twoP }}</td>
+                    <td>{{ player.threeP }}</td>
                     <td>{{ player.ft }}</td>
                     <td>{{ player.rebOff }}/{{ player.rebDef }}</td>
-                    <td>{{ player.ast }}</td>
-                    <td>{{ player.stl }}</td>
-                    <td>{{ player.blk }}</td>
-                    <td>{{ player.pts }}</td>
+                    <td>{{ player.assists }}</td>
+                    <td>{{ player.steals }}</td>
+                    <td>{{ player.blocks }}</td>
+                    <td>{{ player.points }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -412,89 +412,28 @@
   </div>
 
   <!-- Starting Five Modal -->
-  <div v-if="showStartingFiveModal" class="modal-overlay" @click="closeStartingFiveModal">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h2>Match starting five</h2>
-        <p class="match-info">{{ match?.name || 'Match' }}</p>
-        <p class="match-details">Date: {{ formatModalDate() }}</p>
-        <p class="match-details">Place: {{ isHomeMatch ? 'Home' : 'Away' }}</p>
-        <button class="modal-close" @click="closeStartingFiveModal">×</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="teams-selection">
-          <!-- Our Team (Partizan) -->
-          <div class="team-selection">
-            <h3>Our Team - Partizan</h3>
-            <div class="player-list">
-              <div 
-                v-for="player in fullOurTeamStats" 
-                :key="player.id"
-                class="player-item"
-                :class="{ 'selected': selectedOurStartingFive.includes(player.id) }"
-                @click="toggleOurPlayerSelection(player.id)"
-              >
-                <span class="player-checkbox">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedOurStartingFive.includes(player.id)"
-                    @click.stop
-                    @change="toggleOurPlayerSelection(player.id)"
-                  >
-                </span>
-                <span class="player-name">{{ player.name }}</span>
-                <span class="player-number">#{{ player.number }}</span>
-              </div>
-            </div>
-            <p class="selection-count">Selected: {{ selectedOurStartingFive.length }}/5</p>
-          </div>
+  <StartingFiveModal
+    :is-visible="showStartingFiveModal"
+    :match-name="match?.name"
+    :scheduled-at="match?.scheduledAt"
+    :is-home-match="isHomeMatch"
+    :opponent-team="opponentTeam"
+    :our-team-players="fullOurTeamStats"
+    :opponent-team-players="fullOpponentTeamStats"
+    @close="closeStartingFiveModal"
+    @submit="handleStartingFiveSubmit"
+  />
 
-          <!-- Opponent Team -->
-          <div class="team-selection">
-            <h3>{{ opponentTeam }}</h3>
-            <div class="player-list">
-              <div 
-                v-for="player in fullOpponentTeamStats" 
-                :key="player.id"
-                class="player-item"
-                :class="{ 'selected': selectedOpponentStartingFive.includes(player.id) }"
-                @click="toggleOpponentPlayerSelection(player.id)"
-              >
-                <span class="player-checkbox">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedOpponentStartingFive.includes(player.id)"
-                    @click.stop
-                    @change="toggleOpponentPlayerSelection(player.id)"
-                  >
-                </span>
-                <span class="player-name">{{ player.name }}</span>
-                <span class="player-number">#{{ player.number }}</span>
-              </div>
-            </div>
-            <p class="selection-count">Selected: {{ selectedOpponentStartingFive.length }}/5</p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button 
-          class="btn-decline" 
-          @click="closeStartingFiveModal"
-        >
-          Decline
-        </button>
-        <button 
-          class="btn-accept" 
-          :disabled="!canSubmitStartingFive"
-          @click="submitStartingFive"
-        >
-          Accept
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Player Substitution Modal -->
+  <PlayerSubstitutionModal
+    :is-visible="showSubstitutionModal"
+    :team-id="substitutionTeamId"
+    :team-name="substitutionTeamName"
+    :players-in-game="substitutionPlayersInGame"
+    :players-on-bench="substitutionPlayersOnBench"
+    @close="closeSubstitutionModal"
+    @substitute="handleSubstitution"
+  />
 </template>
 
 <script setup>
@@ -502,6 +441,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
+import PlayerSubstitutionModal from '../../components/PlayerSubstitutionModal.vue'
+import StartingFiveModal from '../../components/StartingFiveModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -512,11 +453,11 @@ const match = ref(null)
 
 // Match data (will be updated from API)
 const isHomeMatch = ref(false)
-const opponentTeam = ref('Opponent')
-const currentMatchStatus = ref('upcoming')
-const currentPeriod = ref('1st')
+const opponentTeam = ref('Unknown Opponent')
+const currentMatchStatus = ref('Unknown match status')
+const currentPeriod = ref('Unknown period')
 const currentTime = ref('10:00')
-const gameStatus = ref('Not Started')
+const gameStatus = ref('Unknown game status')
 const timerRunning = ref(false)
 
 // Selected player for actions
@@ -529,120 +470,15 @@ const defenseTypes = ref(['Individual', 'Zone', 'Combined'])
 const selectedDefense = ref('Zone')
 
 // Active players (5 per team)
-const activeOurPlayers = ref([
-  { 
-    id: 1, 
-    name: 'Nikola Jokic', 
-    number: 15, 
-    timeInGame: '2:36',
-    fouls: 3,
-    eff: 16
-  },
-  { 
-    id: 2, 
-    name: 'Bogdan Bogd.', 
-    number: 7, 
-    timeInGame: '3:23',
-    fouls: 3,
-    eff: 8
-  },
-  { 
-    id: 3, 
-    name: 'Marko Petrovic', 
-    number: 5, 
-    timeInGame: '0:30',
-    fouls: 1,
-    eff: 16
-  },
-  { 
-    id: 4, 
-    name: 'Milos Teodosic', 
-    number: 4, 
-    timeInGame: '1:20',
-    fouls: 4,
-    eff: 4
-  },
-  { 
-    id: 5, 
-    name: 'Stefan Nikolic', 
-    number: 12, 
-    timeInGame: '0:52',
-    fouls: 2,
-    eff: 6
-  }
-])
+const activeOurPlayers = ref([])
+const activeOpponentPlayers = ref([])
 
-const activeOpponentPlayers = ref([
-  { 
-    id: 6, 
-    name: 'Vanja Marinkovic', 
-    number: 1, 
-    timeInGame: '2:36',
-    fouls: 2,
-    eff: 16
-  },
-  { 
-    id: 7, 
-    name: 'Mario Nakic', 
-    number: 7, 
-    timeInGame: '3:23',
-    fouls: 4,
-    eff: 8
-  },
-  { 
-    id: 8, 
-    name: 'Isaac Bonga', 
-    number: 17, 
-    timeInGame: '0:30',
-    fouls: 1,
-    eff: 16
-  },
-  { 
-    id: 9, 
-    name: 'Balsa Koprivica', 
-    number: 5, 
-    timeInGame: '1:20',
-    fouls: 3,
-    eff: 4
-  },
-  { 
-    id: 10, 
-    name: 'Marko Markovic', 
-    number: 1, 
-    timeInGame: '0:52',
-    fouls: 2,
-    eff: 6
-  }
-])
-
-// Game events
-const gameEvents = ref([
-  { id: 1, time: '2:35 1Q', description: 'Nikola Jokic +3p' },
-  { id: 2, time: '2:23 1Q', description: 'Substitution Bogdanovic -> Jokic' },
-  { id: 3, time: '9:56 2Q', description: 'Avramovic 2P shot (missed)' }
-])
+// Game events (fetched from backend)
+const gameEvents = ref([])
 
 // Full team statistics (all players)
-const fullOurTeamStats = ref([
-  { id: 1, name: 'Nikola Jokic', number: 15, isActive: true, isStarter: true, minutes: '12:36', points: 18, fg: '7/12', twoP: '5/8', threeP: '2/4', ft: '4/4', offReb: 2, defReb: 6, totalReb: 8, assists: 5, steals: 1, blocks: 2, turnovers: 2, fouls: 2, efficiency: 24 },
-  { id: 2, name: 'Bogdan Bogdanovic', number: 7, isActive: true, isStarter: true, minutes: '11:23', points: 15, fg: '5/10', twoP: '2/4', threeP: '3/6', ft: '2/2', offReb: 0, defReb: 3, totalReb: 3, assists: 4, steals: 2, blocks: 0, turnovers: 1, fouls: 1, efficiency: 18 },
-  { id: 3, name: 'Marko Petrovic', number: 5, isActive: true, isStarter: true, minutes: '8:30', points: 8, fg: '3/7', twoP: '2/4', threeP: '1/3', ft: '1/2', offReb: 1, defReb: 2, totalReb: 3, assists: 2, steals: 0, blocks: 1, turnovers: 0, fouls: 3, efficiency: 9 },
-  { id: 4, name: 'Milos Teodosic', number: 4, isActive: true, isStarter: true, minutes: '10:20', points: 12, fg: '4/8', twoP: '1/3', threeP: '3/5', ft: '1/1', offReb: 0, defReb: 1, totalReb: 1, assists: 6, steals: 1, blocks: 0, turnovers: 3, fouls: 2, efficiency: 13 },
-  { id: 5, name: 'Stefan Nikolic', number: 12, isActive: true, isStarter: true, minutes: '7:52', points: 4, fg: '2/5', twoP: '2/4', threeP: '0/1', ft: '0/0', offReb: 2, defReb: 3, totalReb: 5, assists: 1, steals: 0, blocks: 1, turnovers: 1, fouls: 1, efficiency: 7 },
-  { id: 6, name: 'Aleksa Avramovic', number: 22, isActive: false, isStarter: false, minutes: '5:15', points: 6, fg: '2/4', twoP: '1/2', threeP: '1/2', ft: '1/1', offReb: 0, defReb: 1, totalReb: 1, assists: 1, steals: 1, blocks: 0, turnovers: 0, fouls: 0, efficiency: 8 },
-  { id: 7, name: 'Filip Petrusev', number: 14, isActive: false, isStarter: false, minutes: '3:45', points: 2, fg: '1/2', twoP: '1/2', threeP: '0/0', ft: '0/0', offReb: 1, defReb: 2, totalReb: 3, assists: 0, steals: 0, blocks: 0, turnovers: 0, fouls: 1, efficiency: 4 },
-  { id: 8, name: 'Dusan Ristic', number: 16, isActive: false, isStarter: false, minutes: '2:30', points: 0, fg: '0/1', twoP: '0/1', threeP: '0/0', ft: '0/0', offReb: 0, defReb: 1, totalReb: 1, assists: 0, steals: 0, blocks: 1, turnovers: 0, fouls: 0, efficiency: 1 }
-])
-
-const fullOpponentTeamStats = ref([
-  { id: 9, name: 'Vanja Marinkovic', number: 1, isActive: true, isStarter: true, minutes: '11:36', points: 14, fg: '5/9', twoP: '2/4', threeP: '3/5', ft: '1/1', offReb: 0, defReb: 4, totalReb: 4, assists: 3, steals: 1, blocks: 0, turnovers: 1, fouls: 2, efficiency: 17 },
-  { id: 10, name: 'Mario Nakic', number: 7, isActive: true, isStarter: true, minutes: '10:23', points: 20, fg: '8/13', twoP: '5/7', threeP: '3/6', ft: '1/2', offReb: 2, defReb: 5, totalReb: 7, assists: 4, steals: 0, blocks: 1, turnovers: 2, fouls: 3, efficiency: 22 },
-  { id: 11, name: 'Isaac Bonga', number: 17, isActive: true, isStarter: true, minutes: '9:30', points: 8, fg: '3/6', twoP: '2/3', threeP: '1/3', ft: '1/2', offReb: 1, defReb: 3, totalReb: 4, assists: 2, steals: 1, blocks: 0, turnovers: 0, fouls: 1, efficiency: 12 },
-  { id: 12, name: 'Balsa Koprivica', number: 5, isActive: true, isStarter: true, minutes: '8:20', points: 10, fg: '4/7', twoP: '3/4', threeP: '1/3', ft: '1/1', offReb: 0, defReb: 2, totalReb: 2, assists: 1, steals: 0, blocks: 2, turnovers: 1, fouls: 2, efficiency: 11 },
-  { id: 13, name: 'Marko Markovic', number: 1, isActive: true, isStarter: true, minutes: '6:52', points: 6, fg: '2/4', twoP: '2/3', threeP: '0/1', ft: '2/2', offReb: 1, defReb: 2, totalReb: 3, assists: 0, steals: 1, blocks: 0, turnovers: 0, fouls: 1, efficiency: 8 },
-  { id: 14, name: 'Nemanja Nedovic', number: 8, isActive: false, isStarter: false, minutes: '4:15', points: 3, fg: '1/3', twoP: '0/1', threeP: '1/2', ft: '0/0', offReb: 0, defReb: 1, totalReb: 1, assists: 2, steals: 0, blocks: 0, turnovers: 1, fouls: 0, efficiency: 4 },
-  { id: 15, name: 'Ognjen Dobric', number: 33, isActive: false, isStarter: false, minutes: '3:45', points: 2, fg: '1/2', twoP: '1/2', threeP: '0/0', ft: '0/0', offReb: 0, defReb: 0, totalReb: 0, assists: 1, steals: 0, blocks: 0, turnovers: 0, fouls: 1, efficiency: 2 }
-])
+const fullOurTeamStats = ref([])
+const fullOpponentTeamStats = ref([])
 
 // Automatic recommendations (hardcoded for now)
 const automaticRecommendations = ref([
@@ -686,79 +522,44 @@ const acceptRecommendation = (recommendationId) => {
   if (recommendation) {
     console.log('Accepted recommendation:', recommendation.title)
     // Add to game events
-    const event = {
-      id: gameEvents.value.length + 1,
-      time: `${currentTime.value} ${currentPeriod.value}`,
-      description: `Accepted: ${recommendation.title}`
-    }
-    gameEvents.value.unshift(event)
+    // const event = {
+    //   id: gameEvents.value.length + 1,
+    //   time: `${currentTime.value} ${currentPeriod.value}`,
+    //   description: `Accepted: ${recommendation.title}`
+    // }
+    // gameEvents.value.unshift(event)
     
-    // Remove from recommendations
-    automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+    // // Remove from recommendations
+    // automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
   }
 }
 
 const dismissRecommendation = (recommendationId) => {
-  automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+  //automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
   console.log('Dismissed recommendation:', recommendationId)
 }
 
 // Starting Five Modal
 const showStartingFiveModal = ref(false)
-const selectedOurStartingFive = ref([])
-const selectedOpponentStartingFive = ref([])
 
-// Computed property to check if both teams have exactly 5 players selected
-const canSubmitStartingFive = computed(() => {
-  return selectedOurStartingFive.value.length === 5 && selectedOpponentStartingFive.value.length === 5
-})
+// Substitution Modal
+const showSubstitutionModal = ref(false)
+const substitutionTeamId = ref(null)
+const substitutionTeamName = ref('')
+const substitutionPlayersInGame = ref([])
+const substitutionPlayersOnBench = ref([])
 
 // Modal functions
 const openStartingFiveModal = () => {
   showStartingFiveModal.value = true
-  selectedOurStartingFive.value = []
-  selectedOpponentStartingFive.value = []
 }
 
 const closeStartingFiveModal = () => {
   showStartingFiveModal.value = false
-  selectedOurStartingFive.value = []
-  selectedOpponentStartingFive.value = []
 }
 
-const toggleOurPlayerSelection = (playerId) => {
-  const index = selectedOurStartingFive.value.indexOf(playerId)
-  if (index > -1) {
-    selectedOurStartingFive.value.splice(index, 1)
-  } else if (selectedOurStartingFive.value.length < 5) {
-    selectedOurStartingFive.value.push(playerId)
-  }
-}
-
-const toggleOpponentPlayerSelection = (playerId) => {
-  const index = selectedOpponentStartingFive.value.indexOf(playerId)
-  if (index > -1) {
-    selectedOpponentStartingFive.value.splice(index, 1)
-  } else if (selectedOpponentStartingFive.value.length < 5) {
-    selectedOpponentStartingFive.value.push(playerId)
-  }
-}
-
-const formatModalDate = () => {
-  if (!match.value?.scheduledAt) return 'TBD'
-  const date = new Date(match.value.scheduledAt)
-  return date.toLocaleDateString('sr-RS', {
-    day: '2-digit',
-    month: '2-digit', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const submitStartingFive = async () => {
-  if (!canSubmitStartingFive.value) return
-  
+// Handle starting five submission from modal component
+const handleStartingFiveSubmit = async (selectionData) => {
   try {
     const matchId = route.params.id
     
@@ -767,7 +568,7 @@ const submitStartingFive = async () => {
     
     // Add our team players
     fullOurTeamStats.value.forEach(player => {
-      const isSelected = selectedOurStartingFive.value.includes(player.id)
+      const isSelected = selectionData.ourTeamPlayers.includes(player.id)
       playersData.push({
         teamId: 1, // Use actual team ID
         playerId: player.id,
@@ -775,10 +576,10 @@ const submitStartingFive = async () => {
         inGame: isSelected // Set as in game if they're starters
       })
     })
-    console.log('MATCH VALUE:', match.value)
+    
     // Add opponent team players
     fullOpponentTeamStats.value.forEach(player => {
-      const isSelected = selectedOpponentStartingFive.value.includes(player.id)
+      const isSelected = selectionData.opponentTeamPlayers.includes(player.id)
       playersData.push({
         teamId: match.value?.idTeam || 2, // Use actual team ID
         playerId: player.id,
@@ -793,10 +594,7 @@ const submitStartingFive = async () => {
     await axios.put(`${MATCHES_URL}/TeamMemberMatch/match/${matchId}/starting-lineup`, playersData)
     
     // Update local data
-    updateLocalStartingLineup()
-    
-    // Close modal
-    closeStartingFiveModal()
+    updateLocalStartingLineup(selectionData)
     
     console.log('Starting five updated successfully')
   } catch (err) {
@@ -805,17 +603,17 @@ const submitStartingFive = async () => {
   }
 }
 
-const updateLocalStartingLineup = () => {
+const updateLocalStartingLineup = (selectionData) => {
   // Update our team players
   fullOurTeamStats.value.forEach(player => {
-    const isStarter = selectedOurStartingFive.value.includes(player.id)
+    const isStarter = selectionData.ourTeamPlayers.includes(player.id)
     player.isStarter = isStarter
     player.isActive = isStarter // Set as active if they're starters
   })
   
   // Update opponent team players
   fullOpponentTeamStats.value.forEach(player => {
-    const isStarter = selectedOpponentStartingFive.value.includes(player.id)
+    const isStarter = selectionData.opponentTeamPlayers.includes(player.id)
     player.isStarter = isStarter
     player.isActive = isStarter // Set as active if they're starters
   })
@@ -823,6 +621,162 @@ const updateLocalStartingLineup = () => {
   // Update active players arrays
   activeOurPlayers.value = fullOurTeamStats.value.filter(p => p.isActive)
   activeOpponentPlayers.value = fullOpponentTeamStats.value.filter(p => p.isActive)
+}
+
+// Substitution Modal functions
+const openSubstitutionModal = (teamId, teamName) => {
+  substitutionTeamId.value = teamId
+  substitutionTeamName.value = teamName
+  
+  // Get players for this team
+  let allTeamPlayers = []
+  if (teamId === 1) {
+    // Our team (Partizan)
+    allTeamPlayers = fullOurTeamStats.value
+  } else {
+    // Opponent team
+    allTeamPlayers = fullOpponentTeamStats.value
+  }
+  
+  // Separate players in game and on bench
+  substitutionPlayersInGame.value = allTeamPlayers.filter(p => p.isActive)
+  substitutionPlayersOnBench.value = allTeamPlayers.filter(p => !p.isActive)
+  
+  showSubstitutionModal.value = true
+}
+
+const closeSubstitutionModal = () => {
+  showSubstitutionModal.value = false
+  substitutionTeamId.value = null
+  substitutionTeamName.value = ''
+  substitutionPlayersInGame.value = []
+  substitutionPlayersOnBench.value = []
+}
+
+const handleSubstitution = async (substitutionData) => {
+  try {
+    const matchId = route.params.id
+    
+    // Call the API to perform the substitution
+    const response = await axios.post(`${MATCHES_URL}/TeamMemberMatch/match/${matchId}/substitution`, {
+      matchId: parseInt(matchId),
+      teamId: substitutionData.teamId,
+      playerInId: substitutionData.playerInId,
+      playerOutId: substitutionData.playerOutId
+    })
+    
+    if (response.data.isSuccess) {
+      // Update local player states
+      updateLocalPlayerStates(substitutionData)
+      
+      // Add event to game chronology
+      const event = {
+        id: gameEvents.value.length + 1,
+        time: `${currentTime.value} ${currentPeriod.value}`,
+        description: `Substitution: ${substitutionData.playerOutName} → ${substitutionData.playerInName}`
+      }
+      gameEvents.value.unshift(event)
+      
+      console.log('Substitution completed successfully')
+    } else {
+      alert('Failed to perform substitution: ' + response.data.message)
+    }
+  } catch (err) {
+    console.error('Error performing substitution:', err)
+    alert('Failed to perform substitution. Please try again.')
+  }
+}
+
+const updateLocalPlayerStates = (substitutionData) => {
+  let targetTeamPlayers = []
+  let targetActiveList = []
+  
+  if (substitutionData.teamId === 1) {
+    // Our team
+    targetTeamPlayers = fullOurTeamStats.value
+    targetActiveList = activeOurPlayers.value
+  } else {
+    // Opponent team
+    targetTeamPlayers = fullOpponentTeamStats.value
+    targetActiveList = activeOpponentPlayers.value
+  }
+  
+  // Update player states in full team list
+  targetTeamPlayers.forEach(player => {
+    if (player.id === substitutionData.playerOutId) {
+      player.isActive = false
+    } else if (player.id === substitutionData.playerInId) {
+      player.isActive = true
+    }
+  })
+  
+  // Update active players list
+  const updatedActiveList = targetTeamPlayers.filter(p => p.isActive)
+  
+  if (substitutionData.teamId === 1) {
+    activeOurPlayers.value = updatedActiveList
+  } else {
+    activeOpponentPlayers.value = updatedActiveList
+  }
+}
+
+// Fetch match events from backend
+const fetchMatchEvents = async (matchId) => {
+  try {
+    const response = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
+    
+    if (response.data?.isSuccess && response.data?.value?.events) {
+      // Map backend response to UI format
+      gameEvents.value = response.data.value.events.map(event => ({
+        id: event.id,
+        time: formatEventTime(event),
+        description: formatEventDescription(event)
+      }))
+      
+      console.log('Events loaded:', gameEvents.value.length)
+    }
+  } catch (err) {
+    console.error('Error fetching match events:', err)
+    // Keep events empty on error
+    gameEvents.value = []
+  }
+}
+
+// Helper function to format event time for display
+const formatEventTime = (event) => {
+  if (event.period && event.periodTime !== null) {
+    const minutes = Math.floor(event.periodTime / 60)
+    const seconds = event.periodTime % 60
+    return `${minutes}:${seconds.toString().padStart(2, '0')} ${event.period}Q`
+  }
+  // Fallback to creation time
+  const date = new Date(event.creationTime)
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+}
+
+// Helper function to format event description
+const formatEventDescription = (event) => {
+  let description = ''
+  
+  // Add player name if available
+  if (event.playerName) {
+    description += event.playerName + ' '
+  }
+  
+  // Add team name for team events
+  if (event.eventType === 'team' && event.teamName && !event.playerName) {
+    description += event.teamName + ' '
+  }
+  
+  // Add event type/action
+  description += event.type || 'Event'
+  
+  // Add notes if available
+  if (event.notes) {
+    description += ' - ' + event.notes
+  }
+  
+  return description
 }
 
 // Get match details and team members
@@ -842,6 +796,9 @@ const fetchMatchDetails = async () => {
     // Fetch team members for this match
     await fetchTeamMembers(matchId)
     
+    // Fetch match events for event chronology
+    await fetchMatchEvents(matchId)
+    
   } catch (err) {
     console.error('Error fetching match details:', err)
     error.value = err.response?.data?.message || 'Failed to load match details'
@@ -858,10 +815,11 @@ const updateMatchData = () => {
   if (match.value.teamName) {
     opponentTeam.value = match.value.teamName
   }
-  
+
   // Update home/away status
   isHomeMatch.value = match.value.isInOurHall || false
   
+  currentTime.value = match.value.currentTime || '10:00'
   // Update match status from tracking data
   if (match.value.trackingStatus) {
     currentMatchStatus.value = match.value.trackingStatus
@@ -890,9 +848,9 @@ const fetchTeamMembers = async (matchId) => {
     // Fetch all team members for this match
     const teamMembersResponse = await axios.get(`${MATCHES_URL}/match/${matchId}/team-members`)
     const teamMembers = teamMembersResponse.data.value.teamMembers
-    
-    console.log('Team members:', teamMembers)
-    
+
+    //console.log('Team members:', teamMembers)
+
     // Separate our team (Partizan - team ID 1) and opponent team
     const ourTeamId = 1
     const ourTeamMembers = teamMembers.filter(tm => tm.idTeam === ourTeamId)
@@ -921,8 +879,8 @@ const fetchTeamMembers = async (matchId) => {
       twoP: '0/0', 
       threeP: '0/0',
       ft: '0/0',
-      offReb: 0,
-      defReb: 0,
+      rebOff: 0,
+      rebDef: 0,
       totalReb: 0,
       assists: 0,
       steals: 0,
@@ -964,13 +922,13 @@ const recordAction = (action) => {
     return
   }
   
-  const event = {
-    id: gameEvents.value.length + 1,
-    time: `${currentTime.value} ${currentPeriod.value}`,
-    description: `${selectedPlayer.value.name} ${action.replace('_', ' ')}`
-  }
+  // const event = {
+  //   id: gameEvents.value.length + 1,
+  //   time: `${currentTime.value} ${currentPeriod.value}`,
+  //   description: `${selectedPlayer.value.name} ${action.replace('_', ' ')}`
+  // }
   
-  gameEvents.value.unshift(event)
+  // gameEvents.value.unshift(event)
   console.log('Recorded action:', action, 'for player:', selectedPlayer.value.name)
 }
 
@@ -988,34 +946,34 @@ const selectDefense = (defense) => {
 
 // Game control functions
 const callTimeout = (team) => {
-  const event = {
-    id: gameEvents.value.length + 1,
-    time: `${currentTime.value} ${currentPeriod.value}`,
-    description: `Timeout called by ${team === 'partizan' ? 'Partizan' : opponentTeam.value}`
-  }
-  gameEvents.value.unshift(event)
+  // const event = {
+  //   id: gameEvents.value.length + 1,
+  //   time: `${currentTime.value} ${currentPeriod.value}`,
+  //   description: `Timeout called by ${team === 'partizan' ? 'Partizan' : opponentTeam.value}`
+  // }
+  // gameEvents.value.unshift(event)
   console.log('Timeout called by:', team)
 }
 
 const pauseGame = () => {
-  gameStatus.value = 'Paused'
-  const event = {
-    id: gameEvents.value.length + 1,
-    time: `${currentTime.value} ${currentPeriod.value}`,
-    description: 'Game paused'
-  }
-  gameEvents.value.unshift(event)
+  // gameStatus.value = 'Paused'
+  // const event = {
+  //   id: gameEvents.value.length + 1,
+  //   time: `${currentTime.value} ${currentPeriod.value}`,
+  //   description: 'Game paused'
+  // }
+  // gameEvents.value.unshift(event)
   console.log('Game paused')
 }
 
 const resumeGame = () => {
-  gameStatus.value = 'Playing'
-  const event = {
-    id: gameEvents.value.length + 1,
-    time: `${currentTime.value} ${currentPeriod.value}`,
-    description: 'Game resumed'
-  }
-  gameEvents.value.unshift(event)
+  // gameStatus.value = 'Playing'
+  // const event = {
+  //   id: gameEvents.value.length + 1,
+  //   time: `${currentTime.value} ${currentPeriod.value}`,
+  //   description: 'Game resumed'
+  // }
+  // gameEvents.value.unshift(event)
   console.log('Game resumed')
 }
 
@@ -1023,35 +981,24 @@ const toggleTimer = () => {
   timerRunning.value = !timerRunning.value
   
   if (timerRunning.value) {
-    gameStatus.value = 'Playing'
-    const event = {
-      id: gameEvents.value.length + 1,
-      time: `${currentTime.value} ${currentPeriod.value}`,
-      description: 'Match timer started'
-    }
-    gameEvents.value.unshift(event)
+    // gameStatus.value = 'Playing'
+    // const event = {
+    //   id: gameEvents.value.length + 1,
+    //   time: `${currentTime.value} ${currentPeriod.value}`,
+    //   description: 'Match timer started'
+    // }
+    // gameEvents.value.unshift(event)
     console.log('Timer started')
   } else {
-    gameStatus.value = 'Paused'
-    const event = {
-      id: gameEvents.value.length + 1,
-      time: `${currentTime.value} ${currentPeriod.value}`,
-      description: 'Match timer stopped'
-    }
-    gameEvents.value.unshift(event)
+    // gameStatus.value = 'Paused'
+    // const event = {
+    //   id: gameEvents.value.length + 1,
+    //   time: `${currentTime.value} ${currentPeriod.value}`,
+    //   description: 'Match timer stopped'
+    // }
+    // gameEvents.value.unshift(event)
     console.log('Timer stopped')
   }
-}
-
-// Utility functions
-const formatStatus = (status) => {
-  const statusMap = {
-    'upcoming': 'Upcoming',
-    'preparation': 'In Preparation', 
-    'active': 'Live',
-    'finished': 'Finished'
-  }
-  return statusMap[status] || status
 }
 
 const formatMatchTime = () => {
@@ -1753,7 +1700,7 @@ onMounted(() => {
 }
 
 .events-list {
-  max-height: 400px;
+  max-height: 225px;
   overflow-y: auto;
   margin-bottom: 1rem;
 }
@@ -2064,204 +2011,6 @@ onMounted(() => {
 .efficiency {
   font-weight: bold;
   color: #28a745;
-}
-
-/* Starting Five Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-}
-
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #dee2e6;
-  text-align: center;
-  position: relative;
-}
-
-.modal-header h2 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.5rem;
-}
-
-.match-info {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 500;
-}
-
-.match-details {
-  margin: 0.2rem 0;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close:hover {
-  background-color: #f8f9fa;
-  color: #333;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.teams-selection {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.team-selection {
-  border: 2px solid #dee2e6;
-  border-radius: 8px;
-  padding: 1rem;
-}
-
-.team-selection h3 {
-  margin: 0 0 1rem 0;
-  text-align: center;
-  color: #333;
-  border-bottom: 2px solid #1976d2;
-  padding-bottom: 0.5rem;
-}
-
-.player-list {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-}
-
-.player-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  border-bottom: 1px solid #dee2e6;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.player-item:last-child {
-  border-bottom: none;
-}
-
-.player-item:hover {
-  background-color: #f8f9fa;
-}
-
-.player-item.selected {
-  background-color: #e3f2fd;
-  font-weight: 500;
-}
-
-.player-checkbox {
-  margin-right: 0.8rem;
-}
-
-.player-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.player-name {
-  flex: 1;
-  text-align: left;
-}
-
-.player-number {
-  color: #666;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.selection-count {
-  margin: 0.8rem 0 0 0;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #dee2e6;
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.btn-accept,
-.btn-decline {
-  padding: 0.8rem 2rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 120px;
-}
-
-.btn-accept {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-accept:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.btn-accept:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-decline {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-decline:hover {
-  background-color: #5a6268;
 }
 
 /* Main Content Layout */

@@ -178,8 +178,9 @@ CREATE TABLE general_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('break end', 'break start', 'other', 'pause end', 'pause start', 'period end', 'period start')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_match      INTEGER NOT NULL,
     PRIMARY KEY (id_event)
 );
@@ -281,8 +282,9 @@ CREATE TABLE personal_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('+2p', '+3p', '+ft', '2p', '3p', 'assist', 'block', 'foul', 'ft', 'other', 'reb def', 'reb of', 'steal', 'substitution in', 'substitution out')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_team       INTEGER NOT NULL,
     id_player     INTEGER NOT NULL,
     id_match      INTEGER NOT NULL,
@@ -432,8 +434,9 @@ CREATE TABLE team_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_team       INTEGER NOT NULL,
     id_match      INTEGER NOT NULL,
     PRIMARY KEY (id_event)
@@ -1640,3 +1643,27 @@ $$ LANGUAGE plpgsql;
 -- - Obična utakmica, nizak price_factor (4.0), time_factor (0.4) 
 -- - Min: 1000, Max: 4000 dinara
 -- SELECT calculate_ticket_price(3, 1);
+
+-- Indexes for event tables (ensure present): speed up queries by match id
+-- This block is idempotent: it checks for existing index names before creating
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_match ON personal_event (id_match)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_team_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_team_event_id_match ON team_event (id_match)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_general_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_general_event_id_match ON general_event (id_match)';
+    END IF;
+END
+$$;

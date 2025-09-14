@@ -435,7 +435,8 @@ const acceptMatchStartup = async () => {
   try {
     const prepareMatchRequest = {
       ourTeamPlayerIds: selectedOurPlayers.value.map(p => p.playerId),
-      opponentTeamPlayerIds: selectedOpponentPlayers.value.map(p => p.playerId)
+      opponentTeamPlayerIds: selectedOpponentPlayers.value.map(p => p.playerId),
+      analystId: 4 // Current user ID (analyst) hardcoded to 4 for now
     }
 
     await axios.post(`${MATCHES_URL}/match/${selectedMatch.value.idMatch}/prepare`, prepareMatchRequest)

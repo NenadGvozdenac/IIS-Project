@@ -58,6 +58,13 @@ namespace match_service.src.Matches.Core.Application.Features.MatchTracking.Prep
                 // Update tracking status to 'preparation'
                 matchTracking.TrackingStatus = "preparation";
                 matchTracking.LastUpdateTime = DateTime.UtcNow;
+                
+                // Set analyst ID if provided
+                if (request.AnalystId.HasValue)
+                {
+                    matchTracking.IdUser = request.AnalystId.Value;
+                }
+                
                 _matchTrackingRepository.Update(matchTracking);
 
                 // Get team IDs - assuming team ID 1 is our team and the opponent team ID from match

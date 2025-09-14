@@ -28,6 +28,9 @@ public static class ApplicationStartup
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IMatchTrackingRepository, MatchTrackingRepository>();
         services.AddScoped<ITeamMemberMatchRepository, TeamMemberMatchRepository>();
+        services.AddScoped<IPersonalEventRepository, PersonalEventRepository>();
+        services.AddScoped<ITeamEventRepository, TeamEventRepository>();
+        services.AddScoped<IGeneralEventRepository, GeneralEventRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)
