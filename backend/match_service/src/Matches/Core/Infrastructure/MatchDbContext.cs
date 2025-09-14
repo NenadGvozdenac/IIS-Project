@@ -161,7 +161,6 @@ public partial class MatchDbContext : DbContext
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.Matches)
                 .HasForeignKey(d => d.IdSeason)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_season");
 
             entity.HasOne(d => d.IdTeamNavigation).WithMany(p => p.Matches)
@@ -335,6 +334,8 @@ public partial class MatchDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.StartedAt).HasColumnName("started_at");
+            entity.Property(e => e.TicketsForSale).HasColumnName("tickets_for_sale");
+            entity.Property(e => e.TicketsWentOnSale).HasColumnName("tickets_went_on_sale");
         });
 
         modelBuilder.Entity<Team>(entity =>

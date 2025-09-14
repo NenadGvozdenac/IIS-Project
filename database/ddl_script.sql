@@ -976,7 +976,7 @@ BEGIN
         NULL,                                    -- start_time
         NULL,                                    -- end_time (initially set to scheduled time)
         'upcoming',                              -- tracking_status
-        600,                                     -- period_duration (600 seconds default)
+        600000,                                  -- period_duration (600000 milliseconds = 10 minutes default)
         '1',                                     -- current_period
         'upcoming',                              -- period_status
         NULL,                                    -- period_start_time

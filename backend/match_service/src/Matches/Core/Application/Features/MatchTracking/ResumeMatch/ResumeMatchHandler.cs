@@ -41,8 +41,8 @@ public class ResumeMatchHandler : IRequestHandler<ResumeMatchCommand, Result<Res
 
             var now = DateTime.UtcNow;
 
-            // Calculate duration of this pause
-            var pauseDuration = (int)(now - matchTracking.LastPauseStartTime.Value).TotalSeconds;
+            // Calculate duration of this pause in milliseconds
+            var pauseDuration = (int)(now - matchTracking.LastPauseStartTime.Value).TotalMilliseconds;
             
             // Add to total pause time for this period
             var newTotalPauseTime = (matchTracking.TotalPauseTimeInPeriod ?? 0) + pauseDuration;

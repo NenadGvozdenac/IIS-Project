@@ -5,10 +5,10 @@ namespace match_service.src.Matches.Core.Application.Utilities
     public static class PeriodTimeCalculator
     {
         /// <summary>
-        /// Calculates the remaining time in the current period in seconds
+        /// Calculates the remaining time in the current period in milliseconds
         /// </summary>
         /// <param name="matchTracking">Match tracking entity with current state</param>
-        /// <returns>Remaining time in seconds (null if cannot be calculated)</returns>
+        /// <returns>Remaining time in milliseconds (null if cannot be calculated)</returns>
         public static int? CalculateRemainingPeriodTime(MatchTracking matchTracking)
         {
             if (matchTracking?.PeriodDuration == null)
@@ -22,7 +22,7 @@ namespace match_service.src.Matches.Core.Application.Utilities
                 if (matchTracking.PeriodStartTime == null)
                     return null;
 
-                var periodElapsed = (int)(DateTime.UtcNow - matchTracking.PeriodStartTime.Value).TotalSeconds;
+                var periodElapsed = (int)(DateTime.UtcNow - matchTracking.PeriodStartTime.Value).TotalMilliseconds;
                 var totalPauses = matchTracking.TotalPauseTimeInPeriod ?? 0;
                 currentElapsed = Math.Max(0, periodElapsed - totalPauses);
             }
@@ -46,7 +46,7 @@ namespace match_service.src.Matches.Core.Application.Utilities
         /// Calculates the current elapsed time in the period (for tracking purposes)
         /// </summary>
         /// <param name="matchTracking">Match tracking entity with current state</param>
-        /// <returns>Elapsed time in seconds (null if cannot be calculated)</returns>
+        /// <returns>Elapsed time in milliseconds (null if cannot be calculated)</returns>
         public static int? CalculateElapsedPeriodTime(MatchTracking matchTracking)
         {
             if (matchTracking?.PeriodStatus == "active")
@@ -54,7 +54,7 @@ namespace match_service.src.Matches.Core.Application.Utilities
                 if (matchTracking.PeriodStartTime == null)
                     return null;
 
-                var periodElapsed = (int)(DateTime.UtcNow - matchTracking.PeriodStartTime.Value).TotalSeconds;
+                var periodElapsed = (int)(DateTime.UtcNow - matchTracking.PeriodStartTime.Value).TotalMilliseconds;
                 var totalPauses = matchTracking.TotalPauseTimeInPeriod ?? 0;
                 return Math.Max(0, periodElapsed - totalPauses);
             }

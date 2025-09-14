@@ -27,7 +27,12 @@
           </div>
         </div>
         <div class="starting-five-controls">
-          <button class="control-btn starting-five" @click="openStartingFiveModal">
+          <button 
+            class="control-btn starting-five" 
+            @click="openStartingFiveModal"
+            :disabled="!canEditStartingFive"
+            :class="{ disabled: !canEditStartingFive }"
+          >
             Starting Five
           </button>
         </div>
@@ -213,30 +218,30 @@
             
             <!-- Action Buttons for Our Team -->
             <div class="action-buttons compact">
-              <button class="action-btn small success" title="+2pt" @click="recordAction('2p_made')">+2p</button>
-              <button class="action-btn small miss" title="2pt" @click="recordAction('2p_miss')">2p</button>
-              <button class="action-btn small success" title="+3pt" @click="recordAction('3p_made')">+3p</button>
-              <button class="action-btn small miss" title="3pt" @click="recordAction('3p_miss')">3p</button>
-              <button class="action-btn small success" title="+FT" @click="recordAction('ft_made')">+ft</button>
-              <button class="action-btn small miss" title="FT" @click="recordAction('ft_miss')">ft</button>
+              <button class="action-btn small success" title="+2pt" @click="recordAction('+2p', ourTeamId)">+2p</button>
+              <button class="action-btn small miss" title="2pt" @click="recordAction('2p', ourTeamId)">2p</button>
+              <button class="action-btn small success" title="+3pt" @click="recordAction('+3p', ourTeamId)">+3p</button>
+              <button class="action-btn small miss" title="3pt" @click="recordAction('3p', ourTeamId)">3p</button>
+              <button class="action-btn small success" title="+FT" @click="recordAction('+ft', ourTeamId)">+ft</button>
+              <button class="action-btn small miss" title="FT" @click="recordAction('ft', ourTeamId)">ft</button>
 
               <div class="spacer"></div>
 
-              <button class="action-btn medium assist" title="Assist" @click="recordAction('assist')">asist</button>
+              <button class="action-btn medium assist" title="Assist" @click="recordAction('assist', ourTeamId)">assist</button>
 
               <div class="spacer-small"></div>
 
-              <button class="action-btn medium rebound" title="Offensive rebound" @click="recordAction('reb_off')">reb of</button>
-              <button class="action-btn medium rebound" title="Defensive rebound" @click="recordAction('reb_def')">reb def</button>
+              <button class="action-btn medium rebound" title="Offensive rebound" @click="recordAction('reb of', ourTeamId)">reb of</button>
+              <button class="action-btn medium rebound" title="Defensive rebound" @click="recordAction('reb def', ourTeamId)">reb def</button>
 
               <div class="spacer-small"></div>
 
-              <button class="action-btn medium steal" title="Steal" @click="recordAction('steal')">steal</button>
-              <button class="action-btn medium block" title="Block" @click="recordAction('block')">block</button>
+              <button class="action-btn medium steal" title="Steal" @click="recordAction('steal', ourTeamId)">steal</button>
+              <button class="action-btn medium block" title="Block" @click="recordAction('block', ourTeamId)">block</button>
 
               <div class="spacer"></div>
 
-              <button class="action-btn large foul" title="Foul" @click="recordAction('foul')">foul</button>
+              <button class="action-btn large foul" title="Foul" @click="recordAction('foul', ourTeamId)">foul</button>
             </div>
           </div>
 
@@ -273,30 +278,30 @@
             
             <!-- Action Buttons for Opponent Team -->
             <div class="action-buttons compact">
-              <button class="action-btn small success" title="+2pt" @click="recordAction('2p_made')">+2p</button>
-              <button class="action-btn small miss" title="2pt" @click="recordAction('2p_miss')">2p</button>
-              <button class="action-btn small success" title="+3pt" @click="recordAction('3p_made')">+3p</button>
-              <button class="action-btn small miss" title="3pt" @click="recordAction('3p_miss')">3p</button>
-              <button class="action-btn small success" title="+FT" @click="recordAction('ft_made')">+ft</button>
-              <button class="action-btn small miss" title="FT" @click="recordAction('ft_miss')">ft</button>
+              <button class="action-btn small success" title="+2pt" @click="recordAction('+2p', match?.idTeam)">+2p</button>
+              <button class="action-btn small miss" title="2pt" @click="recordAction('2p', match?.idTeam)">2p</button>
+              <button class="action-btn small success" title="+3pt" @click="recordAction('+3p', match?.idTeam)">+3p</button>
+              <button class="action-btn small miss" title="3pt" @click="recordAction('3p', match?.idTeam)">3p</button>
+              <button class="action-btn small success" title="+FT" @click="recordAction('+ft', match?.idTeam)">+ft</button>
+              <button class="action-btn small miss" title="FT" @click="recordAction('ft', match?.idTeam)">ft</button>
 
               <div class="spacer"></div>
 
-              <button class="action-btn medium assist" title="Assist" @click="recordAction('assist')">asist</button>
+              <button class="action-btn medium assist" title="Assist" @click="recordAction('assist', match?.idTeam)">assist</button>
 
               <div class="spacer-small"></div>
 
-              <button class="action-btn medium rebound" title="Offensive rebound" @click="recordAction('reb_off')">reb of</button>
-              <button class="action-btn medium rebound" title="Defensive rebound" @click="recordAction('reb_def')">reb def</button>
+              <button class="action-btn medium rebound" title="Offensive rebound" @click="recordAction('reb of', match?.idTeam)">reb of</button>
+              <button class="action-btn medium rebound" title="Defensive rebound" @click="recordAction('reb def', match?.idTeam)">reb def</button>
 
               <div class="spacer-small"></div>
 
-              <button class="action-btn medium steal" title="Steal" @click="recordAction('steal')">steal</button>
-              <button class="action-btn medium block" title="Block" @click="recordAction('block')">block</button>
+              <button class="action-btn medium steal" title="Steal" @click="recordAction('steal', match?.idTeam)">steal</button>
+              <button class="action-btn medium block" title="Block" @click="recordAction('block', match?.idTeam)">block</button>
 
               <div class="spacer"></div>
 
-              <button class="action-btn large foul" title="Foul" @click="recordAction('foul')">foul</button>
+              <button class="action-btn large foul" title="Foul" @click="recordAction('foul', match?.idTeam)">foul</button>
             </div>
           </div>
         </div>
@@ -343,7 +348,7 @@
             <h3>Event chronology</h3>
             <div class="events-list">
               <div 
-                v-for="event in gameEvents" 
+                v-for="event in sortedGameEvents" 
                 :key="event.id"
                 class="event-item"
               >
@@ -548,8 +553,8 @@ const matchTrackingState = ref({
   trackingStatus: 'upcoming', // upcoming, preparation, active, finished
   periodStatus: 'upcoming', // upcoming, active, paused, finished
   currentPeriod: '1',
-  periodDuration: 600, // 10 minutes in seconds
-  remainingTime: 600, // seconds remaining in current period
+  periodDuration: 600000, // 10 minutes in milliseconds
+  remainingTime: 600000, // milliseconds remaining in current period
   ourPoints: 0,
   opponentPoints: 0
 })
@@ -565,6 +570,7 @@ const currentPeriod = ref('Unknown period')
 const currentTime = ref('10:00')
 const gameStatus = ref('Unknown game status')
 const timerRunning = ref(false)
+const ourTeamId = 1
 
 // Selected player for actions
 const selectedPlayer = ref(null)
@@ -588,12 +594,13 @@ const fullOpponentTeamStats = ref([])
 
 // Computed properties for dynamic UI
 const canStartMatch = computed(() => {
-  console.log('Checking canStartMatch trackingStatus:', matchTrackingState.value.trackingStatus)
-  console.log('Checking canStartMatch periodStatus:', matchTrackingState.value.periodStatus)
-  return (matchTrackingState.value.trackingStatus === 'preparation' && 
+  const hasProperStatus = (matchTrackingState.value.trackingStatus === 'preparation' && 
          matchTrackingState.value.periodStatus === 'upcoming') ||
          (matchTrackingState.value.trackingStatus === 'active' && 
          matchTrackingState.value.periodStatus === 'upcoming')
+  
+  // Can only start if status is correct AND starting lineup is complete
+  return hasProperStatus && hasCompleteStartingLineup.value
 })
 
 const canPauseMatch = computed(() => {
@@ -624,10 +631,30 @@ const isMatchFinished = computed(() => {
   return matchTrackingState.value.trackingStatus === 'finished'
 })
 
+// Check if starting lineup is complete (5 players from each team)
+const hasCompleteStartingLineup = computed(() => {
+  const ourStarters = fullOurTeamStats.value.filter(p => p.isStarter).length
+  const opponentStarters = fullOpponentTeamStats.value.filter(p => p.isStarter).length
+  return ourStarters === 5 && opponentStarters === 5
+})
+
+// Starting five button should only be enabled in preparation phase
+const canEditStartingFive = computed(() => {
+  return matchTrackingState.value.trackingStatus === 'preparation'
+})
+
 const formattedTime = computed(() => {
-  const minutes = Math.floor(matchTrackingState.value.remainingTime / 60)
-  const seconds = matchTrackingState.value.remainingTime % 60
+  // Ensure we never show negative time
+  const timeMs = Math.max(0, matchTrackingState.value.remainingTime)
+  const totalSeconds = Math.floor(timeMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
+
+// Reverse events order - newest at top, oldest at bottom
+const sortedGameEvents = computed(() => {
+  return [...gameEvents.value].reverse()
 })
 
 const periodDisplayName = computed(() => {
@@ -836,7 +863,7 @@ const fetchMatchTrackingData = async (matchId) => {
 
 // Calculate remaining time based on tracking data
 const calculateRemainingTime = (trackingData) => {
-  const periodDuration = trackingData.periodDuration || 600
+  const periodDuration = trackingData.periodDuration || 600000 // Default 10 minutes in milliseconds
   
   if (trackingData.periodStatus === 'upcoming') {
     return periodDuration // Full period time
@@ -883,12 +910,16 @@ const startTimer = () => {
   
   timerInterval.value = setInterval(() => {
     if (matchTrackingState.value.periodStatus === 'active' && matchTrackingState.value.remainingTime > 0) {
-      matchTrackingState.value.remainingTime--
-      currentTime.value = formattedTime.value
+      matchTrackingState.value.remainingTime -= 1000 // Decrease by 1000ms (1 second)
       
-      // Auto-end period when time expires
+      // Ensure we don't go below 0
       if (matchTrackingState.value.remainingTime <= 0) {
-        endPeriod()
+        matchTrackingState.value.remainingTime = 0 // Set exactly to 0
+        currentTime.value = formattedTime.value // Update display to show 0:00
+        stopTimer() // Stop timer immediately
+        endPeriod() // End the period
+      } else {
+        currentTime.value = formattedTime.value // Update display
       }
     }
   }, 1000)
@@ -987,7 +1018,6 @@ const handleStartingFiveSubmit = async (selectionData) => {
     console.log('Starting five updated successfully')
   } catch (err) {
     console.error('Error updating starting five:', err)
-    alert('Failed to update starting five. Please try again.')
   }
 }
 
@@ -1057,21 +1087,15 @@ const handleSubstitution = async (substitutionData) => {
       // Update local player states
       updateLocalPlayerStates(substitutionData)
       
-      // Add event to game chronology
-      const event = {
-        id: gameEvents.value.length + 1,
-        time: `${currentTime.value} ${currentPeriod.value}`,
-        description: `Substitution: ${substitutionData.playerOutName} → ${substitutionData.playerInName}`
-      }
-      gameEvents.value.unshift(event)
+      // Refresh the match events from backend
+      fetchMatchEvents(matchId)
       
       console.log('Substitution completed successfully')
     } else {
-      alert('Failed to perform substitution: ' + response.data.message)
+      console.error('Error performing substitution:', response.data.message)
     }
   } catch (err) {
     console.error('Error performing substitution:', err)
-    alert('Failed to perform substitution. Please try again.')
   }
 }
 
@@ -1133,8 +1157,11 @@ const fetchMatchEvents = async (matchId) => {
 // Helper function to format event time for display
 const formatEventTime = (event) => {
   if (event.period && event.periodTime !== null) {
-    const minutes = Math.floor(event.periodTime / 60)
-    const seconds = event.periodTime % 60
+    const totalSeconds = Math.floor(event.periodTime / 1000)
+    // Round up to next second (e.g., 5:14:23 becomes 5:15)
+    // const totalSeconds = Math.ceil(event.periodTime / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
     // Show period first (e.g. "2Q 5:34")
     return `${event.period}Q ${minutes}:${seconds.toString().padStart(2, '0')}`
   }
@@ -1245,7 +1272,7 @@ const fetchTeamMembers = async (matchId) => {
     //console.log('Team members:', teamMembers)
 
     // Separate our team (Partizan - team ID 1) and opponent team
-    const ourTeamId = 1
+    
     const ourTeamMembers = teamMembers.filter(tm => tm.idTeam === ourTeamId)
     const opponentTeamMembers = teamMembers.filter(tm => tm.idTeam !== ourTeamId)
     
@@ -1309,20 +1336,58 @@ const selectPlayer = (player, team) => {
 }
 
 // Record action
-const recordAction = (action) => {
+const recordAction = async (action, teamId) => {
   if (!selectedPlayer.value) {
-    alert('Please select a player first')
+    console.log('Please select a player first')
     return
   }
   
-  // const event = {
-  //   id: gameEvents.value.length + 1,
-  //   time: `${currentTime.value} ${currentPeriod.value}`,
-  //   description: `${selectedPlayer.value.name} ${action.replace('_', ' ')}`
-  // }
-  
-  // gameEvents.value.unshift(event)
-  console.log('Recorded action:', action, 'for player:', selectedPlayer.value.name)
+  if (matchTrackingState.value.trackingStatus !== 'active') {
+    console.log('Match must be active to record events')
+    return
+  }
+  const eventTypeMap = {
+      '+2p': '2point made',
+      '2p': '2point miss', 
+      '+3p': '3point made',
+      '3p': '3point miss',
+      '+ft': 'free throw made',
+      'ft': 'free throw miss',
+      'assist': 'assist',
+      'reb of': 'rebound offensive',
+      'reb def': 'rebound defensive', 
+      'steal': 'steal',
+      'block': 'block',
+      'foul': 'foul'
+    }
+
+  try {
+    const matchId = route.params.id
+
+    // Create personal event for the selected player
+    const eventData = {
+      matchId: parseInt(matchId),
+      category: 'personal',
+      playerId: selectedPlayer.value.id,
+      teamId: teamId,
+      type: action,
+      notes: `${selectedPlayer.value.name} - ${eventTypeMap[action] || action}`
+    }
+
+    console.log('Creating personal event:', eventData)
+    
+    const response = await axios.post(`${MATCHES_URL}/ChronologicalEvent`, eventData)
+    
+    if (response.data.isSuccess) {
+      console.log('Event recorded successfully:', response.data)
+      
+      // Refresh events from backend to get updated chronology
+      await fetchMatchEvents(matchId)
+    }
+    
+  } catch (error) {
+    console.error('Error recording event:', error)
+  }
 }
 
 // Formation selection
@@ -1799,11 +1864,13 @@ onUnmounted(() => {
 .timeout-btn.partizan {
   background-color: #007bff;
   color: white;
+  margin-right: auto;
 }
 
 .timeout-btn.opponent {
   background-color: #dc3545;
   color: white;
+  margin-left: auto;
 }
 
 .timeout-btn:hover {
@@ -1866,21 +1933,32 @@ onUnmounted(() => {
   background-color: #4caf50;
   color: white;
   border: none;
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 0.8rem;
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
-  margin-right: 0.5rem;
+  margin-left: auto;
+  margin-right: 1rem;
+  transition: all 0.2s;
+}
+.substitution-btn:hover {
+  background-color: #388e3c;
+  transform: translateY(-1px);
 }
 
 .undo-btn {
   background-color: #f44336;
   color: white;
   border: none;
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 0.8rem;
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.2s;
+}
+.undo-btn:hover {
+  background-color: #d32f2f;
+  transform: translateY(-2px);
 }
 
 .active-players-grid {
