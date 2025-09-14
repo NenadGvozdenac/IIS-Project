@@ -41,22 +41,63 @@
             <span class="time">{{ currentTime }}</span>
             <span class="game-status">{{ gameStatus }}</span>
             <button 
-              class="timer-btn-inline"
-              :class="{ 'start': !timerRunning, 'stop': timerRunning }"
-              @click="toggleTimer"
+              v-if="canStartMatch"
+              class="timer-btn-inline start"
+              @click="startMatchOrPeriod"
             >
-              {{ timerRunning ? '⏹ Stop' : '▶ Start' }}
+              ▶ Start
             </button>
+            <button 
+              v-else-if="canPauseMatch"
+              class="timer-btn-inline stop"
+              @click="pauseMatch"
+            >
+              ⏸ Pause
+            </button>
+            <button 
+              v-else-if="canResumeMatch"
+              class="timer-btn-inline start"
+              @click="resumeMatch"
+            >
+              ▶ Resume
+            </button>
+            <button 
+              v-else-if="canEndPeriod"
+              class="timer-btn-inline stop"
+              @click="endPeriod"
+            >
+              ⏹ End Period
+            </button>
+            <button 
+              v-else-if="canNextPeriod"
+              class="timer-btn-inline start"
+              @click="nextPeriod"
+            >
+              ➡ Next Period
+            </button>
+            <button 
+              v-else-if="canEndMatch"
+              class="timer-btn-inline stop"
+              @click="endMatch"
+            >
+              🏁 End Match
+            </button>
+            <span 
+              v-else-if="isMatchFinished"
+              class="timer-btn-inline disabled"
+            >
+              ✅ Finished
+            </span>
           </div>
           <div class="score-display">
             <div class="team-score home">
               <span class="team-name-large">Partizan</span>
-              <span class="score">{{ match?.ourPoints }}</span>
+              <span class="score">{{ matchTrackingState.ourPoints }}</span>
             </div>
             <div class="vs">-</div>
             <div class="team-score away">
               <span class="team-name-large">{{ opponentTeam }}</span>
-              <span class="score">{{ match?.opponentPoints }}</span>
+              <span class="score">{{ matchTrackingState.opponentPoints }}</span>
             </div>
           </div>
           <div class="live-indicator">
@@ -68,26 +109,64 @@
         <div class="game-controls">          
           <div class="center-controls-full">
             <button 
+              v-if="canPauseMatch || canResumeMatch"
               class="control-btn timeout-btn partizan"
               @click="callTimeout('partizan')"
             >
               Timeout - Partizan
             </button>
+            
             <button 
-              v-if="gameStatus === 'Playing'"
+              v-if="canStartMatch"
+              class="control-btn resume-btn"
+              @click="startMatchOrPeriod"
+            >
+              ▶ Start Match
+            </button>
+            <button 
+              v-else-if="canPauseMatch"
               class="control-btn pause-btn"
-              @click="pauseGame"
+              @click="pauseMatch"
             >
               ⏸ Pause Game
             </button>
             <button 
-              v-else-if="gameStatus === 'Paused'"
+              v-else-if="canResumeMatch"
               class="control-btn resume-btn"
-              @click="resumeGame"
+              @click="resumeMatch"
             >
               ▶ Resume Game
             </button>
             <button 
+              v-else-if="canEndPeriod"
+              class="control-btn pause-btn"
+              @click="endPeriod"
+            >
+              ⏹ End Period
+            </button>
+            <button 
+              v-else-if="canNextPeriod"
+              class="control-btn resume-btn"
+              @click="nextPeriod"
+            >
+              ➡ Next Period
+            </button>
+            <button 
+              v-else-if="canEndMatch"
+              class="control-btn pause-btn"
+              @click="endMatch"
+            >
+              🏁 End Match
+            </button>
+            <span 
+              v-else-if="isMatchFinished"
+              class="control-btn pause-btn disabled"
+            >
+              ✅ Match Finished
+            </span>
+            
+            <button 
+              v-if="canPauseMatch || canResumeMatch"
               class="control-btn timeout-btn opponent"
               @click="callTimeout('opponent')"
             >
@@ -449,7 +528,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
@@ -463,6 +542,20 @@ const router = useRouter()
 const loading = ref(false)
 const error = ref(null)
 const match = ref(null)
+
+// Match tracking state
+const matchTrackingState = ref({
+  trackingStatus: 'upcoming', // upcoming, preparation, active, finished
+  periodStatus: 'upcoming', // upcoming, active, paused, finished
+  currentPeriod: '1',
+  periodDuration: 600, // 10 minutes in seconds
+  remainingTime: 600, // seconds remaining in current period
+  ourPoints: 0,
+  opponentPoints: 0
+})
+
+// Timer state
+const timerInterval = ref(null)
 
 // Match data (will be updated from API)
 const isHomeMatch = ref(false)
@@ -492,6 +585,61 @@ const gameEvents = ref([])
 // Full team statistics (all players)
 const fullOurTeamStats = ref([])
 const fullOpponentTeamStats = ref([])
+
+// Computed properties for dynamic UI
+const canStartMatch = computed(() => {
+  console.log('Checking canStartMatch trackingStatus:', matchTrackingState.value.trackingStatus)
+  console.log('Checking canStartMatch periodStatus:', matchTrackingState.value.periodStatus)
+  return (matchTrackingState.value.trackingStatus === 'preparation' && 
+         matchTrackingState.value.periodStatus === 'upcoming') ||
+         (matchTrackingState.value.trackingStatus === 'active' && 
+         matchTrackingState.value.periodStatus === 'upcoming')
+})
+
+const canPauseMatch = computed(() => {
+  return matchTrackingState.value.periodStatus === 'active'
+})
+
+const canResumeMatch = computed(() => {
+  return matchTrackingState.value.periodStatus === 'paused'
+})
+
+const canEndPeriod = computed(() => {
+  return matchTrackingState.value.periodStatus === 'active' && 
+         matchTrackingState.value.remainingTime <= 0
+})
+
+const canNextPeriod = computed(() => {
+  return (matchTrackingState.value.periodStatus === 'finished' && 
+         matchTrackingState.value.currentPeriod !== '4') &&
+         matchTrackingState.value.trackingStatus !== 'finished'
+})
+
+const canEndMatch = computed(() => {
+  return matchTrackingState.value.periodStatus === 'finished' && 
+         matchTrackingState.value.currentPeriod === '4'
+})
+
+const isMatchFinished = computed(() => {
+  return matchTrackingState.value.trackingStatus === 'finished'
+})
+
+const formattedTime = computed(() => {
+  const minutes = Math.floor(matchTrackingState.value.remainingTime / 60)
+  const seconds = matchTrackingState.value.remainingTime % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
+
+const periodDisplayName = computed(() => {
+  const period = matchTrackingState.value.currentPeriod
+  switch(period) {
+    case '1': return '1st Quarter'
+    case '2': return '2nd Quarter'
+    case '3': return '3rd Quarter'
+    case '4': return '4th Quarter'
+    default: return `Period ${period}`
+  }
+})
 
 // Automatic recommendations (hardcoded for now)
 const automaticRecommendations = ref([
@@ -550,6 +698,207 @@ const acceptRecommendation = (recommendationId) => {
 const dismissRecommendation = (recommendationId) => {
   //automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
   console.log('Dismissed recommendation:', recommendationId)
+}
+
+// Match tracking API functions
+const startMatchOrPeriod = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/start`)
+    
+    if (response.data.isSuccess) {
+      console.log('Match/Period started successfully')
+      await fetchMatchTrackingData(matchId)
+      startTimer()
+    }
+  } catch (error) {
+    console.error('Error starting match/period:', error)
+  }
+}
+
+const pauseMatch = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/pause`)
+    
+    if (response.data.isSuccess) {
+      console.log('Match paused successfully')
+      await fetchMatchTrackingData(matchId)
+      stopTimer()
+    }
+  } catch (error) {
+    console.error('Error pausing match:', error)
+  }
+}
+
+const resumeMatch = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/resume`)
+    
+    if (response.data.isSuccess) {
+      console.log('Match resumed successfully')
+      await fetchMatchTrackingData(matchId)
+      startTimer()
+    }
+  } catch (error) {
+    console.error('Error resuming match:', error)
+  }
+}
+
+const endPeriod = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/end-period`)
+    
+    if (response.data.isSuccess) {
+      console.log('Period ended successfully')
+      await fetchMatchTrackingData(matchId)
+      stopTimer()
+    }
+  } catch (error) {
+    console.error('Error ending period:', error)
+  }
+}
+
+const nextPeriod = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/next-period`)
+    
+    if (response.data.isSuccess) {
+      console.log('Advanced to next period successfully')
+      await fetchMatchTrackingData(matchId)
+    }
+  } catch (error) {
+    console.error('Error advancing to next period:', error)
+  }
+}
+
+const endMatch = async () => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/end`)
+    
+    if (response.data.isSuccess) {
+      console.log('Match ended successfully')
+      await fetchMatchTrackingData(matchId)
+      stopTimer()
+    }
+  } catch (error) {
+    console.error('Error ending match:', error)
+  }
+}
+
+const callTimeoutAPI = async (teamId) => {
+  try {
+    const matchId = route.params.id
+    const response = await axios.post(`${MATCHES_URL}/matchtracking/${matchId}/timeout`, {
+      teamId: teamId
+    })
+    
+    if (response.data.isSuccess) {
+      console.log('Timeout called successfully')
+      await fetchMatchTrackingData(matchId)
+      stopTimer()
+    }
+  } catch (error) {
+    console.error('Error calling timeout:', error)
+  }
+}
+
+// Fetch current match tracking data
+const fetchMatchTrackingData = async (matchId) => {
+  try {
+    const response = await axios.get(`${MATCHES_URL}/match/${matchId}/tracking`)
+    
+    if (response.data.isSuccess) {
+      const data = response.data.value
+      // Update match tracking state
+      matchTrackingState.value = {
+        trackingStatus: data.trackingStatus || 'upcoming',
+        periodStatus: data.periodStatus || 'upcoming',
+        currentPeriod: data.currentPeriod || '1',
+        periodDuration: data.periodDuration || 600,
+        remainingTime: calculateRemainingTime(data),
+        ourPoints: data.ourPoints || 0,
+        opponentPoints: data.opponentPoints || 0
+      }
+      console.log('FETCHED match tracking data:', matchTrackingState.value)
+      
+      // Update UI state
+      updateUIFromTrackingState()
+    }
+  } catch (error) {
+    console.error('Error fetching match tracking data:', error)
+  }
+}
+
+// Calculate remaining time based on tracking data
+const calculateRemainingTime = (trackingData) => {
+  const periodDuration = trackingData.periodDuration || 600
+  
+  if (trackingData.periodStatus === 'upcoming') {
+    return periodDuration // Full period time
+  } else if (trackingData.periodStatus === 'active') {
+    // Calculate based on elapsed time
+    const elapsed = trackingData.elapsedPeriodTime || 0
+    return Math.max(0, periodDuration - elapsed)
+  } else {
+    // For paused/finished, use stored elapsed time
+    const elapsed = trackingData.elapsedPeriodTime || 0
+    return Math.max(0, periodDuration - elapsed)
+  }
+}
+
+// Update UI state from tracking state
+const updateUIFromTrackingState = () => {
+  currentTime.value = formattedTime.value
+  currentPeriod.value = periodDisplayName.value
+  
+  // Update game status
+  if (matchTrackingState.value.trackingStatus === 'finished') {
+    gameStatus.value = 'Finished'
+    timerRunning.value = false
+  } else if (matchTrackingState.value.periodStatus === 'active') {
+    gameStatus.value = 'Playing'
+    timerRunning.value = true
+  } else if (matchTrackingState.value.periodStatus === 'paused') {
+    gameStatus.value = 'Paused'
+    timerRunning.value = false
+  } else if (matchTrackingState.value.periodStatus === 'upcoming') {
+    gameStatus.value = 'Ready to Start'
+    timerRunning.value = false
+  } else {
+    gameStatus.value = 'Preparing'
+    timerRunning.value = false
+  }
+}
+
+// Timer functions
+const startTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+  }
+  
+  timerInterval.value = setInterval(() => {
+    if (matchTrackingState.value.periodStatus === 'active' && matchTrackingState.value.remainingTime > 0) {
+      matchTrackingState.value.remainingTime--
+      currentTime.value = formattedTime.value
+      
+      // Auto-end period when time expires
+      if (matchTrackingState.value.remainingTime <= 0) {
+        endPeriod()
+      }
+    }
+  }, 1000)
+}
+
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+    timerInterval.value = null
+  }
 }
 
 // Starting Five Modal
@@ -764,7 +1113,6 @@ const fetchMatchEvents = async (matchId) => {
   try {
     const response = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
 
-    console.log('RESPONSE.data.value.events:', response.data.value.events)
     if (response.data?.isSuccess && response.data?.value?.events) {
       // Map backend response to UI format
       gameEvents.value = response.data.value.events.map(event => ({
@@ -834,6 +1182,9 @@ const fetchMatchDetails = async () => {
     
     // Update real-time data from match response
     updateMatchData()
+    
+    // Fetch current match tracking data
+    await fetchMatchTrackingData(matchId)
     
     // Fetch team members for this match
     await fetchTeamMembers(matchId)
@@ -942,8 +1293,8 @@ const fetchTeamMembers = async (matchId) => {
     fullOurTeamStats.value = ourTeamMembers.map(convertToPlayerFormat)
     fullOpponentTeamStats.value = opponentTeamMembers.map(convertToPlayerFormat)
     
-    console.log('Our team players:', activeOurPlayers.value)
-    console.log('Opponent team players:', activeOpponentPlayers.value)
+    //console.log('Our team players:', activeOurPlayers.value)
+    //console.log('Opponent team players:', activeOpponentPlayers.value)
     
   } catch (err) {
     console.error('Error fetching team members:', err)
@@ -1028,60 +1379,27 @@ const selectDefense = async (defense) => {
   }
 }
 
-// Game control functions
-const callTimeout = (team) => {
-  // const event = {
-  //   id: gameEvents.value.length + 1,
-  //   time: `${currentTime.value} ${currentPeriod.value}`,
-  //   description: `Timeout called by ${team === 'partizan' ? 'Partizan' : opponentTeam.value}`
-  // }
-  // gameEvents.value.unshift(event)
-  console.log('Timeout called by:', team)
+// Game control functions (updated to use backend APIs)
+const callTimeout = async (team) => {
+  const teamId = team === 'partizan' ? 1 : 2 // Assuming opponent team ID is 2
+  await callTimeoutAPI(teamId)
 }
 
-const pauseGame = () => {
-  // gameStatus.value = 'Paused'
-  // const event = {
-  //   id: gameEvents.value.length + 1,
-  //   time: `${currentTime.value} ${currentPeriod.value}`,
-  //   description: 'Game paused'
-  // }
-  // gameEvents.value.unshift(event)
-  console.log('Game paused')
+const pauseGame = async () => {
+  await pauseMatch()
 }
 
-const resumeGame = () => {
-  // gameStatus.value = 'Playing'
-  // const event = {
-  //   id: gameEvents.value.length + 1,
-  //   time: `${currentTime.value} ${currentPeriod.value}`,
-  //   description: 'Game resumed'
-  // }
-  // gameEvents.value.unshift(event)
-  console.log('Game resumed')
+const resumeGame = async () => {
+  await resumeMatch()
 }
 
-const toggleTimer = () => {
-  timerRunning.value = !timerRunning.value
-  
-  if (timerRunning.value) {
-    // gameStatus.value = 'Playing'
-    // const event = {
-    //   id: gameEvents.value.length + 1,
-    //   time: `${currentTime.value} ${currentPeriod.value}`,
-    //   description: 'Match timer started'
-    // }
-    // gameEvents.value.unshift(event)
-    console.log('Timer started')
-  } else {
-    // gameStatus.value = 'Paused'
-    // const event = {
-    //   id: gameEvents.value.length + 1,
-    //   time: `${currentTime.value} ${currentPeriod.value}`,
-    //   description: 'Match timer stopped'
-    // }
-    // gameEvents.value.unshift(event)
-    console.log('Timer stopped')
+const toggleTimer = async () => {
+  if (canStartMatch.value) {
+    await startMatchOrPeriod()
+  } else if (canPauseMatch.value) {
+    await pauseMatch()
+  } else if (canResumeMatch.value) {
+    await resumeMatch()
   }
 }
 
@@ -1124,6 +1442,11 @@ const formatMatchTime = () => {
 
 onMounted(() => {
   fetchMatchDetails()
+})
+
+onUnmounted(() => {
+  // Clean up timer when component is unmounted
+  stopTimer()
 })
 </script>
 
@@ -1339,6 +1662,19 @@ onMounted(() => {
 .timer-btn-inline.stop:hover {
   background-color: #c82333;
   transform: translateY(-1px);
+}
+
+.timer-btn-inline.disabled {
+  background-color: #6c757d;
+  color: white;
+  cursor: not-allowed;
+}
+
+.control-btn.disabled {
+  background-color: #6c757d;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .period {
