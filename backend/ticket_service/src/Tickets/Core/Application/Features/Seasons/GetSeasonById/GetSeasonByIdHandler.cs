@@ -36,6 +36,8 @@ public class GetSeasonByIdHandler : IRequestHandler<GetSeasonByIdQuery, Result<G
                 MatchesCount = season.Matches.Count,
                 SeasonTicketsCount = season.SeasonTickets.Count,
                 IsActive = season.StartedAt <= currentDate && (!season.EndedAt.HasValue || season.EndedAt >= currentDate),
+                TicketsForSale = season.TicketsForSale,
+                TicketsWentOnSale = season.TicketsWentOnSale,
                 Matches = season.Matches.Select(m => new MatchResponse
                 {
                     IdMatch = m.IdMatch,

@@ -257,6 +257,8 @@ public partial class TicketDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.StartedAt).HasColumnName("started_at");
+            entity.Property(e => e.TicketsForSale).HasColumnName("tickets_for_sale");
+            entity.Property(e => e.TicketsWentOnSale).HasColumnName("tickets_went_on_sale");
         });
 
         modelBuilder.Entity<SeasonTicket>(entity =>
