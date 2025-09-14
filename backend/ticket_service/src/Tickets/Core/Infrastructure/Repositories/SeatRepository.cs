@@ -73,4 +73,12 @@ public class SeatRepository : ISeatRepository
         _ticketDbContext.SaveChanges();
         return true;
     }
+
+    public IEnumerable<Seat> GetEnabledSeats()
+    {
+        return _ticketDbContext.Seats
+            .Include(s => s.IdZoneNavigation)
+            .Where(s => s.Status == "enabled")
+            .ToList();
+    }
 }
