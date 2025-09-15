@@ -34,12 +34,14 @@ public static class ApplicationStartup
         services.AddScoped<IIndividualTicketRepository, IndividualTicketRepository>();
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
         services.AddScoped<ITicketPriceParameterRepository, TicketPriceParameterRepository>();
+        services.AddScoped<IStatisticsRepository, StatisticsRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
     {
         services.AddScoped<ICreditCardEncryptionService, CreditCardEncryptionService>();
         services.AddScoped<ITicketPriceCalculationService, TicketPriceCalculationService>();
+        services.AddHostedService<MatchFinishedService>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

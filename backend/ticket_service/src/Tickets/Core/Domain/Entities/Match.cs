@@ -43,5 +43,7 @@ public partial class Match
 
     public virtual ICollection<IndividualTicket> IndividualTickets { get; set; } = new List<IndividualTicket>();
 
+    public virtual ICollection<MatchZoneSalesSummary> MatchZoneSalesSummaries { get; set; } = new List<MatchZoneSalesSummary>();
+
     public virtual ICollection<TicketPriceParameter> TicketPriceParameters { get; set; } = new List<TicketPriceParameter>();
 }

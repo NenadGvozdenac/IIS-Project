@@ -90,6 +90,8 @@ DROP TABLE IF EXISTS visa CASCADE;
 
 DROP TABLE IF EXISTS zone CASCADE;
 
+DROP TABLE IF EXISTS match_zone_sales_summary CASCADE;
+
 CREATE TABLE accommodation_offer (
     id_offer       INTEGER NOT NULL,
     name           VARCHAR(255),
@@ -560,6 +562,18 @@ CREATE TABLE zone (
     PRIMARY KEY (id_zone)
 );
 
+CREATE TABLE match_zone_sales_summary (
+    id_summary       SERIAL NOT NULL,
+    id_match         INTEGER NOT NULL,
+    id_zone          INTEGER NOT NULL,
+    id_ticket_price_parameter INTEGER,
+    total_tickets_sold INTEGER NOT NULL DEFAULT 0,
+    total_revenue    DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_summary),
+    UNIQUE (id_match, id_zone)
+);
+
 -- FOREIGN KEY CONSTRAINTS
 ALTER TABLE accommodation_offer
     ADD CONSTRAINT fk_acc_offer_offer
@@ -830,6 +844,21 @@ ALTER TABLE ticket_price_parameter
     ADD CONSTRAINT fk_ticket_price_param_zone 
         FOREIGN KEY (id_zone)
         REFERENCES zone (id_zone);
+
+ALTER TABLE match_zone_sales_summary
+    ADD CONSTRAINT fk_match_zone_sales_match 
+        FOREIGN KEY (id_match)
+        REFERENCES match (id_match) ON DELETE CASCADE;
+
+ALTER TABLE match_zone_sales_summary
+    ADD CONSTRAINT fk_match_zone_sales_zone 
+        FOREIGN KEY (id_zone)
+        REFERENCES zone (id_zone) ON DELETE CASCADE;
+
+ALTER TABLE match_zone_sales_summary
+    ADD CONSTRAINT fk_match_zone_sales_price_param 
+        FOREIGN KEY (id_ticket_price_parameter)
+        REFERENCES ticket_price_parameter (id_ticket_price_parameter) ON DELETE SET NULL;
 
 ALTER TABLE transportation_offer
     ADD CONSTRAINT fk_trans_offer_offer
@@ -1583,8 +1612,8 @@ BEGIN
     
     -- Postavljanje faktora (mogu se prebaciti u tabelu parametara)
     v_f := 0.6; -- 60% uticaj zone, 40% stadiona
-    v_k := COALESCE(v_price_factor::NUMERIC / 100.0, 5.0); -- Iz tabele ili default 5
-    v_gamma := COALESCE(v_time_factor::NUMERIC / 100.0, 0.5); -- Iz tabele ili default 0.5
+    v_k := COALESCE(v_price_factor::NUMERIC / 100.0, 8.0); -- Iz tabele ili default 8
+    v_gamma := COALESCE(v_time_factor::NUMERIC / 100.0, 0.7); -- Iz tabele ili default 0.7
     v_t := 30; -- 30 dana maksimalno za vremenski faktor
     
     -- Izračunavanje α i β
@@ -1652,3 +1681,64 @@ $$ LANGUAGE plpgsql;
 -- - Obična utakmica, nizak price_factor (4.0), time_factor (0.4) 
 -- - Min: 1000, Max: 4000 dinara
 -- SELECT calculate_ticket_price(3, 1);
+
+-- TRIGGER FUNKCIJA ZA AGREGACIJU PRODAJE KARATA PO ZONAMA
+CREATE OR REPLACE FUNCTION aggregate_match_zone_sales()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Proverava da li je tickets_for_sale promenjeno sa TRUE na FALSE
+    -- što označava da je prodaja karata završena za meč
+    IF OLD.tickets_for_sale = TRUE AND NEW.tickets_for_sale = FALSE THEN
+
+        -- Briše postojeće podatke za ovaj meč ako postoje
+        DELETE FROM match_zone_sales_summary WHERE id_match = NEW.id_match;
+
+        -- Kreira unose za sve zone sa parametrima cena
+        INSERT INTO match_zone_sales_summary (id_match, id_zone, id_ticket_price_parameter, total_tickets_sold, total_revenue)
+        SELECT 
+            NEW.id_match,
+            z.id_zone,
+            tpp.id_ticket_price_parameter,
+            0 as total_tickets_sold,
+            0.00 as total_revenue
+        FROM zone z
+        LEFT JOIN ticket_price_parameter tpp ON tpp.id_zone = z.id_zone AND tpp.id_match = NEW.id_match
+        WHERE z.status = 'enabled'
+        ORDER BY z.id_zone;
+
+        -- Priprema podatke o prodaji po zonama
+        WITH zone_sales AS (
+            SELECT 
+                s.id_zone,
+                COUNT(*) as ticket_count,
+                SUM(ci.price) as revenue
+            FROM cart_item ci
+            JOIN purchase_offer po ON ci.id_purchase_offer = po.id_purchase_offer
+            JOIN individual_ticket it ON po.id_purchase_offer = it.id_purchase_offer
+            JOIN seat s ON po.id_seat = s.id_seat
+            JOIN cart c ON ci.id_cart = c.id_cart
+            WHERE it.id_match = NEW.id_match 
+              AND c.status = 'bought'
+              AND po.type = 'individual ticket'
+            GROUP BY s.id_zone
+        )
+        -- Ažurira podatke o prodaji za zone koje imaju prodane karte
+        UPDATE match_zone_sales_summary 
+        SET 
+            total_tickets_sold = zone_sales.ticket_count,
+            total_revenue = zone_sales.revenue
+        FROM zone_sales
+        WHERE match_zone_sales_summary.id_match = NEW.id_match 
+          AND match_zone_sales_summary.id_zone = zone_sales.id_zone;
+        
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGER ZA AUTOMATSKU AGREGACIJU KADA SE PRODAJA KARATA ZAVRŠI
+CREATE TRIGGER match_finished_aggregation_trigger
+    AFTER UPDATE ON match
+    FOR EACH ROW
+    EXECUTE FUNCTION aggregate_match_zone_sales();
