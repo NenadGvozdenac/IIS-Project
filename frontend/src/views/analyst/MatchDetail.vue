@@ -190,7 +190,7 @@
             <div class="team-header">
               <h3>Partizan</h3>
               <button class="substitution-btn" @click="openSubstitutionModal(1, 'Partizan')">Substitution</button>
-              <button class="undo-btn">UNDO</button>
+              <button class="undo-btn" @click="undoLastEvent(1)">UNDO</button>
             </div>
             <div class="active-players-grid">
               <div 
@@ -257,7 +257,7 @@
             <div class="team-header">
               <h3>{{ opponentTeam }}</h3>
               <button class="substitution-btn" @click="openSubstitutionModal(match?.idTeam || 2, opponentTeam)">Substitution</button>
-              <button class="undo-btn">UNDO</button>
+              <button class="undo-btn" @click="undoLastEvent(match?.idTeam || 2)">UNDO</button>
             </div>
             <div class="active-players-grid">
               <div 
@@ -727,6 +727,9 @@ const formattedTime = computed(() => {
   const totalSeconds = Math.floor(timeMs / 1000)
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
+  if(minutes === 0 && seconds === 0) {
+    return '0:00'
+  }
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
@@ -924,8 +927,8 @@ const fetchMatchTrackingData = async (matchId) => {
         trackingStatus: data.trackingStatus || 'upcoming',
         periodStatus: data.periodStatus || 'upcoming',
         currentPeriod: data.currentPeriod || '1',
-        periodDuration: data.periodDuration || 600,
-        remainingTime: calculateRemainingTime(data),
+        periodDuration: data.periodDuration || 600000,
+        remainingTime: data.remainingPeriodTime || data.periodDuration || 600000,
         ourPoints: data.ourPoints || 0,
         opponentPoints: data.opponentPoints || 0
       }
@@ -939,44 +942,59 @@ const fetchMatchTrackingData = async (matchId) => {
   }
 }
 
-// Calculate remaining time based on tracking data
-const calculateRemainingTime = (trackingData) => {
-  const periodDuration = trackingData.periodDuration || 600000 // Default 10 minutes in milliseconds
-  
-  if (trackingData.periodStatus === 'upcoming') {
-    return periodDuration // Full period time
-  } else if (trackingData.periodStatus === 'active') {
-    // Calculate based on elapsed time
-    const elapsed = trackingData.elapsedPeriodTime || 0
-    return Math.max(0, periodDuration - elapsed)
-  } else {
-    // For paused/finished, use stored elapsed time
-    const elapsed = trackingData.elapsedPeriodTime || 0
-    return Math.max(0, periodDuration - elapsed)
+// Refresh only scores without affecting timer (for use during active periods)
+const refreshScoresOnly = async (matchId) => {
+  try {
+    const response = await axios.get(`${MATCHES_URL}/match/${matchId}/tracking`)
+    
+    if (response.data.isSuccess) {
+      const data = response.data.value
+      // Only update scores, keep timer state intact
+      matchTrackingState.value.ourPoints = data.ourPoints || 0
+      matchTrackingState.value.opponentPoints = data.opponentPoints || 0
+      console.log('REFRESHED scores only:', { 
+        ourPoints: matchTrackingState.value.ourPoints, 
+        opponentPoints: matchTrackingState.value.opponentPoints 
+      })
+    }
+  } catch (error) {
+    console.error('Error refreshing scores:', error)
   }
 }
 
 // Update UI state from tracking state
 const updateUIFromTrackingState = () => {
-  currentTime.value = formattedTime.value
+  // Only update time display if period is not active (to preserve running timer)
+  // Exception: always update on first load when timer is not running yet
+  if (matchTrackingState.value.periodStatus !== 'active' || !timerInterval.value) {
+    currentTime.value = formattedTime.value
+  }
   currentPeriod.value = periodDisplayName.value
   
-  // Update game status
+  // Update game status and handle timer
   if (matchTrackingState.value.trackingStatus === 'finished') {
     gameStatus.value = 'Finished'
     timerRunning.value = false
+    stopTimer()
   } else if (matchTrackingState.value.periodStatus === 'active') {
     gameStatus.value = 'Playing'
     timerRunning.value = true
+    // Start timer if not already running
+    if (!timerInterval.value) {
+      startTimer()
+    }
   } else if (matchTrackingState.value.periodStatus === 'paused') {
     gameStatus.value = 'Paused'
     timerRunning.value = false
+    stopTimer()
   } else if (matchTrackingState.value.periodStatus === 'upcoming') {
     gameStatus.value = 'Ready to Start'
     timerRunning.value = false
+    stopTimer()
   } else {
     gameStatus.value = 'Preparing'
     timerRunning.value = false
+    stopTimer()
   }
 }
 
@@ -989,7 +1007,8 @@ const startTimer = () => {
   timerInterval.value = setInterval(() => {
     if (matchTrackingState.value.periodStatus === 'active' && matchTrackingState.value.remainingTime > 0) {
       matchTrackingState.value.remainingTime -= 1000 // Decrease by 1000ms (1 second)
-      
+      //console.log('AKTIVNA UTAKMICA IDE VREME: ', matchTrackingState.value.remainingTime)
+
       // Ensure we don't go below 0
       if (matchTrackingState.value.remainingTime <= 0) {
         matchTrackingState.value.remainingTime = 0 // Set exactly to 0
@@ -1516,6 +1535,10 @@ const calculatePlayerStatistics = async (matchId) => {
     fullOurTeamStats.value.forEach(calculateFormattedStats)
     fullOpponentTeamStats.value.forEach(calculateFormattedStats)
 
+    // Update active players arrays with calculated statistics
+    activeOurPlayers.value = fullOurTeamStats.value.filter(p => p.isActive)
+    activeOpponentPlayers.value = fullOpponentTeamStats.value.filter(p => p.isActive)
+
     console.log('Statistics calculated successfully')
 
   } catch (error) {
@@ -1612,6 +1635,14 @@ const recordAction = async (action, teamId) => {
     if (response.data.isSuccess) {
       console.log('Event recorded successfully:', response.data)
       
+      // Refresh scores only if period is active (to avoid resetting timer)
+      // Otherwise refresh full tracking data
+      if (matchTrackingState.value.periodStatus === 'active') {
+        await refreshScoresOnly(matchId)
+      } else {
+        await fetchMatchTrackingData(matchId)
+      }
+      
       // Refresh events from backend to get updated chronology
       await fetchMatchEvents(matchId)
       
@@ -1621,6 +1652,39 @@ const recordAction = async (action, teamId) => {
     
   } catch (error) {
     console.error('Error recording event:', error)
+  }
+}
+
+// Undo last event for a team
+const undoLastEvent = async (teamId) => {
+  try {
+    const matchId = route.params.id
+    
+    const response = await axios.delete(`${MATCHES_URL}/ChronologicalEvent/undo/match/${matchId}/team/${teamId}`)
+    
+    if (response.data.isSuccess) {
+      console.log('Event undone successfully:', response.data)
+      
+      // Refresh scores only if period is active (to avoid resetting timer)
+      // Otherwise refresh full tracking data
+      if (matchTrackingState.value.periodStatus === 'active') {
+        await refreshScoresOnly(matchId)
+      } else {
+        await fetchMatchTrackingData(matchId)
+      }
+      
+      // Refresh events from backend to get updated chronology
+      await fetchMatchEvents(matchId)
+      
+      // Refresh player statistics
+      await calculatePlayerStatistics(matchId)
+    }
+    
+  } catch (error) {
+    console.error('Error undoing last event:', error)
+    if (error.response?.data?.message) {
+      console.log('Undo error:', error.response.data.message)
+    }
   }
 }
 
@@ -2290,8 +2354,8 @@ onUnmounted(() => {
 }
 
 .modern-card .foul-dot {
-  color: #000;
-  font-size: 12px;
+  color: #dc3545;
+  font-size: 18px;
   line-height: 1;
 }
 

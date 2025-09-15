@@ -10,6 +10,7 @@ public class GetMatchTrackingByMatchIdResponse
     public string? PeriodStatus { get; set; }
     public DateTime? PeriodStartTime { get; set; }
     public int? ElapsedPeriodTime { get; set; }
+    public int? RemainingPeriodTime { get; set; }
     public DateTime? LastPauseStartTime { get; set; }
     public int? TotalPauseTimeInPeriod { get; set; }
     public DateTime? LastUpdateTime { get; set; }

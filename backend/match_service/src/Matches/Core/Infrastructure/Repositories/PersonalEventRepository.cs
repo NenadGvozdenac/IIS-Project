@@ -48,6 +48,18 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                 .FirstOrDefault(pe => pe.IdEvent == eventId);
         }
 
+        public PersonalEvent? GetLastEventByTeamAndMatch(int matchId, int teamId)
+        {
+            return _context.PersonalEvents
+                .Include(pe => pe.Id)
+                    .ThenInclude(tm => tm.IdPlayerNavigation)
+                .Include(pe => pe.Id)
+                    .ThenInclude(tm => tm.IdTeamNavigation)
+                .Where(pe => pe.IdMatch == matchId && pe.IdTeam == teamId)
+                .OrderByDescending(pe => pe.CreationTime)
+                .FirstOrDefault();
+        }
+
         public PersonalEvent Create(PersonalEvent personalEvent)
         {
             _context.PersonalEvents.Add(personalEvent);

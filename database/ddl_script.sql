@@ -1656,7 +1656,7 @@ $$ LANGUAGE plpgsql;
 -- - Min: 1000, Max: 4000 dinara
 -- SELECT calculate_ticket_price(3, 1);
 
--- Indexes for event tables (ensure present): speed up queries by match id
+-- Indexes for event tables (ensure present): speed up queries by match id, team, and player
 -- This block is idempotent: it checks for existing index names before creating
 DO $$
 BEGIN
@@ -1676,6 +1676,33 @@ BEGIN
         SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_general_event_id_match'
     ) THEN
         EXECUTE 'CREATE INDEX idx_general_event_id_match ON general_event (id_match)';
+    END IF;
+
+    -- Player and team statistics indexes for personal_event
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_player'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_player ON personal_event (id_player)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_team'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_team ON personal_event (id_team)';
+    END IF;
+
+    -- Optional: player statistics across all matches for a team
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_team_player'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_team_player ON personal_event (id_team, id_player)';
+    END IF;
+
+    -- Performance optimization: index on event type for quick filtering by action type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_type'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_type ON personal_event (type)';
     END IF;
 END
 $$;

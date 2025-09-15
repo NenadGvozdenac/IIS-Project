@@ -3,6 +3,7 @@ using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Domain.Entities;
 using match_service.src.Matches.Core.Application.Utilities;
+using match_service.src.Matches.Core.Infrastructure;
 
 namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent.CreateEvent
 {
@@ -12,52 +13,60 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
         private readonly ITeamEventRepository _teamEventRepository;
         private readonly IGeneralEventRepository _generalEventRepository;
         private readonly IMatchTrackingRepository _matchTrackingRepository;
+        private readonly MatchDbContext _context;
 
         public CreateEventHandler(
             IPersonalEventRepository personalEventRepository,
             ITeamEventRepository teamEventRepository,
             IGeneralEventRepository generalEventRepository,
-            IMatchTrackingRepository matchTrackingRepository)
+            IMatchTrackingRepository matchTrackingRepository,
+            MatchDbContext context)
         {
             _personalEventRepository = personalEventRepository;
             _teamEventRepository = teamEventRepository;
             _generalEventRepository = generalEventRepository;
             _matchTrackingRepository = matchTrackingRepository;
+            _context = context;
         }
 
         public Task<Result<CreateEventResponse>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                // Validate category
-                if (!IsValidCategory(request.Category))
+                // Use transaction to ensure atomicity of event creation and score update
+                using var transaction = _context.Database.BeginTransaction();
+                
+                try
                 {
-                    return Task.FromResult(Result<CreateEventResponse>.Failure("Invalid category. Supported categories: personal, team, general"));
-                }
+                    // Validate category
+                    if (!IsValidCategory(request.Category))
+                    {
+                        return Task.FromResult(Result<CreateEventResponse>.Failure("Invalid category. Supported categories: personal, team, general"));
+                    }
 
-                // Validate type for category
-                if (!IsValidTypeForCategory(request.Category, request.Type))
-                {
-                    return Task.FromResult(Result<CreateEventResponse>.Failure($"Invalid type '{request.Type}' for category '{request.Category}'"));
-                }
+                    // Validate type for category
+                    if (!IsValidTypeForCategory(request.Category, request.Type))
+                    {
+                        return Task.FromResult(Result<CreateEventResponse>.Failure($"Invalid type '{request.Type}' for category '{request.Category}'"));
+                    }
 
-                int eventId = 0;
-                string message = "";
+                    int eventId = 0;
+                    string message = "";
 
-                // prepare holders for created entities
-                PersonalEvent? createdPersonal = null;
-                TeamEvent? createdTeam = null;
-                GeneralEvent? createdGeneral = null;
+                    // prepare holders for created entities
+                    PersonalEvent? createdPersonal = null;
+                    TeamEvent? createdTeam = null;
+                    GeneralEvent? createdGeneral = null;
 
-                // Fetch match and derive current period / period time from MatchTracking
-                var matchTracking = _matchTrackingRepository.GetByMatchId(request.MatchId);
-                if (matchTracking == null)
-                {
-                    return Task.FromResult(Result<CreateEventResponse>.Failure($"Match with id {request.MatchId} not found"));
-                }
+                    // Fetch match and derive current period / period time from MatchTracking
+                    var matchTracking = _matchTrackingRepository.GetByMatchId(request.MatchId);
+                    if (matchTracking == null)
+                    {
+                        return Task.FromResult(Result<CreateEventResponse>.Failure($"Match with id {request.MatchId} not found"));
+                    }
 
-                string? currentPeriod = matchTracking?.CurrentPeriod;
-                int? remainingPeriodTime = matchTracking != null ? PeriodTimeCalculator.CalculateRemainingPeriodTime(matchTracking) : null;
+                    string? currentPeriod = matchTracking?.CurrentPeriod;
+                    int? remainingPeriodTime = matchTracking != null ? PeriodTimeCalculator.CalculateRemainingPeriodTime(matchTracking) : null;
                 switch (request.Category.ToLower())
                 {
                     case "personal":
@@ -126,6 +135,33 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                         break;
                 }
 
+                // Handle score updates for scoring events (transactionally)
+                if (request.Category.ToLower() == "personal" && IsScoreEvent(request.Type))
+                {
+                    var pointsToAdd = GetPointsForEventType(request.Type);
+                    if (pointsToAdd > 0 && request.TeamId.HasValue)
+                    {
+                        // Update match score
+                        if (request.TeamId.Value == 1) // Our team (Partizan)
+                        {
+                            matchTracking!.OurPoints = (matchTracking.OurPoints ?? 0) + pointsToAdd;
+                        }
+                        else // Opponent team
+                        {
+                            matchTracking!.OpponentPoints = (matchTracking.OpponentPoints ?? 0) + pointsToAdd;
+                        }
+
+                        matchTracking!.LastUpdateTime = DateTime.UtcNow;
+                        _matchTrackingRepository.Update(matchTracking!);
+                        
+                        message += $" Score updated: +{pointsToAdd} points for team {request.TeamId.Value}";
+                    }
+                }
+
+                // Save all changes within transaction
+                _context.SaveChanges();
+                transaction.Commit();
+
                 // Compose response using created entity if available
                 var response = new CreateEventResponse
                 {
@@ -143,11 +179,33 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                 };
 
                 return Task.FromResult(Result<CreateEventResponse>.Success(response));
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Task.FromResult(Result<CreateEventResponse>.Failure($"Error creating event: {ex.Message}"));
+                }
             }
             catch (Exception ex)
             {
                 return Task.FromResult(Result<CreateEventResponse>.Failure($"Error creating event: {ex.Message}"));
             }
+        }
+
+        private bool IsScoreEvent(string eventType)
+        {
+            return eventType == "+2p" || eventType == "+3p" || eventType == "+ft";
+        }
+
+        private int GetPointsForEventType(string eventType)
+        {
+            return eventType switch
+            {
+                "+2p" => 2,
+                "+3p" => 3,
+                "+ft" => 1,
+                _ => 0
+            };
         }
 
         private bool IsValidCategory(string category)

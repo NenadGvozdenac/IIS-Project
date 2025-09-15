@@ -1,6 +1,7 @@
 using MediatR;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Interfaces;
+using match_service.src.Matches.Core.Application.Utilities;
 
 namespace match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
 
@@ -34,6 +35,7 @@ public class GetMatchTrackingByMatchIdHandler : IRequestHandler<GetMatchTracking
                 PeriodStatus = matchTracking.PeriodStatus,
                 PeriodStartTime = matchTracking.PeriodStartTime,
                 ElapsedPeriodTime = matchTracking.ElapsedPeriodTime,
+                RemainingPeriodTime = PeriodTimeCalculator.CalculateRemainingPeriodTime(matchTracking),
                 LastPauseStartTime = matchTracking.LastPauseStartTime,
                 TotalPauseTimeInPeriod = matchTracking.TotalPauseTimeInPeriod,
                 LastUpdateTime = matchTracking.LastUpdateTime,

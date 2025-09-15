@@ -7,6 +7,7 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         IEnumerable<PersonalEvent> GetByMatchId(int matchId);
         IEnumerable<PersonalEvent> GetByPlayerId(int teamId, int playerId);
         PersonalEvent? GetById(int eventId);
+        PersonalEvent? GetLastEventByTeamAndMatch(int matchId, int teamId);
         PersonalEvent Create(PersonalEvent personalEvent);
         void Update(PersonalEvent personalEvent);
         bool Delete(int eventId);
