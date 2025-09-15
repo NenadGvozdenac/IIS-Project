@@ -197,14 +197,30 @@ const isCustomer = () => {
 }
 
 .analyst-link {
-  background-color: #e0f2fe;
+  /* subtle default: light blue outline */
+  background-color: rgba(2,119,189,0.06);
   color: #0277bd;
   font-weight: 600;
+  border: 1px solid rgba(2,119,189,0.12);
+  border-radius: 10px;
+  padding: 6px 14px;
+  transition: all 0.25s ease;
 }
 
 .analyst-link:hover {
-  background-color: #b3e5fc;
-  color: #01579b;
+  background-color: rgba(2,119,189,0.12);
+  color: #014f86;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2,119,189,0.08);
+}
+
+.analyst-link.router-link-exact-active,
+.analyst-link.router-link-exact-active:visited {
+  background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(2,119,189,0.18);
+  transform: translateY(-2px);
 }
 
 .navbar-auth {
