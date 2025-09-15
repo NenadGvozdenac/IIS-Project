@@ -29,6 +29,7 @@ import ClubOwnerSeasons from '../views/clubowner/Seasons.vue'
 import ClubOwnerCompetitions from '../views/clubowner/Competitions.vue'
 import UpcomingMatches from '../views/clubowner/UpcomingMatches.vue'
 import SeasonTickets from '../views/clubowner/SeasonTickets.vue'
+import PricingStatistics from '../views/clubowner/PricingStatistics.vue'
 
 const routes = [
   {
@@ -86,6 +87,12 @@ const routes = [
     path: '/club-owner/season-tickets',
     name: 'SeasonTickets',
     component: SeasonTickets,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/pricing-statistics',
+    name: 'PricingStatistics',
+    component: PricingStatistics,
     meta: { requiresAuth: true, requiresRole: 'club owner' }
   },
   {

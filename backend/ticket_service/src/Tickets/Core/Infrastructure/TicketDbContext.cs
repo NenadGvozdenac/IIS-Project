@@ -28,6 +28,8 @@ public partial class TicketDbContext : DbContext
 
     public virtual DbSet<Match> Matches { get; set; }
 
+    public virtual DbSet<MatchZoneSalesSummary> MatchZoneSalesSummaries { get; set; }
+
     public virtual DbSet<PurchaseOffer> PurchaseOffers { get; set; }
 
     public virtual DbSet<Season> Seasons { get; set; }
@@ -215,6 +217,41 @@ public partial class TicketDbContext : DbContext
                 .HasForeignKey(d => d.IdTeam)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_team");
+        });
+
+        modelBuilder.Entity<MatchZoneSalesSummary>(entity =>
+        {
+            entity.HasKey(e => e.IdSummary).HasName("match_zone_sales_summary_pkey");
+
+            entity.ToTable("match_zone_sales_summary");
+
+            entity.HasIndex(e => new { e.IdMatch, e.IdZone }, "match_zone_sales_summary_id_match_id_zone_key").IsUnique();
+
+            entity.Property(e => e.IdSummary).HasColumnName("id_summary");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IdMatch).HasColumnName("id_match");
+            entity.Property(e => e.IdTicketPriceParameter).HasColumnName("id_ticket_price_parameter");
+            entity.Property(e => e.IdZone).HasColumnName("id_zone");
+            entity.Property(e => e.TotalRevenue)
+                .HasPrecision(12, 2)
+                .HasDefaultValueSql("0.00")
+                .HasColumnName("total_revenue");
+            entity.Property(e => e.TotalTicketsSold).HasColumnName("total_tickets_sold");
+
+            entity.HasOne(d => d.IdMatchNavigation).WithMany(p => p.MatchZoneSalesSummaries)
+                .HasForeignKey(d => d.IdMatch)
+                .HasConstraintName("fk_match_zone_sales_match");
+
+            entity.HasOne(d => d.IdTicketPriceParameterNavigation).WithMany(p => p.MatchZoneSalesSummaries)
+                .HasForeignKey(d => d.IdTicketPriceParameter)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_match_zone_sales_price_param");
+
+            entity.HasOne(d => d.IdZoneNavigation).WithMany(p => p.MatchZoneSalesSummaries)
+                .HasForeignKey(d => d.IdZone)
+                .HasConstraintName("fk_match_zone_sales_zone");
         });
 
         modelBuilder.Entity<PurchaseOffer>(entity =>

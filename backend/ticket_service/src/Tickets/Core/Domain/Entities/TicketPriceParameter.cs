@@ -26,4 +26,6 @@ public partial class TicketPriceParameter
     public virtual User IdUserNavigation { get; set; } = null!;
 
     public virtual Zone IdZoneNavigation { get; set; } = null!;
+
+    public virtual ICollection<MatchZoneSalesSummary> MatchZoneSalesSummaries { get; set; } = new List<MatchZoneSalesSummary>();
 }

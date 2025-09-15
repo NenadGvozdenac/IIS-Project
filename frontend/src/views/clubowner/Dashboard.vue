@@ -4,6 +4,17 @@
       <div class="dashboard-header">
         <h1>Club Owner Dashboard</h1>
         <p>Analytics and data overview for your club operations</p>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <router-link to="/club-owner/pricing-statistics" class="action-button pricing-stats">
+            <div class="action-icon">📊</div>
+            <div class="action-content">
+              <span class="action-title">Pricing Parameter Statistics</span>
+              <span class="action-subtitle">Analyze ticket pricing performance</span>
+            </div>
+          </router-link>
+        </div>
       </div>
 
       <div class="dashboard-content" v-if="!loading">
@@ -416,6 +427,68 @@ onBeforeUnmount(cleanup);
 .dashboard-header p {
   color: var(--color-text-light);
   font-size: 1.125rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.action-button:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+}
+
+.action-button.pricing-stats:hover {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+}
+
+.action-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: white;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+
+.action-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.action-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.action-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
 
 .charts-grid {
@@ -591,6 +664,16 @@ onBeforeUnmount(cleanup);
   
   .stat-value {
     font-size: 1.25rem;
+  }
+  
+  .quick-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .action-button {
+    width: 100%;
+    max-width: 400px;
   }
 }
 
