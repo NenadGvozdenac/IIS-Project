@@ -908,6 +908,7 @@ const callTimeoutAPI = async (teamId) => {
     if (response.data.isSuccess) {
       console.log('Timeout called successfully')
       await fetchMatchTrackingData(matchId)
+      await fetchMatchEvents(matchId)
       stopTimer()
     }
   } catch (error) {

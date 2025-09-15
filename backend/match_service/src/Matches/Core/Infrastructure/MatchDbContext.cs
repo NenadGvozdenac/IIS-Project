@@ -229,6 +229,14 @@ public partial class MatchDbContext : DbContext
 
             entity.HasIndex(e => e.IdMatch, "idx_personal_event_id_match");
 
+            entity.HasIndex(e => e.IdPlayer, "idx_personal_event_id_player");
+
+            entity.HasIndex(e => e.IdTeam, "idx_personal_event_id_team");
+
+            entity.HasIndex(e => new { e.IdTeam, e.IdPlayer }, "idx_personal_event_team_player");
+
+            entity.HasIndex(e => e.Type, "idx_personal_event_type");
+
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.CreationTime).HasColumnName("creation_time");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
