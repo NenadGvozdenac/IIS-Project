@@ -180,8 +180,9 @@ CREATE TABLE general_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('break end', 'break start', 'other', 'pause end', 'pause start', 'period end', 'period start')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_match      INTEGER NOT NULL,
     PRIMARY KEY (id_event)
 );
@@ -233,7 +234,7 @@ CREATE TABLE match_tracking (
     tracking_status            VARCHAR(20) CHECK (tracking_status IN ('active', 'finished', 'preparation', 'upcoming')),
     period_duration            INTEGER,
     current_period             VARCHAR(20) CHECK (current_period IN ('1', '2', '3', '4', 'end')),
-    period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused')),
+    period_status              VARCHAR(20) CHECK (period_status IN ('active', 'finished', 'paused', 'upcoming')),
     period_start_time          TIMESTAMP WITH TIME ZONE,
     elapsed_period_time        INTEGER,
     last_pause_start_time      TIMESTAMP WITH TIME ZONE,
@@ -283,8 +284,9 @@ CREATE TABLE personal_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
     type          VARCHAR(20) CHECK (type IN ('+2p', '+3p', '+ft', '2p', '3p', 'assist', 'block', 'foul', 'ft', 'other', 'reb def', 'reb of', 'steal', 'substitution in', 'substitution out')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_team       INTEGER NOT NULL,
     id_player     INTEGER NOT NULL,
     id_match      INTEGER NOT NULL,
@@ -436,8 +438,9 @@ CREATE TABLE team_event (
     id_event      SERIAL NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
     notes         VARCHAR(255),
-    role          VARCHAR(20) CHECK (role IN ('general', 'personal', 'team')),
-    type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout')),
+    type          VARCHAR(20) CHECK (type IN ('other', 'technical foul', 'timeout', 'formation', 'defense')),
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
     id_team       INTEGER NOT NULL,
     id_match      INTEGER NOT NULL,
     PRIMARY KEY (id_event)
@@ -1002,9 +1005,9 @@ BEGIN
         NULL,                                    -- start_time
         NULL,                                    -- end_time (initially set to scheduled time)
         'upcoming',                              -- tracking_status
-        600,                                     -- period_duration (600 seconds default)
+        600000,                                  -- period_duration (600000 milliseconds = 10 minutes default)
         '1',                                     -- current_period
-        'active',                                -- period_status
+        'upcoming',                              -- period_status
         NULL,                                    -- period_start_time
         0,                                       -- elapsed_period_time
         NULL,                                    -- last_pause_start_time
@@ -1742,3 +1745,55 @@ CREATE TRIGGER match_finished_aggregation_trigger
     AFTER UPDATE ON match
     FOR EACH ROW
     EXECUTE FUNCTION aggregate_match_zone_sales();
+
+
+-- Indexes for event tables (ensure present): speed up queries by match id, team, and player
+-- This block is idempotent: it checks for existing index names before creating
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_match ON personal_event (id_match)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_team_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_team_event_id_match ON team_event (id_match)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_general_event_id_match'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_general_event_id_match ON general_event (id_match)';
+    END IF;
+
+    -- Player and team statistics indexes for personal_event
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_player'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_player ON personal_event (id_player)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_team'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_id_team ON personal_event (id_team)';
+    END IF;
+
+    -- Optional: player statistics across all matches for a team
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_team_player'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_team_player ON personal_event (id_team, id_player)';
+    END IF;
+
+    -- Performance optimization: index on event type for quick filtering by action type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_type'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_personal_event_type ON personal_event (type)';
+    END IF;
+END
+$$;

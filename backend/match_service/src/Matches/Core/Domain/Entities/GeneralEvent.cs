@@ -11,9 +11,11 @@ public partial class GeneralEvent
 
     public string? Notes { get; set; }
 
-    public string? Role { get; set; }
-
     public string? Type { get; set; }
+
+    public string? Period { get; set; }
+
+    public int? PeriodTime { get; set; }
 
     public int IdMatch { get; set; }
 

@@ -43,7 +43,6 @@
           :key="team.idTeam"
           class="team-card"
         >
-          <div class="team-logo">📧</div>
           <div class="team-info">
             <h3 class="team-name">{{ team.name }}</h3>
             <p class="team-detail">Coach: {{ team.coach || 'N/A' }}</p>
@@ -380,19 +379,6 @@ onMounted(() => {
 .team-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
-
-.team-logo {
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  margin-bottom: 1rem;
 }
 
 .team-info {
