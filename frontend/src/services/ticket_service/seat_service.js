@@ -87,4 +87,18 @@ export class SeatService {
             throw error.response?.data || error;
         }
     }
+
+    static async getSeatsWithOffersForZoneAndDirection(zoneId, direction, matchId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${TICKETS_URL}/seats/zone/${zoneId}/direction/${direction}/match/${matchId}/with-offers`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    }
 }
