@@ -1797,3 +1797,45 @@ BEGIN
     END IF;
 END
 $$;
+
+-- PERFORMANCE OPTIMIZATION INDEXES FOR SEAT SELECTION
+-- Based on the optimized GetSeatsWithOffersForZoneAndDirection endpoint queries
+
+-- 1. Primary seat filtering: zone + direction (most frequent query pattern)
+CREATE INDEX IF NOT EXISTS idx_seat_zone_direction ON seat (id_zone, direction);
+
+-- 2. Seat ordering optimization: zone + direction + row + number
+CREATE INDEX IF NOT EXISTS idx_seat_zone_direction_row_number ON seat (id_zone, direction, "row", "number");
+
+-- 3. Purchase offer lookup by seat (for individual tickets and season tickets)
+CREATE INDEX IF NOT EXISTS idx_purchase_offer_seat_type ON purchase_offer (id_seat, type);
+
+-- 4. Purchase offer filtering by seat, type, and status
+CREATE INDEX IF NOT EXISTS idx_purchase_offer_seat_type_status ON purchase_offer (id_seat, type, status);
+
+-- 5. Individual ticket lookup by purchase offer
+CREATE INDEX IF NOT EXISTS idx_individual_ticket_purchase_offer ON individual_ticket (id_purchase_offer);
+
+-- 6. Individual ticket lookup by match (for season ticket conflict checking)
+CREATE INDEX IF NOT EXISTS idx_individual_ticket_match ON individual_ticket (id_match);
+
+-- 7. Cart status filtering (for season ticket conflict detection)
+CREATE INDEX IF NOT EXISTS idx_cart_status ON cart (status);
+
+-- 8. Cart item lookup by purchase offer (for season ticket conflicts)
+CREATE INDEX IF NOT EXISTS idx_cart_item_purchase_offer ON cart_item (id_purchase_offer);
+
+-- 9. Cart ownership lookup
+CREATE INDEX IF NOT EXISTS idx_cart_user_status ON cart (id_user, status);
+
+-- 10. Match scheduling lookup (for season ticket date validation)
+CREATE INDEX IF NOT EXISTS idx_match_scheduled_at ON match (scheduled_at);
+
+-- 11. Ticket price calculation optimization
+CREATE INDEX IF NOT EXISTS idx_ticket_price_parameter_match_zone ON ticket_price_parameter (id_match, id_zone);
+
+-- 12. Zone information lookup
+CREATE INDEX IF NOT EXISTS idx_zone_status ON zone (status);
+
+-- 13. Cart item and cart relationship optimization (for purchase analysis)
+CREATE INDEX IF NOT EXISTS idx_cart_item_cart_offer ON cart_item (id_cart, id_purchase_offer);

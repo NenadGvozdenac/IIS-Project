@@ -278,68 +278,63 @@ export default {
             
             this.loadingSeats = true;
             try {
-                const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
+                // Use the optimized endpoint that returns seats with their offers in a single request
+                const response = await SeatService.getSeatsWithOffersForZoneAndDirection(
+                    this.selectedZone.idZone,
+                    this.selectedSide,
+                    this.matchId
+                );
+                
                 if (response.isSuccess) {
-                    // Filter seats by the selected side using the correct field name
-                    console.log('Selected side:', this.selectedSide);
-                    console.log('Total seats from API:', response.value.length);
-                    console.log('Sample seat data:', response.value[0]);
+                    console.log('Optimized seats response:', response.value);
                     
-                    this.seats = response.value.filter(seat => {
-                        console.log(`Seat ${seat.seatRow}-${seat.seatNumber}: direction="${seat.seatDirection}", selectedSide="${this.selectedSide}", match=${seat.seatDirection === this.selectedSide}`);
-                        return seat.seatDirection === this.selectedSide;
+                    // Transform the response to match the expected format
+                    this.seats = response.value.map(seatData => ({
+                        idSeat: seatData.idSeat,
+                        seatRow: seatData.seatRow,
+                        seatNumber: seatData.seatNumber,
+                        seatType: seatData.seatType,
+                        seatDirection: seatData.seatDirection,
+                        seatStatus: seatData.seatStatus,
+                        idZone: seatData.idZone,
+                        zoneName: seatData.zoneName
+                    }));
+                    
+                    // Set up seat offers and conflicts from the response
+                    this.seatOffers = {};
+                    this.seasonTicketConflicts = {};
+                    
+                    response.value.forEach(seatData => {
+                        if (seatData.hasSeasonTicketConflict) {
+                            this.seasonTicketConflicts[seatData.idSeat] = {
+                                hasConflict: true,
+                                conflictReason: seatData.conflictReason
+                            };
+                        } else if (seatData.hasOffer && seatData.idPurchaseOffer) {
+                            this.seatOffers[seatData.idSeat] = {
+                                idPurchaseOffer: seatData.idPurchaseOffer,
+                                matchName: seatData.matchName,
+                                zoneName: seatData.zoneName,
+                                seatRow: seatData.seatRow,
+                                seatNumber: seatData.seatNumber,
+                                seatType: seatData.seatType,
+                                price: seatData.price || 0
+                            };
+                        }
                     });
                     
-                    console.log('Filtered seats count:', this.seats.length);
+                    console.log('Processed seats:', this.seats.length);
+                    console.log('Seat offers:', Object.keys(this.seatOffers).length);
+                    console.log('Season ticket conflicts:', Object.keys(this.seasonTicketConflicts).length);
+                    
                     this.groupSeats();
-                    await this.checkSeatOffers();
                 }
             } catch (error) {
+                console.error('Error loading seats:', error);
                 this.error = 'Failed to load seats';
             } finally {
                 this.loadingSeats = false;
             }
-        },
-
-        async checkSeatOffers() {
-            // Reset seat offers and conflicts
-            this.seatOffers = {};
-            this.seasonTicketConflicts = {};
-            
-            // Check offers for each seat
-            const offerPromises = this.seats.map(async (seat) => {
-                try {
-                    // First check if there's a season ticket conflict
-                    const conflictResponse = await PurchaseOfferService.checkSeasonTicketConflict(
-                        seat.idSeat, 
-                        this.selectedMatch.scheduledAt
-                    );
-                    
-                    if (conflictResponse.isSuccess && conflictResponse.value.hasConflict) {
-                        // Seat is covered by season ticket, mark as unavailable
-                        this.seasonTicketConflicts[seat.idSeat] = conflictResponse.value;
-                        return;
-                    }
-                    
-                    // If no season ticket conflict, check for individual ticket offer
-                    const response = await PurchaseOfferService.getIndividualTicketOffer(
-                        this.selectedZone.idZone,
-                        seat.seatRow,
-                        seat.seatNumber,
-                        this.selectedSide,
-                        this.matchId
-                    );
-                    
-                    if (response.isSuccess) {
-                        this.seatOffers[seat.idSeat] = response.value;
-                    }
-                } catch (error) {
-                    // If there's no offer for this seat, it will remain unavailable
-                    console.log(`No offer available for seat ${seat.seatRow}-${seat.seatNumber} on ${this.selectedSide} side`);
-                }
-            });
-            
-            await Promise.all(offerPromises);
         },
 
         groupSeats() {

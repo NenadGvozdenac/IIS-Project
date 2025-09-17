@@ -62,6 +62,10 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("cart");
 
+            entity.HasIndex(e => e.Status, "idx_cart_status");
+
+            entity.HasIndex(e => new { e.IdUser, e.Status }, "idx_cart_user_status");
+
             entity.Property(e => e.IdCart).HasColumnName("id_cart");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.IdCreditCard).HasColumnName("id_credit_card");
@@ -87,6 +91,10 @@ public partial class TicketDbContext : DbContext
             entity.HasKey(e => new { e.IdCart, e.IdPurchaseOffer }).HasName("cart_item_pkey");
 
             entity.ToTable("cart_item");
+
+            entity.HasIndex(e => new { e.IdCart, e.IdPurchaseOffer }, "idx_cart_item_cart_offer");
+
+            entity.HasIndex(e => e.IdPurchaseOffer, "idx_cart_item_purchase_offer");
 
             entity.Property(e => e.IdCart).HasColumnName("id_cart");
             entity.Property(e => e.IdPurchaseOffer).HasColumnName("id_purchase_offer");
@@ -153,6 +161,10 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("individual_ticket");
 
+            entity.HasIndex(e => e.IdMatch, "idx_individual_ticket_match");
+
+            entity.HasIndex(e => e.IdPurchaseOffer, "idx_individual_ticket_purchase_offer");
+
             entity.HasIndex(e => e.IdIndividualTicket, "individual_ticket_id_individual_ticket_key").IsUnique();
 
             entity.Property(e => e.IdPurchaseOffer)
@@ -178,6 +190,8 @@ public partial class TicketDbContext : DbContext
             entity.HasKey(e => e.IdMatch).HasName("match_pkey");
 
             entity.ToTable("match");
+
+            entity.HasIndex(e => e.ScheduledAt, "idx_match_scheduled_at");
 
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");
@@ -260,6 +274,10 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("purchase_offer");
 
+            entity.HasIndex(e => new { e.IdSeat, e.Type }, "idx_purchase_offer_seat_type");
+
+            entity.HasIndex(e => new { e.IdSeat, e.Type, e.Status }, "idx_purchase_offer_seat_type_status");
+
             entity.Property(e => e.IdPurchaseOffer).HasColumnName("id_purchase_offer");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Description)
@@ -326,6 +344,10 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("seat");
 
+            entity.HasIndex(e => new { e.IdZone, e.Direction }, "idx_seat_zone_direction");
+
+            entity.HasIndex(e => new { e.IdZone, e.Direction, e.Row, e.Number }, "idx_seat_zone_direction_row_number");
+
             entity.Property(e => e.IdSeat).HasColumnName("id_seat");
             entity.Property(e => e.Direction)
                 .HasMaxLength(255)
@@ -386,6 +408,8 @@ public partial class TicketDbContext : DbContext
 
             entity.ToTable("ticket_price_parameter");
 
+            entity.HasIndex(e => new { e.IdMatch, e.IdZone }, "idx_ticket_price_parameter_match_zone");
+
             entity.Property(e => e.IdTicketPriceParameter).HasColumnName("id_ticket_price_parameter");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
@@ -443,6 +467,8 @@ public partial class TicketDbContext : DbContext
             entity.HasKey(e => e.IdZone).HasName("zone_pkey");
 
             entity.ToTable("zone");
+
+            entity.HasIndex(e => e.Status, "idx_zone_status");
 
             entity.Property(e => e.IdZone).HasColumnName("id_zone");
             entity.Property(e => e.MaximumCapacity).HasColumnName("maximum_capacity");
