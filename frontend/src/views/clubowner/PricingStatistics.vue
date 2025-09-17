@@ -82,9 +82,6 @@
           >
             <div class="zone-header">
               <h3>{{ zone.zoneName }}</h3>
-              <div class="occupancy-badge" :class="getOccupancyClass(zone)">
-                {{ getOccupancyPercentage(zone) }}%
-              </div>
             </div>
             
             <div class="zone-stats">
