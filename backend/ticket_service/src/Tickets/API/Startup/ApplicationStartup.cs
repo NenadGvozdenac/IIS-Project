@@ -41,6 +41,7 @@ public static class ApplicationStartup
     {
         services.AddScoped<ICreditCardEncryptionService, CreditCardEncryptionService>();
         services.AddScoped<ITicketPriceCalculationService, TicketPriceCalculationService>();
+        services.AddScoped<INeo4jSeedingService, Neo4jSeedingService>();
         services.AddHostedService<MatchFinishedService>();
     }
 

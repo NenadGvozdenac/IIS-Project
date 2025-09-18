@@ -13,7 +13,7 @@ services:
       - DB_PORT=5432
     depends_on:
       - postgres_db
-      
+
   match_service:
     image: ${DOCKER_REGISTRY-}matchservice
     build:
@@ -43,9 +43,20 @@ services:
       dockerfile: backend/ticket_service/Dockerfile
     ports:
       - "5004:5004"
-      - "5005:5005" # Web UI
+      - "5005:5005" # HTTPS
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5004;https://+:5005
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=password
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-compose.yml:/docker-compose.yml:ro
+      - ./database/graph_database:/database/graph_database:ro
+      - ~/.aspnet/https:/https:ro
     depends_on:
       - postgres_db
+      - neo4j
 
   travel_service:
     image: ${DOCKER_REGISTRY-}travelservice
@@ -70,6 +81,22 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
+  neo4j:
+    image: neo4j:5.23
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474" # Web UI
+      - "7687:7687" # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+      - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
+
   frontend:
     build:
       context: ./frontend
@@ -86,3 +113,7 @@ services:
 
 volumes:
   pgdata:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
