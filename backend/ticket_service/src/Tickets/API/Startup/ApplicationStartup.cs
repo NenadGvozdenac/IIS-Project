@@ -38,6 +38,9 @@ public static class ApplicationStartup
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
         services.AddScoped<ITicketPriceParameterRepository, TicketPriceParameterRepository>();
         services.AddScoped<IStatisticsRepository, StatisticsRepository>();
+        
+        // Graph repositories
+        services.AddScoped<IGraphSeatRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.SeatRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
