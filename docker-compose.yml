@@ -13,7 +13,7 @@ services:
       - DB_PORT=5432
     depends_on:
       - postgres_db
-      
+
   match_service:
     image: ${DOCKER_REGISTRY-}matchservice
     build:
@@ -70,6 +70,39 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
+  neo4j:
+    image: neo4j:5.23
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474"   # Web UI
+      - "7687:7687"   # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password 
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+      - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
+
+  neo4j-init:
+    image: neo4j:5.23
+    depends_on:
+      - neo4j
+    volumes:
+      - ./database/graph_database/neo4j_init.cql:/neo4j_init.cql
+    entrypoint: >
+      bash -c "
+        echo 'Waiting for Neo4j...';
+        until cypher-shell -u neo4j -p password -a bolt://neo4j:7687 'RETURN 1'; do
+          sleep 3;
+        done;
+        echo 'Running init script...';
+        cypher-shell -u neo4j -p password -a bolt://neo4j:7687 -f /neo4j_init.cql;
+        echo 'Seeding finished.';
+      "
+
   frontend:
     build:
       context: ./frontend
@@ -86,3 +119,7 @@ services:
 
 volumes:
   pgdata:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
