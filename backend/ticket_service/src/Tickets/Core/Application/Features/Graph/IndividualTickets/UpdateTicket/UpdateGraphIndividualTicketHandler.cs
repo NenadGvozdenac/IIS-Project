@@ -27,7 +27,7 @@ public class UpdateGraphIndividualTicketHandler : IRequestHandler<UpdateGraphInd
                 Price = request.Price
             };
 
-            await _ticketRepository.UpdateIndividualTicket(ticket);
+            await _ticketRepository.UpdateIndividualTicket(request.Id, ticket);
             var response = new UpdateGraphIndividualTicketResponse(ticket.Name, ticket.Description, ticket.Type, ticket.ReleasedAt, ticket.Price);
             return Result<UpdateGraphIndividualTicketResponse>.Success(response);
         }

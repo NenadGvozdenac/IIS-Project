@@ -1,6 +1,6 @@
-namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatByName;
+namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatById;
 
-public class GetGraphSeatByNameResponse
+public class GetGraphSeatByIdResponse
 {
     public string Id { get; set; } = string.Empty;
     public string ElementId { get; set; } = string.Empty;
@@ -9,7 +9,7 @@ public class GetGraphSeatByNameResponse
     public int Number { get; set; }
     public string Direction { get; set; } = string.Empty;
 
-    public GetGraphSeatByNameResponse(string id, string elementId, string name, int row, int number, string direction)
+    public GetGraphSeatByIdResponse(string id, string elementId, string name, int row, int number, string direction)
     {
         Id = id;
         ElementId = elementId;

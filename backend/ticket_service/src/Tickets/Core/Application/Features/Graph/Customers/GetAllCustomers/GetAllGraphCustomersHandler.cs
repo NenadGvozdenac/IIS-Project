@@ -20,6 +20,8 @@ public class GetAllGraphCustomersHandler : IRequestHandler<GetAllGraphCustomersQ
             var customers = await _graphCustomerRepository.GetAllCustomers();
             var response = customers.Select(customer => new GetAllGraphCustomersResponse
             {
+                Id = customer.Id,
+                ElementId = customer.ElementId,
                 Email = customer.Email,
                 Name = customer.Name,
                 Surname = customer.Surname,

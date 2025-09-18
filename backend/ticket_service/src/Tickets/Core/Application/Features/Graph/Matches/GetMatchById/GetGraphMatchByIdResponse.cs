@@ -1,11 +1,9 @@
-using MediatR;
-using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
+namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.GetMatchById;
 
-namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.UpdateMatch;
-
-public class UpdateGraphMatchCommand : IRequest<Result<UpdateGraphMatchResponse>>
+public class GetGraphMatchByIdResponse
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string ElementId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime ScheduledAt { get; set; }
     public string Type { get; set; } = string.Empty;
@@ -14,9 +12,10 @@ public class UpdateGraphMatchCommand : IRequest<Result<UpdateGraphMatchResponse>
     public string Hall { get; set; } = string.Empty;
     public bool IsInOurHall { get; set; }
 
-    public UpdateGraphMatchCommand(int id, string name, DateTime scheduledAt, string type, string state, string city, string hall, bool isInOurHall)
+    public GetGraphMatchByIdResponse(string id, string elementId, string name, DateTime scheduledAt, string type, string state, string city, string hall, bool isInOurHall)
     {
         Id = id;
+        ElementId = elementId;
         Name = name;
         ScheduledAt = scheduledAt;
         Type = type;

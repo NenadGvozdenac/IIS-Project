@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetAllIndividualTickets;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetTicketByName;
+using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetTicketById;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.CreateTicket;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.UpdateTicket;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.DeleteTicket;
@@ -37,6 +38,14 @@ public class IndividualTicketsController : BaseController
         return CreateResponse(result);
     }
 
+    [HttpGet("id/{id}")]
+    public async Task<IActionResult> GetIndividualTicketById(int id)
+    {
+        var query = new GetGraphIndividualTicketByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateIndividualTicket([FromBody] CreateIndividualTicketDto ticketDto)
     {
@@ -50,11 +59,12 @@ public class IndividualTicketsController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpPut("{name}")]
-    public async Task<IActionResult> UpdateIndividualTicket(string name, [FromBody] UpdateIndividualTicketDto ticketDto)
+    [HttpPut("id/{id}")]
+    public async Task<IActionResult> UpdateIndividualTicket(int id, [FromBody] UpdateIndividualTicketDto ticketDto)
     {
         var command = new UpdateGraphIndividualTicketCommand(
-            name,
+            id,
+            ticketDto.Name,
             ticketDto.Description,
             ticketDto.Type,
             ticketDto.ReleasedAt,
@@ -63,10 +73,10 @@ public class IndividualTicketsController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpDelete("{name}")]
-    public async Task<IActionResult> DeleteIndividualTicket(string name)
+    [HttpDelete("id/{id}")]
+    public async Task<IActionResult> DeleteIndividualTicket(int id)
     {
-        var command = new DeleteGraphIndividualTicketCommand(name);
+        var command = new DeleteGraphIndividualTicketCommand(id);
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

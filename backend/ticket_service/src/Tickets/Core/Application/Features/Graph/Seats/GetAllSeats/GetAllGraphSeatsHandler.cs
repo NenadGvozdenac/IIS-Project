@@ -20,6 +20,8 @@ public class GetAllGraphSeatsHandler : IRequestHandler<GetAllGraphSeatsQuery, Re
             var seats = await _graphSeatRepository.GetAllSeats();
             var response = seats.Select(seat => new GetAllGraphSeatsResponse
             {
+                Id = seat.Id,
+                ElementId = seat.ElementId,
                 Name = seat.Name,
                 Row = seat.Row,
                 Number = seat.Number,

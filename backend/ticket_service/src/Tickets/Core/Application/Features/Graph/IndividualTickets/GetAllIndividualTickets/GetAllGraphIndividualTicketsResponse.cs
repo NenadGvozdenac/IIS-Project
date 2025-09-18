@@ -2,6 +2,8 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualT
 
 public class GetAllGraphIndividualTicketsResponse
 {
+    public string Id { get; set; } = string.Empty;
+    public string ElementId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;

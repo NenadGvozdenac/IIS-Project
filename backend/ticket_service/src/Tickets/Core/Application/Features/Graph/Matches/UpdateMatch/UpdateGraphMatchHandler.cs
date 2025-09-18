@@ -24,17 +24,9 @@ public class UpdateGraphMatchHandler : IRequestHandler<UpdateGraphMatchCommand, 
                     .WithCode((int)ResultCode.BadRequest);
             }
 
-            // Check if match exists
-            var existingMatch = await _graphMatchRepository.GetMatchByName(request.Name);
-            if (existingMatch == null)
-            {
-                return Result<UpdateGraphMatchResponse>.Failure($"Match with name '{request.Name}' not found")
-                    .WithCode((int)ResultCode.NotFound);
-            }
-
             var updatedMatch = new Match
             {
-                Name = string.IsNullOrWhiteSpace(request.NewName) ? request.Name : request.NewName,
+                Name = request.Name,
                 ScheduledAt = request.ScheduledAt,
                 Type = request.Type,
                 State = request.State,
@@ -43,7 +35,7 @@ public class UpdateGraphMatchHandler : IRequestHandler<UpdateGraphMatchCommand, 
                 IsInOurHall = request.IsInOurHall
             };
 
-            await _graphMatchRepository.UpdateMatch(updatedMatch);
+            await _graphMatchRepository.UpdateMatch(request.Id, updatedMatch);
 
             var response = new UpdateGraphMatchResponse
             {

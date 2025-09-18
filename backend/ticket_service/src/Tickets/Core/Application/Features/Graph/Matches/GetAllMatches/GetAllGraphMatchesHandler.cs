@@ -20,6 +20,8 @@ public class GetAllGraphMatchesHandler : IRequestHandler<GetAllGraphMatchesQuery
             var matches = await _graphMatchRepository.GetAllMatches();
             var response = matches.Select(match => new GetAllGraphMatchesResponse
             {
+                Id = match.Id,
+                ElementId = match.ElementId,
                 Name = match.Name,
                 ScheduledAt = match.ScheduledAt,
                 Type = match.Type,

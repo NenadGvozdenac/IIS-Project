@@ -6,8 +6,8 @@ public interface IGraphMatchRepository
 {
     public Task CreateMatch(Match match);
     public Task<Match?> GetMatchByName(string name);
+    public Task<Match?> GetMatchById(int id);
     public Task<List<Match>> GetAllMatches();
-    public Task UpdateMatch(Match match);
-    public Task DeleteMatch(string name);
-    public Task<List<Match>> GetMatchesByDateRange(DateTime startDate, DateTime endDate);
+    public Task UpdateMatch(int id, Match match);
+    public Task DeleteMatch(int id);
 }

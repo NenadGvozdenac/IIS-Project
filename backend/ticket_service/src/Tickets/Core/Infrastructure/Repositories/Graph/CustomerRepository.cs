@@ -37,13 +37,14 @@ public class CustomerRepository : IGraphCustomerRepository
         await _graphDbContext.RunAsync(query, parameters);
     }
 
-    public async Task DeleteCustomer(string email)
+    public async Task DeleteCustomer(int id)
     {
         var query = @"
-            MATCH (c:Customer {email: $email})
+            MATCH (c:Customer)
+            WHERE id(c) = $id
             DETACH DELETE c";
 
-        var parameters = new { email };
+        var parameters = new { id };
 
         await _graphDbContext.RunAsync(query, parameters);
     }
@@ -52,7 +53,8 @@ public class CustomerRepository : IGraphCustomerRepository
     {
         var query = @"
             MATCH (c:Customer)
-            RETURN c.email as email, c.name as name, c.surname as surname, 
+            RETURN id(c) as nodeId, elementId(c) as elementId,
+                   c.email as email, c.name as name, c.surname as surname, 
                    c.phone as phone, c.type as type";
 
         var result = await _graphDbContext.RunAsync(query);
@@ -62,6 +64,8 @@ public class CustomerRepository : IGraphCustomerRepository
         {
             customers.Add(new Customer
             {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
                 Email = record["email"].As<string>(),
                 Name = record["name"].As<string>(),
                 Surname = record["surname"].As<string>(),
@@ -77,7 +81,8 @@ public class CustomerRepository : IGraphCustomerRepository
     {
         var query = @"
             MATCH (c:Customer {email: $email})
-            RETURN c.email as email, c.name as name, c.surname as surname, 
+            RETURN id(c) as nodeId, elementId(c) as elementId,
+                   c.email as email, c.name as name, c.surname as surname, 
                    c.phone as phone, c.type as type";
 
         var parameters = new { email };
@@ -87,6 +92,8 @@ public class CustomerRepository : IGraphCustomerRepository
         {
             return new Customer
             {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
                 Email = record["email"].As<string>(),
                 Name = record["name"].As<string>(),
                 Surname = record["surname"].As<string>(),
@@ -98,17 +105,49 @@ public class CustomerRepository : IGraphCustomerRepository
         return null;
     }
 
-    public async Task UpdateCustomer(Customer customer)
+    public async Task<Customer?> GetCustomerById(int id)
     {
         var query = @"
-            MATCH (c:Customer {email: $email})
-            SET c.name = $name,
+            MATCH (c:Customer)
+            WHERE id(c) = $id
+            RETURN id(c) as nodeId, elementId(c) as elementId,
+                   c.email as email, c.name as name, c.surname as surname, 
+                   c.phone as phone, c.type as type";
+
+        var parameters = new { id };
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Customer
+            {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
+                Email = record["email"].As<string>(),
+                Name = record["name"].As<string>(),
+                Surname = record["surname"].As<string>(),
+                Phone = record["phone"].As<string>(),
+                Type = record["type"].As<string>()
+            };
+        }
+
+        return null;
+    }
+
+    public async Task UpdateCustomer(int id, Customer customer)
+    {
+        var query = @"
+            MATCH (c:Customer)
+            WHERE id(c) = $id
+            SET c.email = $email,
+                c.name = $name,
                 c.surname = $surname,
                 c.phone = $phone,
                 c.type = $type";
 
         var parameters = new
         {
+            id,
             email = customer.Email,
             name = customer.Name,
             surname = customer.Surname,

@@ -41,13 +41,14 @@ public class MatchRepository : IGraphMatchRepository
         await _graphDbContext.RunAsync(query, parameters);
     }
 
-    public async Task DeleteMatch(string name)
+    public async Task DeleteMatch(int id)
     {
         var query = @"
-            MATCH (m:Match {name: $name})
+            MATCH (m:Match)
+            WHERE id(m) = $id
             DETACH DELETE m";
 
-        var parameters = new { name };
+        var parameters = new { id };
 
         await _graphDbContext.RunAsync(query, parameters);
     }
@@ -56,7 +57,8 @@ public class MatchRepository : IGraphMatchRepository
     {
         var query = @"
             MATCH (m:Match)
-            RETURN m.name as name, m.scheduled_at as scheduledAt, m.type as type,
+            RETURN id(m) as nodeId, elementId(m) as elementId,
+                   m.name as name, m.scheduled_at as scheduledAt, m.type as type,
                    m.state as state, m.city as city, m.hall as hall, 
                    m.is_in_our_hall as isInOurHall";
 
@@ -67,6 +69,8 @@ public class MatchRepository : IGraphMatchRepository
         {
             matches.Add(new Match
             {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
                 Type = record["type"].As<string>(),
@@ -80,21 +84,25 @@ public class MatchRepository : IGraphMatchRepository
         return matches;
     }
 
-    public async Task<Match?> GetMatchByName(string name)
+    public async Task<Match?> GetMatchById(int id)
     {
         var query = @"
-            MATCH (m:Match {name: $name})
-            RETURN m.name as name, m.scheduled_at as scheduledAt, m.type as type,
+            MATCH (m:Match)
+            WHERE id(m) = $id
+            RETURN id(m) as nodeId, elementId(m) as elementId,
+                   m.name as name, m.scheduled_at as scheduledAt, m.type as type,
                    m.state as state, m.city as city, m.hall as hall, 
                    m.is_in_our_hall as isInOurHall";
 
-        var parameters = new { name };
+        var parameters = new { id };
         var result = await _graphDbContext.RunAsync(query, parameters);
 
         await foreach (var record in result)
         {
             return new Match
             {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
                 Type = record["type"].As<string>(),
@@ -108,29 +116,24 @@ public class MatchRepository : IGraphMatchRepository
         return null;
     }
 
-    public async Task<List<Match>> GetMatchesByDateRange(DateTime startDate, DateTime endDate)
+    public async Task<Match?> GetMatchByName(string name)
     {
         var query = @"
-            MATCH (m:Match)
-            WHERE m.scheduled_at >= datetime($startDate) AND m.scheduled_at <= datetime($endDate)
-            RETURN m.name as name, m.scheduled_at as scheduledAt, m.type as type,
+            MATCH (m:Match {name: $name})
+            RETURN id(m) as nodeId, elementId(m) as elementId,
+                   m.name as name, m.scheduled_at as scheduledAt, m.type as type,
                    m.state as state, m.city as city, m.hall as hall, 
-                   m.is_in_our_hall as isInOurHall
-            ORDER BY m.scheduled_at";
+                   m.is_in_our_hall as isInOurHall";
 
-        var parameters = new
-        {
-            startDate = startDate.ToString("yyyy-MM-ddTHH:mm:ssK"),
-            endDate = endDate.ToString("yyyy-MM-ddTHH:mm:ssK")
-        };
-
+        var parameters = new { name };
         var result = await _graphDbContext.RunAsync(query, parameters);
-        var matches = new List<Match>();
 
         await foreach (var record in result)
         {
-            matches.Add(new Match
+            return new Match
             {
+                Id = record["nodeId"].As<long>().ToString(),
+                ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
                 Type = record["type"].As<string>(),
@@ -138,16 +141,17 @@ public class MatchRepository : IGraphMatchRepository
                 City = record["city"].As<string>(),
                 Hall = record["hall"].As<string>(),
                 IsInOurHall = record["isInOurHall"].As<bool>()
-            });
+            };
         }
 
-        return matches;
+        return null;
     }
 
-    public async Task UpdateMatch(Match match)
+    public async Task UpdateMatch(int id, Match match)
     {
         var query = @"
-            MATCH (m:Match {name: $name})
+            MATCH (m:Match)
+            WHERE id(m) = $id
             SET m.scheduled_at = datetime($scheduledAt),
                 m.type = $type,
                 m.state = $state,
