@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ticket_service.src.Tickets.Core.Application.Interfaces;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure.Services;
 

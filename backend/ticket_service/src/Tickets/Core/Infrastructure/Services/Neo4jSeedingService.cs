@@ -1,7 +1,7 @@
 using Neo4j.Driver;
 using System.Diagnostics;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
-using ticket_service.src.Tickets.Core.Application.Interfaces;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Graph;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure.Services;
 

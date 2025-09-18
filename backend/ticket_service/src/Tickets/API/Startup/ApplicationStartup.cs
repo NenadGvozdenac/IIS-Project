@@ -1,10 +1,12 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using ticket_service.src.Tickets.Core.Application.Interfaces;
-using ticket_service.src.Tickets.Core.Infrastructure.Repositories;
 using ticket_service.src.Tickets.Core.Infrastructure;
 using ticket_service.src.Tickets.Core.Infrastructure.Services;
+using ticket_service.src.Tickets.Core.Infrastructure.Repositories.Relational;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Graph;
+using ticket_service.src.Tickets.Core.Infrastructure.Database;
 
 namespace ticket_service.src.Tickets.API.Startup;
 
@@ -15,6 +17,7 @@ public static class ApplicationStartup
         SetupDatabases(services, configuration);
         SetupRepositories(services);
         SetupServices(services);
+        SetupBackgroundServices(services);
         SetupMediatR(services);
 
         return services;
@@ -42,6 +45,10 @@ public static class ApplicationStartup
         services.AddScoped<ICreditCardEncryptionService, CreditCardEncryptionService>();
         services.AddScoped<ITicketPriceCalculationService, TicketPriceCalculationService>();
         services.AddScoped<INeo4jSeedingService, Neo4jSeedingService>();
+    }
+
+    private static void SetupBackgroundServices(IServiceCollection services)
+    {
         services.AddHostedService<MatchFinishedService>();
     }
 
@@ -49,13 +56,13 @@ public static class ApplicationStartup
     {
         services.AddMediatR(Assembly.GetExecutingAssembly());
     }
-    
+
     private static void SetupDatabases(IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ??
             "Host=postgres_db;Database=sportsdb;Username=postgres;Password=postgres;Port=5432";
-        
-        services.AddDbContext<TicketDbContext>(options =>
-            options.UseNpgsql(connectionString));
+
+        services.AddDbContext<TicketDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IGraphDatabaseContext, Neo4jDatabaseContext>();
     }
 }
