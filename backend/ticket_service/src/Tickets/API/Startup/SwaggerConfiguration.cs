@@ -9,11 +9,38 @@ public static class SwaggerConfiguration
     {
         services.AddSwaggerGen(setup =>
         {
+            // Regular API Document
             setup.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Ticket Service API",
-                Version = "v1"
+                Version = "v1",
+                Description = "Regular relational database operations"
             });
+
+            // Neo4j API Document  
+            setup.SwaggerDoc("neo4j", new OpenApiInfo
+            {
+                Title = "Ticket Service Neo4j API",
+                Version = "v1",
+                Description = "Neo4j graph database operations"
+            });
+
+            // Configure document filters to separate controllers
+            setup.DocInclusionPredicate((docName, apiDesc) =>
+            {
+                if (docName == "v1")
+                {
+                    // Include only non-Neo4j controllers (controllers not in NAIS folder)
+                    return !apiDesc.RelativePath?.StartsWith("api/neo4j") == true;
+                }
+                else if (docName == "neo4j")
+                {
+                    // Include only Neo4j controllers (controllers in NAIS folder with /api/neo4j route)
+                    return apiDesc.RelativePath?.StartsWith("api/neo4j") == true;
+                }
+                return false;
+            });
+
             var jwtSecurityScheme = new OpenApiSecurityScheme
             {
                 BearerFormat = "JWT",

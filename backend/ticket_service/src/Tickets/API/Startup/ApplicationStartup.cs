@@ -41,6 +41,9 @@ public static class ApplicationStartup
         
         // Graph repositories
         services.AddScoped<IGraphSeatRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.SeatRepository>();
+        services.AddScoped<IGraphMatchRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.MatchRepository>();
+        services.AddScoped<IGraphCustomerRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.CustomerRepository>();
+        services.AddScoped<IGraphIndividualTicketRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.IndividualTicketRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)

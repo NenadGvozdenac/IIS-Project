@@ -7,7 +7,6 @@ using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.CreateSea
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.UpdateSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.DeleteSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatsByDirection;
-using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatsByRowRange;
 using ticket_service.src.Tickets.Core.Application.DTOs.Graph;
 
 namespace ticket_service.src.Tickets.API.Controllers.NAIS;
@@ -67,14 +66,6 @@ public class SeatsController : BaseController
     public async Task<IActionResult> GetSeatsByDirection(string direction)
     {
         var query = new GetGraphSeatsByDirectionQuery(direction);
-        var result = await _mediator.Send(query);
-        return CreateResponse(result);
-    }
-
-    [HttpGet("rows/{minRow}/{maxRow}")]
-    public async Task<IActionResult> GetSeatsByRowRange(int minRow, int maxRow)
-    {
-        var query = new GetGraphSeatsByRowRangeQuery(minRow, maxRow);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

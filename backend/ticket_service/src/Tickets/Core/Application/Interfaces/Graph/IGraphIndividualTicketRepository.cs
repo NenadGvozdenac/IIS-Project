@@ -9,8 +9,6 @@ public interface IGraphIndividualTicketRepository
     public Task<List<IndividualTicket>> GetAllIndividualTickets();
     public Task UpdateIndividualTicket(IndividualTicket ticket);
     public Task DeleteIndividualTicket(string name);
-    public Task<List<IndividualTicket>> GetTicketsByMatch(string matchName);
-    public Task<List<IndividualTicket>> GetTicketsBySeat(string seatName);
-    public Task<List<IndividualTicket>> GetAvailableTicketsByMatch(string matchName);
-    public Task<IndividualTicket?> GetTicketForSeatAndMatch(string seatName, string matchName);
+    public Task<List<IndividualTicket>> GetTicketsByType(string type);
+    public Task<List<IndividualTicket>> GetTicketsByDateRange(DateTime startDate, DateTime endDate);
 }

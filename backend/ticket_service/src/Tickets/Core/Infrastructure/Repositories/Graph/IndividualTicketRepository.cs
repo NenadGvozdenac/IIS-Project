@@ -79,34 +79,6 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return tickets;
     }
 
-    public async Task<List<IndividualTicket>> GetAvailableTicketsByMatch(string matchName)
-    {
-        var query = @"
-            MATCH (t:IndividualTicket)-[:IS_FOR_MATCH]->(m:Match {name: $matchName})
-            WHERE NOT (t)<-[:BOUGHT]-()
-            RETURN t.name as name, t.description as description, t.type as type,
-                   t.released_at as releasedAt, t.price as price
-            ORDER BY t.name";
-
-        var parameters = new { matchName };
-        var result = await _graphDbContext.RunAsync(query, parameters);
-        var tickets = new List<IndividualTicket>();
-
-        await foreach (var record in result)
-        {
-            tickets.Add(new IndividualTicket
-            {
-                Name = record["name"].As<string>(),
-                Description = record["description"].As<string>(),
-                Type = record["type"].As<string>(),
-                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
-                Price = record["price"].As<decimal>()
-            });
-        }
-
-        return tickets;
-    }
-
     public async Task<IndividualTicket?> GetIndividualTicketByName(string name)
     {
         var query = @"
@@ -132,44 +104,24 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return null;
     }
 
-    public async Task<IndividualTicket?> GetTicketForSeatAndMatch(string seatName, string matchName)
+    public async Task<List<IndividualTicket>> GetTicketsByDateRange(DateTime startDate, DateTime endDate)
     {
         var query = @"
-            MATCH (t:IndividualTicket)-[:IS_FOR_SEAT]->(s:Seat {name: $seatName})
-            MATCH (t)-[:IS_FOR_MATCH]->(m:Match {name: $matchName})
-            RETURN t.name as name, t.description as description, t.type as type,
-                   t.released_at as releasedAt, t.price as price";
-
-        var parameters = new { seatName, matchName };
-        var result = await _graphDbContext.RunAsync(query, parameters);
-
-        await foreach (var record in result)
-        {
-            return new IndividualTicket
-            {
-                Name = record["name"].As<string>(),
-                Description = record["description"].As<string>(),
-                Type = record["type"].As<string>(),
-                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
-                Price = record["price"].As<decimal>()
-            };
-        }
-
-        return null;
-    }
-
-    public async Task<List<IndividualTicket>> GetTicketsByMatch(string matchName)
-    {
-        var query = @"
-            MATCH (t:IndividualTicket)-[:IS_FOR_MATCH]->(m:Match {name: $matchName})
+            MATCH (t:IndividualTicket)
+            WHERE t.released_at >= date($startDate) AND t.released_at <= date($endDate)
             RETURN t.name as name, t.description as description, t.type as type,
                    t.released_at as releasedAt, t.price as price
-            ORDER BY t.name";
+            ORDER BY t.released_at";
 
-        var parameters = new { matchName };
+        var parameters = new
+        {
+            startDate = startDate.ToString("yyyy-MM-dd"),
+            endDate = endDate.ToString("yyyy-MM-dd")
+        };
+
         var result = await _graphDbContext.RunAsync(query, parameters);
-        var tickets = new List<IndividualTicket>();
 
+        var tickets = new List<IndividualTicket>();
         await foreach (var record in result)
         {
             tickets.Add(new IndividualTicket
@@ -185,18 +137,18 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return tickets;
     }
 
-    public async Task<List<IndividualTicket>> GetTicketsBySeat(string seatName)
+    public async Task<List<IndividualTicket>> GetTicketsByType(string type)
     {
         var query = @"
-            MATCH (t:IndividualTicket)-[:IS_FOR_SEAT]->(s:Seat {name: $seatName})
+            MATCH (t:IndividualTicket {type: $type})
             RETURN t.name as name, t.description as description, t.type as type,
                    t.released_at as releasedAt, t.price as price
             ORDER BY t.name";
 
-        var parameters = new { seatName };
+        var parameters = new { type };
         var result = await _graphDbContext.RunAsync(query, parameters);
-        var tickets = new List<IndividualTicket>();
 
+        var tickets = new List<IndividualTicket>();
         await foreach (var record in result)
         {
             tickets.Add(new IndividualTicket
