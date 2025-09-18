@@ -49,6 +49,9 @@ public static class ApplicationStartup
         services.AddScoped<IGraphBoughtRelationshipRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.BoughtRelationshipRepository>();
         services.AddScoped<IGraphIsForSeatRelationshipRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.IsForSeatRelationshipRepository>();
         services.AddScoped<IGraphIsForMatchRelationshipRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.IsForMatchRelationshipRepository>();
+        
+        // Graph complex query repository
+        services.AddScoped<IGraphComplexQueryRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.ComplexQueryRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
