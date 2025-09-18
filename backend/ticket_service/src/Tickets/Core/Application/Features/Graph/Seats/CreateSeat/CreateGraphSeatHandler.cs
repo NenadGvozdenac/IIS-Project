@@ -46,10 +46,18 @@ public class CreateGraphSeatHandler : IRequestHandler<CreateGraphSeatCommand, Re
                 Direction = request.Direction
             };
 
-            await _graphSeatRepository.CreateSeat(seat);
+            seat = await _graphSeatRepository.CreateSeat(seat);
+
+            if (seat == null)
+            {
+                return Result<CreateGraphSeatResponse>.Failure("Failed to create seat")
+                    .WithCode((int)ResultCode.InternalServerError);
+            }
 
             var response = new CreateGraphSeatResponse
             {
+                Id = seat.Id,
+                ElementId = seat.ElementId,
                 Name = seat.Name,
                 Row = seat.Row,
                 Number = seat.Number,

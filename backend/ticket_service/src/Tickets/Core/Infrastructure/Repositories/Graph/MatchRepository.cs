@@ -14,7 +14,7 @@ public class MatchRepository : IGraphMatchRepository
         _graphDbContext = graphDbContext;
     }
 
-    public async Task CreateMatch(Match match)
+    public async Task<Match?> CreateMatch(Match match)
     {
         var query = @"
             CREATE (m:Match {
@@ -25,7 +25,10 @@ public class MatchRepository : IGraphMatchRepository
                 city: $city,
                 hall: $hall,
                 is_in_our_hall: $isInOurHall
-            })";
+            }) RETURN id(m) as nodeId, elementId(m) as elementId,
+                   m.name as name, m.scheduled_at as scheduledAt, m.type as type,
+                   m.state as state, m.city as city, m.hall as hall, 
+                   m.is_in_our_hall as isInOurHall";
 
         var parameters = new
         {
@@ -38,7 +41,25 @@ public class MatchRepository : IGraphMatchRepository
             isInOurHall = match.IsInOurHall
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Match
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
+                Type = record["type"].As<string>(),
+                State = record["state"].As<string>(),
+                City = record["city"].As<string>(),
+                Hall = record["hall"].As<string>(),
+                IsInOurHall = record["isInOurHall"].As<bool>()
+            };
+        }
+
+        return null;
     }
 
     public async Task DeleteMatch(int id)
@@ -69,7 +90,7 @@ public class MatchRepository : IGraphMatchRepository
         {
             matches.Add(new Match
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
@@ -101,7 +122,7 @@ public class MatchRepository : IGraphMatchRepository
         {
             return new Match
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
@@ -132,7 +153,7 @@ public class MatchRepository : IGraphMatchRepository
         {
             return new Match
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
@@ -147,7 +168,7 @@ public class MatchRepository : IGraphMatchRepository
         return null;
     }
 
-    public async Task UpdateMatch(int id, Match match)
+    public async Task<Match?> UpdateMatch(int id, Match match)
     {
         var query = @"
             MATCH (m:Match)
@@ -157,7 +178,11 @@ public class MatchRepository : IGraphMatchRepository
                 m.state = $state,
                 m.city = $city,
                 m.hall = $hall,
-                m.is_in_our_hall = $isInOurHall";
+                m.is_in_our_hall = $isInOurHall
+            RETURN id(m) as nodeId, elementId(m) as elementId,
+                   m.name as name, m.scheduled_at as scheduledAt, m.type as type,
+                   m.state as state, m.city as city, m.hall as hall, 
+                   m.is_in_our_hall as isInOurHall";
 
         var parameters = new
         {
@@ -170,6 +195,24 @@ public class MatchRepository : IGraphMatchRepository
             isInOurHall = match.IsInOurHall
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Match
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                ScheduledAt = record["scheduledAt"].As<ZonedDateTime>().ToDateTimeOffset().DateTime,
+                Type = record["type"].As<string>(),
+                State = record["state"].As<string>(),
+                City = record["city"].As<string>(),
+                Hall = record["hall"].As<string>(),
+                IsInOurHall = record["isInOurHall"].As<bool>()
+            };
+        }
+
+        return null;
     }
 }

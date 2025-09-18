@@ -2,7 +2,7 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.Get
 
 public class GetAllGraphMatchesResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string ElementId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime ScheduledAt { get; set; }

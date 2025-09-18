@@ -14,7 +14,7 @@ public class CustomerRepository : IGraphCustomerRepository
         _graphDbContext = graphDbContext;
     }
 
-    public async Task CreateCustomer(Customer customer)
+    public async Task<Customer?> CreateCustomer(Customer customer)
     {
         var query = @"
             CREATE (c:Customer {
@@ -23,7 +23,9 @@ public class CustomerRepository : IGraphCustomerRepository
                 surname: $surname,
                 phone: $phone,
                 type: $type
-            })";
+            }) RETURN id(c) as nodeId, elementId(c) as elementId,
+                   c.email as email, c.name as name, c.surname as surname, 
+                   c.phone as phone, c.type as type";
 
         var parameters = new
         {
@@ -34,7 +36,23 @@ public class CustomerRepository : IGraphCustomerRepository
             type = customer.Type
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Customer
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Email = record["email"].As<string>(),
+                Name = record["name"].As<string>(),
+                Surname = record["surname"].As<string>(),
+                Phone = record["phone"].As<string>(),
+                Type = record["type"].As<string>()
+            };
+        }
+
+        return null;
     }
 
     public async Task DeleteCustomer(int id)
@@ -64,7 +82,7 @@ public class CustomerRepository : IGraphCustomerRepository
         {
             customers.Add(new Customer
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Email = record["email"].As<string>(),
                 Name = record["name"].As<string>(),
@@ -92,7 +110,7 @@ public class CustomerRepository : IGraphCustomerRepository
         {
             return new Customer
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Email = record["email"].As<string>(),
                 Name = record["name"].As<string>(),
@@ -121,7 +139,7 @@ public class CustomerRepository : IGraphCustomerRepository
         {
             return new Customer
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Email = record["email"].As<string>(),
                 Name = record["name"].As<string>(),
@@ -134,7 +152,7 @@ public class CustomerRepository : IGraphCustomerRepository
         return null;
     }
 
-    public async Task UpdateCustomer(int id, Customer customer)
+    public async Task<Customer?> UpdateCustomer(int id, Customer customer)
     {
         var query = @"
             MATCH (c:Customer)
@@ -143,7 +161,10 @@ public class CustomerRepository : IGraphCustomerRepository
                 c.name = $name,
                 c.surname = $surname,
                 c.phone = $phone,
-                c.type = $type";
+                c.type = $type 
+            RETURN id(c) as nodeId, elementId(c) as elementId,
+                c.email as email, c.name as name, c.surname as surname, 
+                c.phone as phone, c.type as type";
 
         var parameters = new
         {
@@ -155,6 +176,22 @@ public class CustomerRepository : IGraphCustomerRepository
             type = customer.Type
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Customer
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Email = record["email"].As<string>(),
+                Name = record["name"].As<string>(),
+                Surname = record["surname"].As<string>(),
+                Phone = record["phone"].As<string>(),
+                Type = record["type"].As<string>()
+            };
+        }
+
+        return null;
     }
 }

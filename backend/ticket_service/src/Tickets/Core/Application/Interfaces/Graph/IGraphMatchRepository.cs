@@ -4,10 +4,10 @@ namespace ticket_service.src.Tickets.Core.Application.Interfaces.Graph;
 
 public interface IGraphMatchRepository
 {
-    public Task CreateMatch(Match match);
+    public Task<Match?> CreateMatch(Match match);
     public Task<Match?> GetMatchByName(string name);
     public Task<Match?> GetMatchById(int id);
     public Task<List<Match>> GetAllMatches();
-    public Task UpdateMatch(int id, Match match);
+    public Task<Match?> UpdateMatch(int id, Match match);
     public Task DeleteMatch(int id);
 }

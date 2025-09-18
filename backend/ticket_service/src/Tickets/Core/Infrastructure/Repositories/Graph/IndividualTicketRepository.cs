@@ -19,7 +19,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return new DateTime(localDate.Year, localDate.Month, localDate.Day);
     }
 
-    public async Task CreateIndividualTicket(IndividualTicket ticket)
+    public async Task<IndividualTicket?> CreateIndividualTicket(IndividualTicket ticket)
     {
         var query = @"
             CREATE (t:IndividualTicket {
@@ -28,7 +28,9 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
                 type: $type,
                 released_at: date($releasedAt),
                 price: $price
-            })";
+            }) RETURN id(t) as nodeId, elementId(t) as elementId,
+                   t.name as name, t.description as description, t.type as type,
+                   t.released_at as releasedAt, t.price as price";
 
         var parameters = new
         {
@@ -39,7 +41,23 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
             price = ticket.Price
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new IndividualTicket
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Description = record["description"].As<string>(),
+                Type = record["type"].As<string>(),
+                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
+                Price = record["price"].As<decimal>()
+            };
+        }
+
+        return null;
     }
 
     public async Task DeleteIndividualTicket(int id)
@@ -70,7 +88,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         {
             tickets.Add(new IndividualTicket
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Description = record["description"].As<string>(),
@@ -99,7 +117,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         {
             return new IndividualTicket
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Description = record["description"].As<string>(),
@@ -127,7 +145,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         {
             return new IndividualTicket
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Description = record["description"].As<string>(),
@@ -140,7 +158,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return null;
     }
 
-    public async Task UpdateIndividualTicket(int id, IndividualTicket ticket)
+    public async Task<IndividualTicket?> UpdateIndividualTicket(int id, IndividualTicket ticket)
     {
         var query = @"
             MATCH (t:IndividualTicket)
@@ -159,6 +177,22 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
             price = ticket.Price
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new IndividualTicket
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Description = record["description"].As<string>(),
+                Type = record["type"].As<string>(),
+                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
+                Price = record["price"].As<decimal>()
+            };
+        }
+
+        return null;
     }
 }

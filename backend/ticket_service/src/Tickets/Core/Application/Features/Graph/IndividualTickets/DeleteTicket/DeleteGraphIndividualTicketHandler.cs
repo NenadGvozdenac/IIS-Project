@@ -18,7 +18,7 @@ public class DeleteGraphIndividualTicketHandler : IRequestHandler<DeleteGraphInd
         try
         {
             await _ticketRepository.DeleteIndividualTicket(request.Id);
-            var response = new DeleteGraphIndividualTicketResponse(request.Id.ToString(), "Ticket deleted successfully");
+            var response = new DeleteGraphIndividualTicketResponse(request.Id, "Ticket deleted successfully");
             return Result<DeleteGraphIndividualTicketResponse>.Success(response);
         }
         catch (Exception ex)

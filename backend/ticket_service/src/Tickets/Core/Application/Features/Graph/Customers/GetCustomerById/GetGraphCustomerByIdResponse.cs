@@ -2,7 +2,7 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Customers.G
 
 public class GetGraphCustomerByIdResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string ElementId { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -10,7 +10,7 @@ public class GetGraphCustomerByIdResponse
     public string Phone { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
 
-    public GetGraphCustomerByIdResponse(string id, string elementId, string email, string name, string surname, string phone, string type)
+    public GetGraphCustomerByIdResponse(int id, string elementId, string email, string name, string surname, string phone, string type)
     {
         Id = id;
         ElementId = elementId;

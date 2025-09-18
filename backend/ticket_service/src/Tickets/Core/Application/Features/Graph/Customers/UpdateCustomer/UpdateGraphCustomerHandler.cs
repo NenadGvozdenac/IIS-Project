@@ -27,8 +27,14 @@ public class UpdateGraphCustomerHandler : IRequestHandler<UpdateGraphCustomerCom
                 Type = request.Type
             };
 
-            await _customerRepository.UpdateCustomer(request.Id, customer);
-            var response = new UpdateGraphCustomerResponse(customer.Email, customer.Name, customer.Surname, customer.Phone, customer.Type);
+            customer = await _customerRepository.UpdateCustomer(request.Id, customer);
+
+            if(customer == null)
+            {
+                return Result<UpdateGraphCustomerResponse>.Failure("Customer not found");
+            }
+
+            var response = new UpdateGraphCustomerResponse(customer.Id, customer.ElementId, customer.Email, customer.Name, customer.Surname, customer.Phone, customer.Type);
             return Result<UpdateGraphCustomerResponse>.Success(response);
         }
         catch (Exception ex)

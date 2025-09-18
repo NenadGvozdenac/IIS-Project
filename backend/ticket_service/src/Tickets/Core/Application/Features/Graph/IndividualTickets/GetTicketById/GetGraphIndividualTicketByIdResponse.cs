@@ -2,7 +2,7 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualT
 
 public class GetGraphIndividualTicketByIdResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string ElementId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -10,7 +10,7 @@ public class GetGraphIndividualTicketByIdResponse
     public DateTime ReleasedAt { get; set; }
     public decimal Price { get; set; }
 
-    public GetGraphIndividualTicketByIdResponse(string id, string elementId, string name, string description, string type, DateTime releasedAt, decimal price)
+    public GetGraphIndividualTicketByIdResponse(int id, string elementId, string name, string description, string type, DateTime releasedAt, decimal price)
     {
         Id = id;
         ElementId = elementId;

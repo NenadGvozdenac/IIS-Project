@@ -32,10 +32,18 @@ public class UpdateGraphSeatHandler : IRequestHandler<UpdateGraphSeatCommand, Re
                 Direction = request.Direction
             };
 
-            await _graphSeatRepository.UpdateSeat(request.Id, updatedSeat);
+            updatedSeat = await _graphSeatRepository.UpdateSeat(request.Id, updatedSeat);
+
+            if (updatedSeat == null)
+            {
+                return Result<UpdateGraphSeatResponse>.Failure("Seat not found")
+                    .WithCode((int)ResultCode.NotFound);
+            }
 
             var response = new UpdateGraphSeatResponse
             {
+                Id = updatedSeat.Id,
+                ElementId = updatedSeat.ElementId,
                 Name = updatedSeat.Name,
                 Row = updatedSeat.Row,
                 Number = updatedSeat.Number,

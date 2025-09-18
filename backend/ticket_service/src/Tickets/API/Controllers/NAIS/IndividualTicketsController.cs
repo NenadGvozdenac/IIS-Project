@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetAllIndividualTickets;
-using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetTicketByName;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.GetTicketById;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.CreateTicket;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualTickets.UpdateTicket;
@@ -26,14 +25,6 @@ public class IndividualTicketsController : BaseController
     public async Task<IActionResult> GetAllIndividualTickets()
     {
         var query = new GetAllGraphIndividualTicketsQuery();
-        var result = await _mediator.Send(query);
-        return CreateResponse(result);
-    }
-
-    [HttpGet("{name}")]
-    public async Task<IActionResult> GetIndividualTicketByName(string name)
-    {
-        var query = new GetGraphIndividualTicketByNameQuery(name);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

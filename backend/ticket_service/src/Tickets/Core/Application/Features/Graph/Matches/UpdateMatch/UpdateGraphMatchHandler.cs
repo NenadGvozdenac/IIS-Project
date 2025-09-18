@@ -39,6 +39,8 @@ public class UpdateGraphMatchHandler : IRequestHandler<UpdateGraphMatchCommand, 
 
             var response = new UpdateGraphMatchResponse
             {
+                Id = updatedMatch.Id,
+                ElementId = updatedMatch.ElementId,
                 Name = updatedMatch.Name,
                 ScheduledAt = updatedMatch.ScheduledAt,
                 Type = updatedMatch.Type,

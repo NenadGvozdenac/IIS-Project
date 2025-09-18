@@ -14,7 +14,7 @@ public class SeatRepository : IGraphSeatRepository
         _graphDbContext = graphDbContext;
     }
 
-    public async Task CreateSeat(Seat seat)
+    public async Task<Seat?> CreateSeat(Seat seat)
     {
         var query = @"
             CREATE (s:Seat {
@@ -22,7 +22,8 @@ public class SeatRepository : IGraphSeatRepository
                 row: $row,
                 number: $number,
                 direction: $direction
-            })";
+            }) RETURN id(s) as nodeId, elementId(s) as elementId,
+                   s.name as name, s.row as row, s.number as number, s.direction as direction";
 
         var parameters = new
         {
@@ -32,7 +33,22 @@ public class SeatRepository : IGraphSeatRepository
             direction = seat.Direction
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Seat
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Row = record["row"].As<int>(),
+                Number = record["number"].As<int>(),
+                Direction = record["direction"].As<string>()
+            };
+        }
+        
+        return null;
     }
 
     public async Task DeleteSeat(int id)
@@ -62,7 +78,7 @@ public class SeatRepository : IGraphSeatRepository
         {
             seats.Add(new Seat
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Row = record["row"].As<int>(),
@@ -89,7 +105,7 @@ public class SeatRepository : IGraphSeatRepository
         {
             return new Seat
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Row = record["row"].As<int>(),
@@ -115,7 +131,7 @@ public class SeatRepository : IGraphSeatRepository
         {
             return new Seat
             {
-                Id = record["nodeId"].As<long>().ToString(),
+                Id = record["nodeId"].As<int>(),
                 ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Row = record["row"].As<int>(),
@@ -126,8 +142,8 @@ public class SeatRepository : IGraphSeatRepository
 
         return null;
     }
-    
-    public async Task UpdateSeat(int id, Seat seat)
+
+    public async Task<Seat?> UpdateSeat(int id, Seat seat)
     {
         var query = @"
             MATCH (s:Seat)
@@ -144,6 +160,21 @@ public class SeatRepository : IGraphSeatRepository
             direction = seat.Direction
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new Seat
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Row = record["row"].As<int>(),
+                Number = record["number"].As<int>(),
+                Direction = record["direction"].As<string>()
+            };
+        }
+
+        return null;
     }
 }
