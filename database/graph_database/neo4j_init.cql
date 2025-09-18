@@ -7,7 +7,6 @@ CREATE CONSTRAINT ticket_id_unique IF NOT EXISTS FOR (t:IndividualTicket) REQUIR
 
 CREATE INDEX customer_email_index IF NOT EXISTS FOR (c:Customer) ON (c.email);
 CREATE INDEX match_scheduled_at_index IF NOT EXISTS FOR (m:Match) ON (m.scheduled_at);
-CREATE INDEX seat_zone_index IF NOT EXISTS FOR (s:Seat) ON (s.zone_id);
 
 CREATE (c1:Customer {
     id: 7,
@@ -44,14 +43,7 @@ CREATE (m1:Match {
     state: 'Serbia',
     city: 'Belgrade',
     hall: 'Stark Arena',
-    is_in_our_hall: true,
-    transportation_required: false,
-    accommodation_required: false,
-    tickets_for_sale: true,
-    tickets_went_on_sale: datetime('2025-09-05T19:00:00+01:00'),
-    id_competition: 1,
-    id_season: 1,
-    id_team: 2
+    is_in_our_hall: true
 })
 
 CREATE (m2:Match {
@@ -62,14 +54,7 @@ CREATE (m2:Match {
     state: 'Serbia',
     city: 'Belgrade',
     hall: 'Stark Arena',
-    is_in_our_hall: true,
-    transportation_required: false,
-    accommodation_required: false,
-    tickets_for_sale: true,
-    tickets_went_on_sale: datetime('2025-09-15T19:00:00+01:00'),
-    id_competition: 1,
-    id_season: 1,
-    id_team: 3
+    is_in_our_hall: true
 })
 
 CREATE (m3:Match {
@@ -80,14 +65,7 @@ CREATE (m3:Match {
     state: 'Serbia',
     city: 'Belgrade',
     hall: 'Stark Arena',
-    is_in_our_hall: true,
-    transportation_required: false,
-    accommodation_required: false,
-    tickets_for_sale: true,
-    tickets_went_on_sale: datetime('2025-09-25T19:00:00+01:00'),
-    id_competition: 1,
-    id_season: 1,
-    id_team: 4
+    is_in_our_hall: true
 });
 
 UNWIND range(1, 160) AS seat_id
@@ -100,14 +78,10 @@ WITH seat_id,
      (seat_id - 1) % 8 + 1 AS number
 CREATE (:Seat {
     id: seat_id,
+    name: 'Seat ' + toString(seat_id),
     row: row,
     number: number,
-    type: 'standard',
-    direction: direction,
-    status: 'enabled',
-    zone_id: 1,
-    zone_name: 'Zone 100',
-    zone_rank: 100
+    direction: direction
 });
 
 UNWIND range(161, 560) AS seat_id
@@ -120,14 +94,10 @@ WITH seat_id,
      (seat_id - 161) % 10 + 1 AS number
 CREATE (:Seat {
     id: seat_id,
+    name: 'Seat ' + toString(seat_id),
     row: row,
     number: number,
-    type: 'standard',
-    direction: direction,
-    status: 'enabled',
-    zone_id: 2,
-    zone_name: 'Zone 200',
-    zone_rank: 200
+    direction: direction
 });
 
 UNWIND range(561, 1160) AS seat_id
@@ -140,14 +110,10 @@ WITH seat_id,
      (seat_id - 561) % 15 + 1 AS number
 CREATE (:Seat {
     id: seat_id,
+    name: 'Seat ' + toString(seat_id),
     row: row,
     number: number,
-    type: 'standard',
-    direction: direction,
-    status: 'enabled',
-    zone_id: 3,
-    zone_name: 'Zone 300',
-    zone_rank: 300
+    direction: direction
 });
 
 UNWIND range(1161, 1960) AS seat_id
@@ -160,35 +126,27 @@ WITH seat_id,
      (seat_id - 1161) % 20 + 1 AS number
 CREATE (:Seat {
     id: seat_id,
+    name: 'Seat ' + toString(seat_id),
     row: row,
     number: number,
-    type: 'standard',
-    direction: direction,
-    status: 'enabled',
-    zone_id: 4,
-    zone_name: 'Zone 400',
-    zone_rank: 400
+    direction: direction
 });
 
 UNWIND range(1, 1960) AS seat_id
 WITH seat_id, (seat_id - 1) * 3 + 1 AS ticket_id
 CREATE (:IndividualTicket {
     id: ticket_id,
-    purchase_offer_id: ticket_id + 1960, // Offset to avoid conflicts with season tickets
-    match_id: 1,
     seat_id: seat_id,
+    match_id: 1,
     name: 'Individual Ticket - Partizan vs Crvena Zvezda - Seat ' + toString(seat_id),
     description: 'Single match ticket for Partizan vs Crvena Zvezda',
     type: 'individual ticket',
-    status: CASE WHEN ticket_id <= 10 THEN 'bought' ELSE 'enabled' END, // First 10 tickets are sold
     released_at: date('2025-08-15'),
-    created_at: date('2025-08-15'),
-    expires_at: date('2025-09-05'),
     price: CASE 
-        WHEN seat_id <= 160 THEN 4000    // Zone 100 - Premium
-        WHEN seat_id <= 560 THEN 3000    // Zone 200 - VIP
-        WHEN seat_id <= 1160 THEN 2000   // Zone 300 - Standard
-        ELSE 1000                        // Zone 400 - Economy
+        WHEN seat_id <= 160 THEN 4000
+        WHEN seat_id <= 560 THEN 3000
+        WHEN seat_id <= 1160 THEN 2000
+        ELSE 1000
     END
 });
 
@@ -196,21 +154,17 @@ UNWIND range(1, 1960) AS seat_id
 WITH seat_id, (seat_id - 1) * 3 + 2 AS ticket_id
 CREATE (:IndividualTicket {
     id: ticket_id,
-    purchase_offer_id: ticket_id + 1960,
-    match_id: 2,
     seat_id: seat_id,
+    match_id: 2,
     name: 'Individual Ticket - Partizan vs FMP - Seat ' + toString(seat_id),
     description: 'Single match ticket for Partizan vs FMP',
     type: 'individual ticket',
-    status: 'enabled',
     released_at: date('2025-08-15'),
-    created_at: date('2025-08-15'),
-    expires_at: date('2025-09-15'),
     price: CASE 
-        WHEN seat_id <= 160 THEN 2500    // Zone 100 - Premium
-        WHEN seat_id <= 560 THEN 2000    // Zone 200 - VIP
-        WHEN seat_id <= 1160 THEN 1500   // Zone 300 - Standard
-        ELSE 800                         // Zone 400 - Economy
+        WHEN seat_id <= 160 THEN 2500
+        WHEN seat_id <= 560 THEN 2000
+        WHEN seat_id <= 1160 THEN 1500
+        ELSE 800
     END
 });
 
@@ -218,21 +172,17 @@ UNWIND range(1, 1960) AS seat_id
 WITH seat_id, (seat_id - 1) * 3 + 3 AS ticket_id
 CREATE (:IndividualTicket {
     id: ticket_id,
-    purchase_offer_id: ticket_id + 1960,
-    match_id: 3,
     seat_id: seat_id,
+    match_id: 3,
     name: 'Individual Ticket - Partizan vs Mega - Seat ' + toString(seat_id),
     description: 'Single match ticket for Partizan vs Mega',
     type: 'individual ticket',
-    status: 'enabled',
     released_at: date('2025-08-15'),
-    created_at: date('2025-08-15'),
-    expires_at: date('2025-09-25'),
     price: CASE 
-        WHEN seat_id <= 160 THEN 2000    // Zone 100 - Premium
-        WHEN seat_id <= 560 THEN 1500    // Zone 200 - VIP
-        WHEN seat_id <= 1160 THEN 1200   // Zone 300 - Standard
-        ELSE 600                         // Zone 400 - Economy
+        WHEN seat_id <= 160 THEN 2000
+        WHEN seat_id <= 560 THEN 1500
+        WHEN seat_id <= 1160 THEN 1200
+        ELSE 600
     END
 });
 
@@ -240,11 +190,11 @@ MATCH (c1:Customer {id: 7}), (t:IndividualTicket {match_id: 1})
 WHERE t.id IN [1, 4, 7, 10] // Customer 1 bought 4 tickets
 CREATE (c1)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t.price}]->(t);
 
-MATCH (c2:Customer {id: 8}), (t:IndividualTicket {match_id: 1})
+MATCH (c2:Customer {id: 8}), (t:IndividualTicket {match_id: 2})
 WHERE t.id IN [2, 5, 8] // Customer 2 bought 3 tickets
 CREATE (c2)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t.price}]->(t);
 
-MATCH (c3:Customer {id: 9}), (t:IndividualTicket {match_id: 1})
+MATCH (c3:Customer {id: 9}), (t:IndividualTicket {match_id: 3})
 WHERE t.id IN [3, 6, 9] // Customer 3 bought 3 tickets
 CREATE (c3)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t.price}]->(t);
 
