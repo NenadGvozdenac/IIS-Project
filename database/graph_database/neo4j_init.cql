@@ -24,6 +24,30 @@ CREATE (c3:Customer {
     email: 'stefan@example.com',
     phone: '+381603333333',
     type: 'customer'
+})
+
+CREATE (c4:Customer {
+    name: 'Milica',
+    surname: 'Stojanovic',
+    email: 'milica@example.com',
+    phone: '+381604444444',
+    type: 'customer'
+})
+
+CREATE (c5:Customer {
+    name: 'Nikola',
+    surname: 'Milic',
+    email: 'nikola@example.com',
+    phone: '+381605555555',
+    type: 'customer'
+})
+
+CREATE (c6:Customer {
+    name: 'Jelena',
+    surname: 'Radic',
+    email: 'jelena@example.com',
+    phone: '+381606666666',
+    type: 'customer'
 });
 
 CREATE (m1:Match {
@@ -199,3 +223,50 @@ MATCH (t8:IndividualTicket)-[:IS_FOR_SEAT]->(s8:Seat {name: 'Seat 20'}), (t8)-[:
 MATCH (t9:IndividualTicket)-[:IS_FOR_SEAT]->(s9:Seat {name: 'Seat 21'}), (t9)-[:IS_FOR_MATCH]->(m3)
 CREATE (c3)-[:BOUGHT {purchased_at: date('2025-08-22'), price: t8.price}]->(t8)
 CREATE (c3)-[:BOUGHT {purchased_at: date('2025-08-22'), price: t9.price}]->(t9);
+
+// Kupac milica je kupio karte za dva različita meča (premium i srednje sedišta)
+MATCH (c4:Customer {email: 'milica@example.com'})
+// Premium karte za Partizan vs Crvena Zvezda
+MATCH (t10:IndividualTicket)-[:IS_FOR_SEAT]->(s10:Seat {name: 'Seat 50'}), (t10)-[:IS_FOR_MATCH]->(m1:Match {name: 'Partizan vs Crvena Zvezda'})
+MATCH (t11:IndividualTicket)-[:IS_FOR_SEAT]->(s11:Seat {name: 'Seat 51'}), (t11)-[:IS_FOR_MATCH]->(m1)
+// Srednje karte za Partizan vs FMP
+MATCH (t12:IndividualTicket)-[:IS_FOR_SEAT]->(s12:Seat {name: 'Seat 300'}), (t12)-[:IS_FOR_MATCH]->(m2:Match {name: 'Partizan vs FMP'})
+MATCH (t13:IndividualTicket)-[:IS_FOR_SEAT]->(s13:Seat {name: 'Seat 301'}), (t13)-[:IS_FOR_MATCH]->(m2)
+MATCH (t14:IndividualTicket)-[:IS_FOR_SEAT]->(s14:Seat {name: 'Seat 302'}), (t14)-[:IS_FOR_MATCH]->(m2)
+CREATE (c4)-[:BOUGHT {purchased_at: date('2025-08-18'), price: t10.price}]->(t10)
+CREATE (c4)-[:BOUGHT {purchased_at: date('2025-08-18'), price: t11.price}]->(t11)
+CREATE (c4)-[:BOUGHT {purchased_at: date('2025-08-19'), price: t12.price}]->(t12)
+CREATE (c4)-[:BOUGHT {purchased_at: date('2025-08-19'), price: t13.price}]->(t13)
+CREATE (c4)-[:BOUGHT {purchased_at: date('2025-08-19'), price: t14.price}]->(t14);
+
+// Kupac nikola je kupio karte za sva tri meča (različite cenovne kategorije)
+MATCH (c5:Customer {email: 'nikola@example.com'})
+// Jeftina karta za Partizan vs Crvena Zvezda
+MATCH (t15:IndividualTicket)-[:IS_FOR_SEAT]->(s15:Seat {name: 'Seat 1500'}), (t15)-[:IS_FOR_MATCH]->(m1:Match {name: 'Partizan vs Crvena Zvezda'})
+// Premium karta za Partizan vs FMP
+MATCH (t16:IndividualTicket)-[:IS_FOR_SEAT]->(s16:Seat {name: 'Seat 100'}), (t16)-[:IS_FOR_MATCH]->(m2:Match {name: 'Partizan vs FMP'})
+// Srednja karta za Partizan vs Mega
+MATCH (t17:IndividualTicket)-[:IS_FOR_SEAT]->(s17:Seat {name: 'Seat 800'}), (t17)-[:IS_FOR_MATCH]->(m3:Match {name: 'Partizan vs Mega'})
+MATCH (t18:IndividualTicket)-[:IS_FOR_SEAT]->(s18:Seat {name: 'Seat 801'}), (t18)-[:IS_FOR_MATCH]->(m3)
+CREATE (c5)-[:BOUGHT {purchased_at: date('2025-08-16'), price: t15.price}]->(t15)
+CREATE (c5)-[:BOUGHT {purchased_at: date('2025-08-17'), price: t16.price}]->(t16)
+CREATE (c5)-[:BOUGHT {purchased_at: date('2025-08-23'), price: t17.price}]->(t17)
+CREATE (c5)-[:BOUGHT {purchased_at: date('2025-08-23'), price: t18.price}]->(t18);
+
+// Kupac jelena je veliki fan - kupio karte za sva tri meča (mix cena)
+MATCH (c6:Customer {email: 'jelena@example.com'})
+// Mix karata za Partizan vs Crvena Zvezda
+MATCH (t19:IndividualTicket)-[:IS_FOR_SEAT]->(s19:Seat {name: 'Seat 80'}), (t19)-[:IS_FOR_MATCH]->(m1:Match {name: 'Partizan vs Crvena Zvezda'})
+MATCH (t20:IndividualTicket)-[:IS_FOR_SEAT]->(s20:Seat {name: 'Seat 600'}), (t20)-[:IS_FOR_MATCH]->(m1)
+// Premium karte za Partizan vs FMP
+MATCH (t21:IndividualTicket)-[:IS_FOR_SEAT]->(s21:Seat {name: 'Seat 25'}), (t21)-[:IS_FOR_MATCH]->(m2:Match {name: 'Partizan vs FMP'})
+MATCH (t22:IndividualTicket)-[:IS_FOR_SEAT]->(s22:Seat {name: 'Seat 26'}), (t22)-[:IS_FOR_MATCH]->(m2)
+MATCH (t23:IndividualTicket)-[:IS_FOR_SEAT]->(s23:Seat {name: 'Seat 27'}), (t23)-[:IS_FOR_MATCH]->(m2)
+// Jeftina karta za Partizan vs Mega
+MATCH (t24:IndividualTicket)-[:IS_FOR_SEAT]->(s24:Seat {name: 'Seat 1800'}), (t24)-[:IS_FOR_MATCH]->(m3:Match {name: 'Partizan vs Mega'})
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-15'), price: t19.price}]->(t19)
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-15'), price: t20.price}]->(t20)
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t21.price}]->(t21)
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t22.price}]->(t22)
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-20'), price: t23.price}]->(t23)
+CREATE (c6)-[:BOUGHT {purchased_at: date('2025-08-24'), price: t24.price}]->(t24);
