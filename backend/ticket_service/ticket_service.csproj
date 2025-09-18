@@ -38,9 +38,6 @@
     <Folder Include="src\Tickets\BuildingBlocks\Core\UseCases\" />
     <Folder Include="src\Tickets\BuildingBlocks\Infratructure\Database\" />
     <Folder Include="src\Tickets\Core\Application\Features\Users\GetUserById\" />
-    <Folder Include="src\Tickets\Core\Application\Interfaces\" />
-    <Folder Include="src\Tickets\Core\Domain\Entities\" />
-    <Folder Include="src\Tickets\Core\Infrastructure\Repositories\" />
   </ItemGroup>
 
 </Project>

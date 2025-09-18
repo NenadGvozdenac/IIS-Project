@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using ticket_service.src.Tickets.Core.Application.Interfaces;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure.Services;
 

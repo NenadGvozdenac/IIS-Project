@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using ticket_service.src.Tickets.Core.Domain.Entities;
+using ticket_service.src.Tickets.Core.Domain.Entities.Relational;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure;
 
