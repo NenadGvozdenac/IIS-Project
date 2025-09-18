@@ -5,10 +5,10 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Customers.D
 
 public class DeleteGraphCustomerCommand : IRequest<Result<DeleteGraphCustomerResponse>>
 {
-    public string Email { get; set; } = string.Empty;
+    public int Id { get; set; }
 
-    public DeleteGraphCustomerCommand(string email)
+    public DeleteGraphCustomerCommand(int id)
     {
-        Email = email;
+        Id = id;
     }
 }

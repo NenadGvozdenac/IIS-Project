@@ -26,6 +26,8 @@ public class GetGraphCustomerByEmailHandler : IRequestHandler<GetGraphCustomerBy
 
             var response = new GetGraphCustomerByEmailResponse
             {
+                Id = customer.Id,
+                ElementId = customer.ElementId,
                 Email = customer.Email,
                 Name = customer.Name,
                 Surname = customer.Surname,

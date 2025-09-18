@@ -24,13 +24,7 @@ public class GetGraphSeatByNameHandler : IRequestHandler<GetGraphSeatByNameQuery
                     .WithCode((int)ResultCode.NotFound);
             }
 
-            var response = new GetGraphSeatByNameResponse
-            {
-                Name = seat.Name,
-                Row = seat.Row,
-                Number = seat.Number,
-                Direction = seat.Direction
-            };
+            var response = new GetGraphSeatByNameResponse(seat.Id, seat.ElementId, seat.Name, seat.Row, seat.Number, seat.Direction);
 
             return Result<GetGraphSeatByNameResponse>.Success(response);
         }

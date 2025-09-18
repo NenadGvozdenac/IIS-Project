@@ -18,6 +18,8 @@ public class UpdateSeatDto
 
 public class SeatResponseDto
 {
+    public string Id { get; set; } = string.Empty;
+    public string ElementId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int Row { get; set; }
     public int Number { get; set; }

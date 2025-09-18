@@ -5,10 +5,10 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.Delet
 
 public class DeleteGraphSeatCommand : IRequest<Result<DeleteGraphSeatResponse>>
 {
-    public string Name { get; set; } = string.Empty;
+    public int Id { get; set; }
 
-    public DeleteGraphSeatCommand(string name)
+    public DeleteGraphSeatCommand(int id)
     {
-        Name = name;
+        Id = id;
     }
 }

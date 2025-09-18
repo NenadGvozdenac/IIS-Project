@@ -5,8 +5,8 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.Upd
 
 public class UpdateGraphMatchCommand : IRequest<Result<UpdateGraphMatchResponse>>
 {
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string NewName { get; set; } = string.Empty;
     public DateTime ScheduledAt { get; set; }
     public string Type { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
@@ -14,10 +14,10 @@ public class UpdateGraphMatchCommand : IRequest<Result<UpdateGraphMatchResponse>
     public string Hall { get; set; } = string.Empty;
     public bool IsInOurHall { get; set; }
 
-    public UpdateGraphMatchCommand(string name, string newName, DateTime scheduledAt, string type, string state, string city, string hall, bool isInOurHall)
+    public UpdateGraphMatchCommand(int id, string name, DateTime scheduledAt, string type, string state, string city, string hall, bool isInOurHall)
     {
+        Id = id;
         Name = name;
-        NewName = newName;
         ScheduledAt = scheduledAt;
         Type = type;
         State = state;

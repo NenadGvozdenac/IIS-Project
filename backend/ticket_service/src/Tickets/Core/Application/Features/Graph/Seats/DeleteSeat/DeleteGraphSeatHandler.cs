@@ -17,19 +17,11 @@ public class DeleteGraphSeatHandler : IRequestHandler<DeleteGraphSeatCommand, Re
     {
         try
         {
-            // Check if seat exists
-            var existingSeat = await _graphSeatRepository.GetSeatByName(request.Name);
-            if (existingSeat == null)
-            {
-                return Result<DeleteGraphSeatResponse>.Failure($"Seat with name '{request.Name}' not found")
-                    .WithCode((int)ResultCode.NotFound);
-            }
-
-            await _graphSeatRepository.DeleteSeat(request.Name);
+            await _graphSeatRepository.DeleteSeat(request.Id);
 
             var response = new DeleteGraphSeatResponse
             {
-                Message = $"Seat '{request.Name}' deleted successfully"
+                Message = $"Seat with ID '{request.Id}' deleted successfully"
             };
 
             return Result<DeleteGraphSeatResponse>.Success(response);

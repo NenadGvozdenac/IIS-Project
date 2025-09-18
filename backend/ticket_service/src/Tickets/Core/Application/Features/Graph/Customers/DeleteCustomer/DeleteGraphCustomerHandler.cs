@@ -18,8 +18,8 @@ public class DeleteGraphCustomerHandler : IRequestHandler<DeleteGraphCustomerCom
     {
         try
         {
-            await _customerRepository.DeleteCustomer(request.Email);
-            var response = new DeleteGraphCustomerResponse(request.Email, "Customer deleted successfully");
+            await _customerRepository.DeleteCustomer(request.Id);
+            var response = new DeleteGraphCustomerResponse(request.Id, "Customer deleted successfully");
             return Result<DeleteGraphCustomerResponse>.Success(response);
         }
         catch (Exception ex)

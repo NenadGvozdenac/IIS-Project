@@ -2,12 +2,12 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Customers.D
 
 public class DeleteGraphCustomerResponse
 {
-    public string Email { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string Message { get; set; } = string.Empty;
 
-    public DeleteGraphCustomerResponse(string email, string message)
+    public DeleteGraphCustomerResponse(int id, string message)
     {
-        Email = email;
+        Id = id;
         Message = message;
     }
 }

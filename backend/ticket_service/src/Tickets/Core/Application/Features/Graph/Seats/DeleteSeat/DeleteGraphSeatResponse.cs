@@ -2,5 +2,6 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.Delet
 
 public class DeleteGraphSeatResponse
 {
+    public int Id { get; set; }
     public string Message { get; set; } = string.Empty;
 }

@@ -20,6 +20,8 @@ public class GetAllGraphIndividualTicketsHandler : IRequestHandler<GetAllGraphIn
             var tickets = await _graphIndividualTicketRepository.GetAllIndividualTickets();
             var response = tickets.Select(ticket => new GetAllGraphIndividualTicketsResponse
             {
+                Id = ticket.Id,
+                ElementId = ticket.ElementId,
                 Name = ticket.Name,
                 Description = ticket.Description,
                 Type = ticket.Type,

@@ -19,7 +19,7 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return new DateTime(localDate.Year, localDate.Month, localDate.Day);
     }
 
-    public async Task CreateIndividualTicket(IndividualTicket ticket)
+    public async Task<IndividualTicket?> CreateIndividualTicket(IndividualTicket ticket)
     {
         var query = @"
             CREATE (t:IndividualTicket {
@@ -28,7 +28,9 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
                 type: $type,
                 released_at: date($releasedAt),
                 price: $price
-            })";
+            }) RETURN id(t) as nodeId, elementId(t) as elementId,
+                   t.name as name, t.description as description, t.type as type,
+                   t.released_at as releasedAt, t.price as price";
 
         var parameters = new
         {
@@ -39,60 +41,14 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
             price = ticket.Price
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
-    }
-
-    public async Task DeleteIndividualTicket(string name)
-    {
-        var query = @"
-            MATCH (t:IndividualTicket {name: $name})
-            DETACH DELETE t";
-
-        var parameters = new { name };
-
-        await _graphDbContext.RunAsync(query, parameters);
-    }
-
-    public async Task<List<IndividualTicket>> GetAllIndividualTickets()
-    {
-        var query = @"
-            MATCH (t:IndividualTicket)
-            RETURN t.name as name, t.description as description, t.type as type,
-                   t.released_at as releasedAt, t.price as price
-            ORDER BY t.name";
-
-        var result = await _graphDbContext.RunAsync(query);
-        var tickets = new List<IndividualTicket>();
-
-        await foreach (var record in result)
-        {
-            tickets.Add(new IndividualTicket
-            {
-                Name = record["name"].As<string>(),
-                Description = record["description"].As<string>(),
-                Type = record["type"].As<string>(),
-                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
-                Price = record["price"].As<decimal>()
-            });
-        }
-
-        return tickets;
-    }
-
-    public async Task<IndividualTicket?> GetIndividualTicketByName(string name)
-    {
-        var query = @"
-            MATCH (t:IndividualTicket {name: $name})
-            RETURN t.name as name, t.description as description, t.type as type,
-                   t.released_at as releasedAt, t.price as price";
-
-        var parameters = new { name };
         var result = await _graphDbContext.RunAsync(query, parameters);
 
         await foreach (var record in result)
         {
             return new IndividualTicket
             {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Description = record["description"].As<string>(),
                 Type = record["type"].As<string>(),
@@ -104,55 +60,36 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return null;
     }
 
-    public async Task<List<IndividualTicket>> GetTicketsByDateRange(DateTime startDate, DateTime endDate)
+    public async Task DeleteIndividualTicket(int id)
     {
         var query = @"
             MATCH (t:IndividualTicket)
-            WHERE t.released_at >= date($startDate) AND t.released_at <= date($endDate)
-            RETURN t.name as name, t.description as description, t.type as type,
-                   t.released_at as releasedAt, t.price as price
-            ORDER BY t.released_at";
+            WHERE id(t) = $id
+            DETACH DELETE t";
 
-        var parameters = new
-        {
-            startDate = startDate.ToString("yyyy-MM-dd"),
-            endDate = endDate.ToString("yyyy-MM-dd")
-        };
+        var parameters = new { id };
 
-        var result = await _graphDbContext.RunAsync(query, parameters);
-
-        var tickets = new List<IndividualTicket>();
-        await foreach (var record in result)
-        {
-            tickets.Add(new IndividualTicket
-            {
-                Name = record["name"].As<string>(),
-                Description = record["description"].As<string>(),
-                Type = record["type"].As<string>(),
-                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
-                Price = record["price"].As<decimal>()
-            });
-        }
-
-        return tickets;
+        await _graphDbContext.RunAsync(query, parameters);
     }
 
-    public async Task<List<IndividualTicket>> GetTicketsByType(string type)
+    public async Task<List<IndividualTicket>> GetAllIndividualTickets()
     {
         var query = @"
-            MATCH (t:IndividualTicket {type: $type})
-            RETURN t.name as name, t.description as description, t.type as type,
+            MATCH (t:IndividualTicket)
+            RETURN id(t) as nodeId, elementId(t) as elementId,
+                   t.name as name, t.description as description, t.type as type,
                    t.released_at as releasedAt, t.price as price
             ORDER BY t.name";
 
-        var parameters = new { type };
-        var result = await _graphDbContext.RunAsync(query, parameters);
-
+        var result = await _graphDbContext.RunAsync(query);
         var tickets = new List<IndividualTicket>();
+
         await foreach (var record in result)
         {
             tickets.Add(new IndividualTicket
             {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
                 Name = record["name"].As<string>(),
                 Description = record["description"].As<string>(),
                 Type = record["type"].As<string>(),
@@ -164,10 +101,68 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
         return tickets;
     }
 
-    public async Task UpdateIndividualTicket(IndividualTicket ticket)
+    public async Task<IndividualTicket?> GetIndividualTicketById(int id)
+    {
+        var query = @"
+            MATCH (t:IndividualTicket)
+            WHERE id(t) = $id
+            RETURN id(t) as nodeId, elementId(t) as elementId,
+                   t.name as name, t.description as description, t.type as type,
+                   t.released_at as releasedAt, t.price as price";
+
+        var parameters = new { id };
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new IndividualTicket
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Description = record["description"].As<string>(),
+                Type = record["type"].As<string>(),
+                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
+                Price = record["price"].As<decimal>()
+            };
+        }
+
+        return null;
+    }
+
+    public async Task<IndividualTicket?> GetIndividualTicketByName(string name)
     {
         var query = @"
             MATCH (t:IndividualTicket {name: $name})
+            RETURN id(t) as nodeId, elementId(t) as elementId,
+                   t.name as name, t.description as description, t.type as type,
+                   t.released_at as releasedAt, t.price as price";
+
+        var parameters = new { name };
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new IndividualTicket
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Description = record["description"].As<string>(),
+                Type = record["type"].As<string>(),
+                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
+                Price = record["price"].As<decimal>()
+            };
+        }
+
+        return null;
+    }
+
+    public async Task<IndividualTicket?> UpdateIndividualTicket(int id, IndividualTicket ticket)
+    {
+        var query = @"
+            MATCH (t:IndividualTicket)
+            WHERE id(t) = $id
             SET t.description = $description,
                 t.type = $type,
                 t.released_at = date($releasedAt),
@@ -182,6 +177,22 @@ public class IndividualTicketRepository : IGraphIndividualTicketRepository
             price = ticket.Price
         };
 
-        await _graphDbContext.RunAsync(query, parameters);
+        var result = await _graphDbContext.RunAsync(query, parameters);
+
+        await foreach (var record in result)
+        {
+            return new IndividualTicket
+            {
+                Id = record["nodeId"].As<int>(),
+                ElementId = record["elementId"].As<string>(),
+                Name = record["name"].As<string>(),
+                Description = record["description"].As<string>(),
+                Type = record["type"].As<string>(),
+                ReleasedAt = ConvertLocalDateToDateTime(record["releasedAt"].As<LocalDate>()),
+                Price = record["price"].As<decimal>()
+            };
+        }
+
+        return null;
     }
 }

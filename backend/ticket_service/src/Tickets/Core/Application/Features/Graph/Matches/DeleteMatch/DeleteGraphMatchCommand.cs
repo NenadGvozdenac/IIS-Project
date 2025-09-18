@@ -5,10 +5,10 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.Del
 
 public class DeleteGraphMatchCommand : IRequest<Result<DeleteGraphMatchResponse>>
 {
-    public string Name { get; set; } = string.Empty;
+    public int Id { get; set; }
 
-    public DeleteGraphMatchCommand(string name)
+    public DeleteGraphMatchCommand(int id)
     {
-        Name = name;
+        Id = id;
     }
 }

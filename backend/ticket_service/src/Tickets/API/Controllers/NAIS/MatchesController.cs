@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.GetAllMatches;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.GetMatchByName;
+using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.GetMatchById;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.CreateMatch;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.UpdateMatch;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Matches.DeleteMatch;
@@ -37,6 +38,14 @@ public class MatchesController : BaseController
         return CreateResponse(result);
     }
 
+    [HttpGet("id/{id}")]
+    public async Task<IActionResult> GetMatchById(int id)
+    {
+        var query = new GetGraphMatchByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateMatch([FromBody] CreateMatchDto matchDto)
     {
@@ -52,11 +61,11 @@ public class MatchesController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpPut("{name}")]
-    public async Task<IActionResult> UpdateMatch(string name, [FromBody] UpdateMatchDto matchDto)
+    [HttpPut("id/{id}")]
+    public async Task<IActionResult> UpdateMatch(int id, [FromBody] UpdateMatchDto matchDto)
     {
         var command = new UpdateGraphMatchCommand(
-            name, 
+            id, 
             matchDto.Name, 
             matchDto.ScheduledAt, 
             matchDto.Type, 
@@ -68,10 +77,10 @@ public class MatchesController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpDelete("{name}")]
-    public async Task<IActionResult> DeleteMatch(string name)
+    [HttpDelete("id/{id}")]
+    public async Task<IActionResult> DeleteMatch(int id)
     {
-        var command = new DeleteGraphMatchCommand(name);
+        var command = new DeleteGraphMatchCommand(id);
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

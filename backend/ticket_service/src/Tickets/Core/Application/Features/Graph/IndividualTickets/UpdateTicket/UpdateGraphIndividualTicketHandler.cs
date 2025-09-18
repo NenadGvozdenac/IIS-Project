@@ -27,8 +27,14 @@ public class UpdateGraphIndividualTicketHandler : IRequestHandler<UpdateGraphInd
                 Price = request.Price
             };
 
-            await _ticketRepository.UpdateIndividualTicket(ticket);
-            var response = new UpdateGraphIndividualTicketResponse(ticket.Name, ticket.Description, ticket.Type, ticket.ReleasedAt, ticket.Price);
+            ticket = await _ticketRepository.UpdateIndividualTicket(request.Id, ticket);
+
+            if(ticket == null)
+            {
+                return Result<UpdateGraphIndividualTicketResponse>.Failure("Ticket not found");
+            }
+
+            var response = new UpdateGraphIndividualTicketResponse(ticket.Id, ticket.ElementId, ticket.Name, ticket.Description, ticket.Type, ticket.ReleasedAt, ticket.Price);
             return Result<UpdateGraphIndividualTicketResponse>.Success(response);
         }
         catch (Exception ex)

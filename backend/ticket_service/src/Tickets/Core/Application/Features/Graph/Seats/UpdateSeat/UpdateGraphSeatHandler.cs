@@ -24,26 +24,26 @@ public class UpdateGraphSeatHandler : IRequestHandler<UpdateGraphSeatCommand, Re
                     .WithCode((int)ResultCode.BadRequest);
             }
 
-            // Check if seat exists
-            var existingSeat = await _graphSeatRepository.GetSeatByName(request.Name);
-            if (existingSeat == null)
-            {
-                return Result<UpdateGraphSeatResponse>.Failure($"Seat with name '{request.Name}' not found")
-                    .WithCode((int)ResultCode.NotFound);
-            }
-
             var updatedSeat = new Seat
             {
-                Name = string.IsNullOrWhiteSpace(request.NewName) ? request.Name : request.NewName,
+                Name = request.Name,
                 Row = request.Row,
                 Number = request.Number,
                 Direction = request.Direction
             };
 
-            await _graphSeatRepository.UpdateSeat(updatedSeat);
+            updatedSeat = await _graphSeatRepository.UpdateSeat(request.Id, updatedSeat);
+
+            if (updatedSeat == null)
+            {
+                return Result<UpdateGraphSeatResponse>.Failure("Seat not found")
+                    .WithCode((int)ResultCode.NotFound);
+            }
 
             var response = new UpdateGraphSeatResponse
             {
+                Id = updatedSeat.Id,
+                ElementId = updatedSeat.ElementId,
                 Name = updatedSeat.Name,
                 Row = updatedSeat.Row,
                 Number = updatedSeat.Number,

@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using ticket_service.src.Tickets.BuildingBlocks.Core.Domain;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetAllSeats;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatByName;
+using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatById;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.CreateSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.UpdateSeat;
 using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.DeleteSeat;
-using ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.GetSeatsByDirection;
 using ticket_service.src.Tickets.Core.Application.DTOs.Graph;
 
 namespace ticket_service.src.Tickets.API.Controllers.NAIS;
@@ -38,6 +38,14 @@ public class SeatsController : BaseController
         return CreateResponse(result);
     }
 
+    [HttpGet("id/{id}")]
+    public async Task<IActionResult> GetSeatById(int id)
+    {
+        var query = new GetGraphSeatByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateSeat([FromBody] CreateSeatDto seatDto)
     {
@@ -46,27 +54,19 @@ public class SeatsController : BaseController
         return CreateResponse(result);
     }
 
-    [HttpPut("{name}")]
-    public async Task<IActionResult> UpdateSeat(string name, [FromBody] UpdateSeatDto seatDto)
+    [HttpPut("id/{id}")]
+    public async Task<IActionResult> UpdateSeat(int id, [FromBody] UpdateSeatDto seatDto)
     {
-        var command = new UpdateGraphSeatCommand(name, seatDto.Name, seatDto.Row, seatDto.Number, seatDto.Direction);
+        var command = new UpdateGraphSeatCommand(id, seatDto.Name, seatDto.Row, seatDto.Number, seatDto.Direction);
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
 
-    [HttpDelete("{name}")]
-    public async Task<IActionResult> DeleteSeat(string name)
+    [HttpDelete("id/{id}")]
+    public async Task<IActionResult> DeleteSeat(int id)
     {
-        var command = new DeleteGraphSeatCommand(name);
+        var command = new DeleteGraphSeatCommand(id);
         var result = await _mediator.Send(command);
-        return CreateResponse(result);
-    }
-
-    [HttpGet("direction/{direction}")]
-    public async Task<IActionResult> GetSeatsByDirection(string direction)
-    {
-        var query = new GetGraphSeatsByDirectionQuery(direction);
-        var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
 }

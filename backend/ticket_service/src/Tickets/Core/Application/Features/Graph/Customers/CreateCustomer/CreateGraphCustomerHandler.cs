@@ -47,10 +47,18 @@ public class CreateGraphCustomerHandler : IRequestHandler<CreateGraphCustomerCom
                 Type = request.Type
             };
 
-            await _graphCustomerRepository.CreateCustomer(customer);
+            customer = await _graphCustomerRepository.CreateCustomer(customer);
+
+            if (customer == null)
+            {
+                return Result<CreateGraphCustomerResponse>.Failure("Failed to create customer")
+                    .WithCode((int)ResultCode.InternalServerError);
+            }
 
             var response = new CreateGraphCustomerResponse
             {
+                Id = customer.Id,
+                ElementId = customer.ElementId,
                 Email = customer.Email,
                 Name = customer.Name,
                 Surname = customer.Surname,

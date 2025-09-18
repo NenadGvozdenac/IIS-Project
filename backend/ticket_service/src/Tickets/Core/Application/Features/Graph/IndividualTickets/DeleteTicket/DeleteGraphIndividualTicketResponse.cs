@@ -2,12 +2,12 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.IndividualT
 
 public class DeleteGraphIndividualTicketResponse
 {
-    public string Name { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string Message { get; set; } = string.Empty;
 
-    public DeleteGraphIndividualTicketResponse(string name, string message)
+    public DeleteGraphIndividualTicketResponse(int id, string message)
     {
-        Name = name;
+        Id = id;
         Message = message;
     }
 }

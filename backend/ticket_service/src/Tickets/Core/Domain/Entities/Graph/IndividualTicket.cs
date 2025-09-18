@@ -1,6 +1,6 @@
 namespace ticket_service.src.Tickets.Core.Domain.Entities.Graph;
 
-public class IndividualTicket
+public class IndividualTicket : BaseGraphEntity
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

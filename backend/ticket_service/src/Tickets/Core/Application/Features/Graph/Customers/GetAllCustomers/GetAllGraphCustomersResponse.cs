@@ -2,6 +2,8 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Customers.G
 
 public class GetAllGraphCustomersResponse
 {
+    public int Id { get; set; }
+    public string ElementId { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Surname { get; set; } = string.Empty;

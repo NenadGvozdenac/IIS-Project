@@ -27,8 +27,14 @@ public class CreateGraphIndividualTicketHandler : IRequestHandler<CreateGraphInd
                 Price = request.Price
             };
 
-            await _ticketRepository.CreateIndividualTicket(ticket);
-            var response = new CreateGraphIndividualTicketResponse(ticket.Name, ticket.Description, ticket.Type, ticket.ReleasedAt, ticket.Price);
+            ticket = await _ticketRepository.CreateIndividualTicket(ticket);
+
+            if(ticket == null)
+            {
+                return Result<CreateGraphIndividualTicketResponse>.Failure("Failed to create ticket");
+            }
+
+            var response = new CreateGraphIndividualTicketResponse(ticket.Id, ticket.ElementId, ticket.Name, ticket.Description, ticket.Type, ticket.ReleasedAt, ticket.Price);
             return Result<CreateGraphIndividualTicketResponse>.Success(response);
         }
         catch (Exception ex)

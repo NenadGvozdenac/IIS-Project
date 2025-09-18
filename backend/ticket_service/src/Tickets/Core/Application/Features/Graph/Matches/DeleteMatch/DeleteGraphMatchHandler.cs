@@ -17,19 +17,11 @@ public class DeleteGraphMatchHandler : IRequestHandler<DeleteGraphMatchCommand, 
     {
         try
         {
-            // Check if match exists
-            var existingMatch = await _graphMatchRepository.GetMatchByName(request.Name);
-            if (existingMatch == null)
-            {
-                return Result<DeleteGraphMatchResponse>.Failure($"Match with name '{request.Name}' not found")
-                    .WithCode((int)ResultCode.NotFound);
-            }
-
-            await _graphMatchRepository.DeleteMatch(request.Name);
+            await _graphMatchRepository.DeleteMatch(request.Id);
 
             var response = new DeleteGraphMatchResponse
             {
-                Message = $"Match '{request.Name}' deleted successfully"
+                Message = $"Match with ID '{request.Id}' deleted successfully"
             };
 
             return Result<DeleteGraphMatchResponse>.Success(response);

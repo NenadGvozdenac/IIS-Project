@@ -1,6 +1,6 @@
 namespace ticket_service.src.Tickets.Core.Domain.Entities.Graph;
 
-public class Customer
+public class Customer : BaseGraphEntity
 {
     public string Email { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

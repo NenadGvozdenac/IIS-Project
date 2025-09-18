@@ -53,6 +53,8 @@ public class CreateGraphMatchHandler : IRequestHandler<CreateGraphMatchCommand, 
 
             var response = new CreateGraphMatchResponse
             {
+                Id = match.Id,
+                ElementId = match.ElementId,
                 Name = match.Name,
                 ScheduledAt = match.ScheduledAt,
                 Type = match.Type,

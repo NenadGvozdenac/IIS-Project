@@ -5,16 +5,16 @@ namespace ticket_service.src.Tickets.Core.Application.Features.Graph.Seats.Updat
 
 public class UpdateGraphSeatCommand : IRequest<Result<UpdateGraphSeatResponse>>
 {
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string NewName { get; set; } = string.Empty;
     public int Row { get; set; }
     public int Number { get; set; }
     public string Direction { get; set; } = string.Empty;
 
-    public UpdateGraphSeatCommand(string name, string newName, int row, int number, string direction)
+    public UpdateGraphSeatCommand(int id, string name, int row, int number, string direction)
     {
+        Id = id;
         Name = name;
-        NewName = newName;
         Row = row;
         Number = number;
         Direction = direction;
