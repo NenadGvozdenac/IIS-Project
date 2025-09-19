@@ -16,6 +16,7 @@ public class Neo4jController : BaseController
     }
 
     [HttpPost("seed")]
+    [Obsolete("This endpoint is deprecated and will be removed in future versions. Use the hosted service for seeding instead.")]
     public async Task<IActionResult> SeedDatabase()
     {
         var result = await _neo4jSeedingService.SeedDatabaseAndRemoveInitContainer();
