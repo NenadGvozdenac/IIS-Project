@@ -52,6 +52,9 @@ public static class ApplicationStartup
         
         // Graph complex query repository
         services.AddScoped<IGraphComplexQueryRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.ComplexQueryRepository>();
+        
+        // Graph reports repository
+        services.AddScoped<IGraphReportsRepository, ticket_service.src.Tickets.Core.Infrastructure.Repositories.Graph.ReportsRepository>();
     }
 
     private static void SetupServices(IServiceCollection services)
