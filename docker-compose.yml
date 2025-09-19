@@ -11,6 +11,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=sportsdb
       - DB_PORT=5432
+      - TICKET_SERVICE_URL=http://ticket_service:5004
     depends_on:
       - postgres_db
 

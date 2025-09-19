@@ -566,12 +566,12 @@ ALTER TABLE cart_item
 ALTER TABLE cart
     ADD CONSTRAINT fk_cart_user 
         FOREIGN KEY (id_user)
-        REFERENCES users (id_user);
+        REFERENCES users (id_user) ON DELETE CASCADE;
 
 ALTER TABLE credit_card
     ADD CONSTRAINT fk_credit_card_user 
         FOREIGN KEY (id_user)
-        REFERENCES users (id_user);
+        REFERENCES users (id_user) ON DELETE CASCADE;
 
 ALTER TABLE general_event
     ADD CONSTRAINT fk_general_event_match_tracking 

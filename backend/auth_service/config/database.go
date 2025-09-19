@@ -10,6 +10,16 @@ import (
 
 var DB *sql.DB
 
+// Configuration for external services
+var (
+	TicketServiceURL string
+)
+
+func init() {
+	// Initialize external service URLs
+	TicketServiceURL = getEnv("TICKET_SERVICE_URL", "http://localhost:8001")
+}
+
 func ConnectDatabase() error {
 	host := getEnv("DB_HOST", "localhost")
 	user := getEnv("DB_USER", "postgres")
