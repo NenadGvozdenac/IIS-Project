@@ -82,7 +82,6 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.Carts)
                 .HasForeignKey(d => d.IdUser)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_cart_user");
         });
 
@@ -151,7 +150,6 @@ public partial class TicketDbContext : DbContext
 
             entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.CreditCards)
                 .HasForeignKey(d => d.IdUser)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_credit_card_user");
         });
 
