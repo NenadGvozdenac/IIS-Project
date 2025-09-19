@@ -14,6 +14,19 @@
               <span class="action-subtitle">Analyze ticket pricing performance</span>
             </div>
           </router-link>
+
+          <button @click="generateReport" class="action-button generate-report" :disabled="generatingReport">
+            <div class="action-icon">
+              <span v-if="!generatingReport">📋</span>
+              <div v-else class="loading-spinner-small"></div>
+            </div>
+            <div class="action-content">
+              <span class="action-title">Generate Analytics Report</span>
+              <span class="action-subtitle">
+                {{ generatingReport ? 'Generating PDF report...' : 'Export comprehensive PDF report' }}
+              </span>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -113,6 +126,18 @@
           <button @click="loadData" class="btn btn-primary">Retry</button>
         </div>
       </div>
+
+      <!-- Success Notification -->
+      <div v-if="showSuccessNotification" class="notification-container success">
+        <div class="notification-content">
+          <div class="notification-icon">✅</div>
+          <div class="notification-text">
+            <h4>Report Generated Successfully!</h4>
+            <p>Your comprehensive analytics report has been downloaded.</p>
+          </div>
+          <button @click="showSuccessNotification = false" class="notification-close">×</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -120,11 +145,15 @@
 <script setup>
 import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue';
 import { AdminService } from '../../services/ticket_service/admin_service';
+import { ReportsService } from '../../services/ticket_service/reports_service';
+import { PDFReportGenerator } from '../../utils/pdfReportGenerator';
 import Chart from 'chart.js/auto';
 
 // Reactive data
 const loading = ref(true);
 const error = ref(null);
+const generatingReport = ref(false);
+const showSuccessNotification = ref(false);
 const seasonsData = ref([]);
 const matchesData = ref([]);
 const competitionsData = ref([]);
@@ -204,6 +233,39 @@ const loadData = async () => {
     error.value = 'Failed to load dashboard data. Please try again.';
   } finally {
     loading.value = false;
+  }
+};
+
+// Generate comprehensive PDF report
+const generateReport = async () => {
+  try {
+    generatingReport.value = true;
+    
+    // Fetch all reports data
+    const reportsData = await ReportsService.getAllReports();
+    
+    // Generate PDF
+    const pdfGenerator = new PDFReportGenerator();
+    const pdf = pdfGenerator.generateReport(reportsData);
+    
+    // Create filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const filename = `club-analytics-report-${timestamp}.pdf`;
+    
+    // Save PDF
+    pdfGenerator.save(filename);
+    
+    // Show success notification
+    showSuccessNotification.value = true;
+    setTimeout(() => {
+      showSuccessNotification.value = false;
+    }, 5000);
+    
+  } catch (err) {
+    console.error('Error generating report:', err);
+    error.value = 'Failed to generate report. Please try again.';
+  } finally {
+    generatingReport.value = false;
   }
 };
 
@@ -458,6 +520,109 @@ onBeforeUnmount(cleanup);
 
 .action-button.pricing-stats:hover {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+}
+
+.action-button.generate-report {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border: 2px solid #e2e8f0;
+}
+
+.action-button.generate-report:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-color: #22c55e;
+}
+
+.action-button.generate-report:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-button.generate-report:disabled:hover {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-color: #e2e8f0;
+  box-shadow: var(--shadow-sm);
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #22c55e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-container.success {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #22c55e;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.notification-text h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: #166534;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.notification-text p {
+  margin: 0;
+  color: #15803d;
+  font-size: 0.875rem;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #166534;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.notification-close:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .action-icon {
