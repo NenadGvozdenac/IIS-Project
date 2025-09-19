@@ -61,3 +61,23 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 	return user, nil
 }
+
+func (r *UserRepository) Delete(id uint) error {
+	query := `DELETE FROM "users" WHERE id_user = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

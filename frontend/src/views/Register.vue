@@ -204,14 +204,14 @@ const handleRegister = async () => {
   
   try {
     const result = await AuthService.register(form.name, form.surname, form.email, form.password, form.phone, form.confirm_password, 'customer')
-    
+
     if (result.code === 201) {
       router.push('/dashboard')
     } else {
       errorMessage.value = result.message || 'Registration failed. Please try again.'
     }
   } catch (error) {
-    errorMessage.value = 'An unexpected error occurred. Please try again.'
+    errorMessage.value = error.message || 'An unexpected error occurred. Please try again.'
   } finally {
     loading.value = false
   }

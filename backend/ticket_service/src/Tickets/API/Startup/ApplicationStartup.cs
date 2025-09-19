@@ -64,6 +64,7 @@ public static class ApplicationStartup
     private static void SetupBackgroundServices(IServiceCollection services)
     {
         services.AddHostedService<MatchFinishedService>();
+        services.AddHostedService<Neo4jSeedingHostedService>();
     }
 
     private static void SetupMediatR(IServiceCollection services)
