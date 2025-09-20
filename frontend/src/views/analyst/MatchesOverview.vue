@@ -34,7 +34,7 @@
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score live-score">
                     Score: {{ getMatchScore(match) }}
                   </div>
@@ -60,7 +60,7 @@
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                 </div>
                 <button 
                   class="match-action start-up" 
@@ -93,7 +93,7 @@
                   <div class="result-indicator">{{ getMatchResult(match) }}</div>
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score final-score">
                     Final Score: {{ getMatchScore(match) }}
                   </div>
@@ -693,9 +693,11 @@ onMounted(() => {
 }
 
 .match-score {
+  display: inline-block;
+  text-align: center;
   font-size: 1rem;
   font-weight: 700;
-  margin: 0.4rem 0;
+  margin: auto;
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);

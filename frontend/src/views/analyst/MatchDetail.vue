@@ -649,6 +649,7 @@ const currentTime = ref('10:00')
 const gameStatus = ref('Unknown game status')
 const timerRunning = ref(false)
 const ourTeamId = 1
+const ourTeamFouls = ref([])
 
 // Selected player for actions
 const selectedPlayer = ref(null)
@@ -749,63 +750,34 @@ const periodDisplayName = computed(() => {
   }
 })
 
-// Automatic recommendations (hardcoded for now)
-const automaticRecommendations = ref([
-  {
-    id: 1,
-    priority: 'urgent',
-    title: 'Focus on defense 3-point!',
-    description: 'Opponent shoots 47% for 3-point - too many open shots',
-    icon: '🔴',
-    timestamp: new Date().toLocaleTimeString()
-  },
-  {
-    id: 2,
-    priority: 'medium',
-    title: 'Better usage of offensive rebounds',
-    description: 'We have more rebounds but we don\'t make points off them',
-    icon: '⚠️',
-    timestamp: new Date(Date.now() - 60000).toLocaleTimeString()
-  },
-  {
-    id: 3,
-    priority: 'low',
-    title: 'Continue playing aggressive',
-    description: 'Great efficiency of free throws',
-    icon: '✅',
-    timestamp: new Date(Date.now() - 120000).toLocaleTimeString()
-  },
-  {
-    id: 4,
-    priority: 'medium',
-    title: 'Consider substitution',
-    description: 'Stefan Nikolic has 4 fouls - risk of disqualification',
-    icon: '⚠️',
-    timestamp: new Date(Date.now() - 180000).toLocaleTimeString()
-  }
-])
+// Automatic recommendations (fetched from backend)
+const automaticRecommendations = ref([])
 
 // Functions to manage recommendations
-const acceptRecommendation = (recommendationId) => {
-  const recommendation = automaticRecommendations.value.find(r => r.id === recommendationId)
-  if (recommendation) {
-    console.log('Accepted recommendation:', recommendation.title)
-    // Add to game events
-    // const event = {
-    //   id: gameEvents.value.length + 1,
-    //   time: `${currentTime.value} ${currentPeriod.value}`,
-    //   description: `Accepted: ${recommendation.title}`
-    // }
-    // gameEvents.value.unshift(event)
-    
-    // // Remove from recommendations
-    // automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+const acceptRecommendation = async (recommendationId) => {
+  try {
+    const response = await axios.put(`${MATCHES_URL}/automaticrecommendation/${recommendationId}/accept`)
+    if (response.status === 200) {
+      // Remove from local array after successful accept
+      automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+      console.log('Recommendation accepted:', recommendationId)
+    }
+  } catch (error) {
+    console.error('Error accepting recommendation:', error)
   }
 }
 
-const dismissRecommendation = (recommendationId) => {
-  //automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
-  console.log('Dismissed recommendation:', recommendationId)
+const dismissRecommendation = async (recommendationId) => {
+  try {
+    const response = await axios.put(`${MATCHES_URL}/automaticrecommendation/${recommendationId}/reject`)
+    if (response.status === 200) {
+      // Remove from local array after successful reject
+      automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+      console.log('Recommendation dismissed:', recommendationId)
+    }
+  } catch (error) {
+    console.error('Error dismissing recommendation:', error)
+  }
 }
 
 // Match tracking API functions
@@ -1230,19 +1202,178 @@ const updateLocalPlayerStates = (substitutionData) => {
   }
 }
 
+// Fetch automatic recommendations from backend
+const fetchAutomaticRecommendations = async (matchId) => {
+  try {
+    const response = await axios.get(`${MATCHES_URL}/automaticrecommendation/match/${matchId}`)
+    if (response.data.isSuccess) {
+      automaticRecommendations.value = response.data.value.recommendations.map(rec => ({
+        id: rec.idRecommendation,
+        priority: rec.priority,
+        title: rec.type,
+        description: rec.description,
+        icon: rec.priority === 'urgent' ? '🔴' : rec.priority === 'medium priority' ? '⚠️' : '✅',
+        timestamp: new Date(rec.creationTime).toLocaleTimeString()
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching automatic recommendations:', error)
+  }
+}
+
+// Create automatic recommendation
+const createRecommendation = async (priority, type, description) => {
+  try {
+    console.log('priority: ', priority)
+    console.log('type: ', type)
+    console.log('description: ', description)
+    const matchId = parseInt(route.params.id)
+    console.log('matchId: ', matchId)
+    const response = await axios.post(`${MATCHES_URL}/automaticrecommendation`, {
+      matchId,
+      priority,
+      type,
+      description
+    })
+    if (response.status === 200) {
+      // Refresh recommendations after creating new one
+      await fetchAutomaticRecommendations(matchId)
+    }
+  } catch (error) {
+    console.error('Error creating recommendation:', error)
+  }
+}
+
+// Check specific game conditions based on event type
+const checkRecommendationsForEvent = async (eventType, playerId = null, teamId = null) => {
+  const matchId = parseInt(route.params.id)
+  
+  // Only check relevant conditions based on the event type
+  switch(eventType) {
+    case 'foul':
+      await checkFoulRecommendations(playerId, teamId)
+      break
+    case 'reb of':
+      await checkOffensiveReboundRecommendations()
+      break
+    case '+3p':
+      await checkThreePointerRecommendations(playerId, teamId)
+    case '3p':
+    case '+2p':
+    case '2p':
+      await checkShootingRecommendations(playerId)
+      break
+    case '+ft':
+    case 'ft':
+      await checkFreeThrowRecommendations()
+      break
+    default:
+      // For other events, no specific recommendations needed
+      break
+  }
+}
+
+// Check foul-related recommendations
+const checkFoulRecommendations = async (playerId, teamId) => {
+  // 1. Check if our player reached 4 fouls
+  if (teamId === ourTeamId) {
+    const player = fullOurTeamStats.value.find(p => p.id === playerId)
+    if (player && player.fouls === 4) {
+      createRecommendation('urgent', 'player foul limit', 
+        `Player ${player.name} has 4 fouls - substitution recommended`)
+    }
+    // 3. Check if our team reached 4 fouls in current period using recorded foul events
+    try {
+      const currentPeriodStr = String(matchTrackingState.value.currentPeriod || '').trim()
+      const foulsThisPeriod = (ourTeamFouls.value || []).filter(ev => {
+        const evPeriod = ev.period !== undefined && ev.period !== null ? String(ev.period) : null
+        return evPeriod === currentPeriodStr
+      }).length
+      console.log('FOULS THIS PERIOD: ', foulsThisPeriod)
+
+      if (foulsThisPeriod === 4) {
+        createRecommendation('urgent', 'team foul bonus', 
+          'Team has 4 fouls in quarter - less aggressive play recommended due to bonus')
+      }
+    } catch (err) {
+      console.error('Error checking team fouls in current period:', err)
+    }
+  }
+}
+
+// Check three-pointer recommendations
+const checkThreePointerRecommendations = async (playerId, teamId) => {
+  // 2. Check if opponent player made 3rd three-pointer
+  if (teamId !== ourTeamId) {
+    const player = fullOpponentTeamStats.value.find(p => p.id === playerId)
+    if (player && player.threeP_made === 3) {
+      createRecommendation('urgent', 'opponent hot shooter', 
+        `Opponent player ${player.name} made 3 three-pointers - strengthen defense`)
+    }
+  }
+}
+
+// Check shooting percentage recommendations
+const checkShootingRecommendations = async (playerId) => {
+  // 4. Check if our player has poor shooting percentage
+  const player = fullOurTeamStats.value.find(p => p.id === playerId)
+  if (player) {
+    const totalShots = (player.twoP_attempts || 0) + (player.threeP_attempts || 0)
+    const totalMade = (player.twoP_made || 0) + (player.threeP_made || 0)
+    const percentage = totalShots > 0 ? (totalMade / totalShots) * 100 : 0
+    //console.log('TOTAL/MADE - ', totalShots, '/', totalMade, ' = ', percentage)
+    if (totalShots === 7 && percentage < 30) {
+      createRecommendation('medium priority', 'poor shooting', 
+        `Player ${player.name} has poor shooting percentage (${percentage.toFixed(1)}%) - consider substitution`)
+    }
+  }
+}
+
+// Check free throw recommendations
+const checkFreeThrowRecommendations = async () => {
+  // 6. Check if team reached 10 free throws
+  const ourFreeThrows = fullOurTeamStats.value.reduce((sum, player) => sum + (player.ft_attempts || 0), 0)
+  if (ourFreeThrows === 10) {
+    createRecommendation('not priority', 'free throw advantage', 
+      'Team achieved 10 free throws - continue with aggressive play')
+  }
+}
+
+// Check offensive rebound recommendations
+const checkOffensiveReboundRecommendations = async () => {
+  // 7. Check if team reached 8 offensive rebounds
+  const ourOffensiveRebounds = fullOurTeamStats.value.reduce((sum, player) => sum + (player.rebOff || 0), 0)
+  if (ourOffensiveRebounds === 8) {
+    createRecommendation('not priority', 'offensive rebound dominance', 
+      'Team has 8 offensive rebounds - paint dominance')
+  }
+}
+
 // Fetch match events from backend
 const fetchMatchEvents = async (matchId) => {
   try {
     const response = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
 
     if (response.data?.isSuccess && response.data?.value?.events) {
-      // Map backend response to UI format
-      gameEvents.value = response.data.value.events.map(event => ({
+      // Map backend response to UI format (keep raw event for further checks)
+      const rawEvents = response.data.value.events
+      gameEvents.value = rawEvents.map(event => ({
         id: event.id,
         time: formatEventTime(event),
-        description: formatEventDescription(event)
+        description: formatEventDescription(event),
+        //raw: event // keep original payload for debugging/logic
       }))
-      
+
+      // Populate ourTeamFouls with personal 'foul' events that belong to our team
+      ourTeamFouls.value = rawEvents.filter(e => {
+        const type = (e.type || e.Type || '').toString().toLowerCase()
+        // support multiple possible team id field names from backend
+        const teamId = e.teamId
+        const isPersonal = (e.eventType === 'personal')
+        return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
+      })
+      console.log('FOUL Events loaded:', ourTeamFouls.value)
+
       console.log('Events loaded:', gameEvents.value)
     }
   } catch (err) {
@@ -1635,9 +1766,7 @@ const recordAction = async (action, teamId) => {
     
     if (response.data.isSuccess) {
       console.log('Event recorded successfully:', response.data)
-      
-      // Refresh scores only if period is active (to avoid resetting timer)
-      // Otherwise refresh full tracking data
+
       if (matchTrackingState.value.periodStatus === 'active') {
         await refreshScoresOnly(matchId)
       } else {
@@ -1649,6 +1778,11 @@ const recordAction = async (action, teamId) => {
       
       // Refresh player statistics
       await calculatePlayerStatistics(matchId)
+
+      // Check for automatic recommendations based on the specific event type
+      await checkRecommendationsForEvent(action, selectedPlayer.value.id, teamId)
+      
+      console.log(`Recorded ${action} for player ${selectedPlayer.value.name}`)
     }
     
   } catch (error) {
@@ -1806,6 +1940,11 @@ const formatMatchTime = () => {
 
 onMounted(() => {
   fetchMatchDetails()
+  // Fetch recommendations for this match
+  const matchId = parseInt(route.params.id)
+  if (matchId) {
+    fetchAutomaticRecommendations(matchId)
+  }
 })
 
 onUnmounted(() => {

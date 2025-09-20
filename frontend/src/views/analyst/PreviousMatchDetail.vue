@@ -1244,7 +1244,6 @@ onMounted(() => {
 .stats-table.modern-stats td {
   padding: 8px 8px;
   vertical-align: middle;
-  border-bottom: 1px solid #e9ecef;
 }
 
 .player-info-cell {
@@ -1351,12 +1350,40 @@ onMounted(() => {
   color: #28a745;
 }
 
-.stats-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
 .stats-table tbody tr:nth-child(even) {
   background-color: #fbfbfb;
+}
+
+/* Row separator and improved alignment; hover comes after zebra striping so it overrides */
+.stats-table tbody tr {
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background-color: transparent;
+}
+
+.stats-table tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.stats-table td, .stats-table th {
+  vertical-align: middle; /* ensure cells align vertically */
+  padding: 10px 8px; /* consistent padding for alignment */
+}
+
+.player-info-cell {
+  display: flex;
+  align-items: center; /* center contents vertically */
+  gap: 12px;
+  padding-left: 8px; /* ensure the first column lines up with others */
+}
+
+.player-number {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
 }
 
 /* Table Header Styles - identical to MatchDetail */
