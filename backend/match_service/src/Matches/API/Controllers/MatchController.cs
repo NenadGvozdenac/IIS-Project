@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Features.Match.GetAllMatches;
+using match_service.src.Matches.Core.Application.Features.Match.GetFinishedMatchesByTeam;
 using match_service.src.Matches.Core.Application.Features.Match.GetMatchById;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.PrepareMatchTracking;
@@ -48,6 +49,14 @@ public class MatchController : BaseController
     public async Task<ActionResult> GetTeamMembersByMatch(int matchId, [FromQuery] int? teamId = null)
     {
         var query = new GetTeamMembersByMatchQuery(matchId, teamId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("finished/team/{teamId}")]
+    public async Task<ActionResult> GetFinishedMatchesByTeam(int teamId)
+    {
+        var query = new GetFinishedMatchesByTeamQuery { TeamId = teamId };
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

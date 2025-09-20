@@ -1,5 +1,6 @@
 using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.CreateEvent;
 using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetEventTypes;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetTeamStatistics;
 using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.UndoLastEvent;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,14 @@ namespace match_service.src.Matches.API.Controllers
         {
             var command = new UndoLastEventCommand { MatchId = matchId, TeamId = teamId };
             var result = await _mediator.Send(command);
+            return CreateResponse(result);
+        }
+
+        [HttpGet("team-statistics/{teamId}")]
+        public async Task<ActionResult> GetTeamStatistics(int teamId)
+        {
+            var query = new GetTeamStatisticsQuery { TeamId = teamId };
+            var result = await _mediator.Send(query);
             return CreateResponse(result);
         }
     }

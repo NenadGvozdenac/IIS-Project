@@ -13,46 +13,48 @@
 
     <!-- Match Content -->
     <div v-else-if="match" class="match-content">
-      <!-- Back Button -->
-      <div class="back-navigation">
-        <button @click="goBack" class="btn-back">
+      <!-- Combined Match Header and Score Section -->
+      <div class="combined-match-section">
+        <!-- Back Button positioned absolutely -->
+        <button @click="goBack" class="btn-back-absolute">
           ← Back to Matches
         </button>
-      </div>
-
-      <!-- Match Header -->
-      <div class="match-header">
-        <div class="header-info">
-          <h1>Match Details</h1>
-          <div class="match-time-location">
-            <div class="time-info">{{ formatMatchTime() }}</div>
-            <div class="location-info">{{ match.place }}, {{ match.city }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Final Score Display -->
-      <div class="final-score-section">
-        <div class="score-container">
-          <div class="team-score our-team">
-            <div class="team-name">Naš tim</div>
-            <div class="score">{{ match.ourPoints || 0 }}</div>
-          </div>
-          
-          <div class="vs-separator">
-            <div class="final-badge">FINAL</div>
-          </div>
-          
-          <div class="team-score opponent-team">
-            <div class="team-name">{{ opponentTeam }}</div>
-            <div class="score">{{ match.opponentPoints || 0 }}</div>
-          </div>
-        </div>
         
-        <div class="match-result">
-          <span :class="['result-badge', getMatchResultClass(match)]">
-            {{ getMatchResult(match) === 'W' ? 'POBEDA' : 'PORAZ' }}
-          </span>
+        <!-- Centered content -->
+        <div class="centered-match-content">
+          <!-- Match Header Info -->
+          <div class="match-header-info">
+            <h1>Match Details</h1>
+            <div class="match-time-location">
+              <div class="time-info">{{ formatMatchTime() }}</div>
+              <div class="location-info">{{ match.hall }} - {{ match.state }}, {{ match.city }}</div>
+            </div>
+          </div>
+
+          <!-- Final Score Display -->
+          <div class="score-section">
+            <div class="score-container">
+              <div class="team-score our-team">
+                <div class="team-name">KK Partizan</div>
+                <div class="score">{{ match.ourPoints || 0 }}</div>
+              </div>
+              
+              <div class="vs-separator">
+                <div class="final-badge">FINAL</div>
+              </div>
+              
+              <div class="team-score opponent-team">
+                <div class="team-name">{{ opponentTeam }}</div>
+                <div class="score">{{ match.opponentPoints || 0 }}</div>
+              </div>
+            </div>
+            
+            <div class="match-result">
+              <span :class="['result-badge', getMatchResultClass(match)]">
+                {{ getMatchResult(match) === 'W' ? 'WIN' : 'LOSS' }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -63,7 +65,7 @@
         <div class="team-stats-comparison">
           <div class="team-stats-header">
             <div class="team-column">
-              <h3>Naš tim</h3>
+              <h3>Partizan</h3>
             </div>
             <div class="stats-labels">
               <div class="stat-label-header">Statistics</div>
@@ -150,17 +152,6 @@
               </div>
             </div>
             
-            <!-- Turnovers -->
-            <div class="stat-comparison-row">
-              <div class="team-stat-value our-team">
-                <span class="total">{{ ourTeamStats.turnovers }}</span>
-              </div>
-              <div class="stat-label">TO</div>
-              <div class="team-stat-value opponent-team">
-                <span class="total">{{ opponentTeamStats.turnovers }}</span>
-              </div>
-            </div>
-            
             <!-- Steals -->
             <div class="stat-comparison-row">
               <div class="team-stat-value our-team">
@@ -203,42 +194,64 @@
         
         <!-- Our Team Players -->
         <div class="team-player-stats">
-          <h3>Naš tim</h3>
+          <h3>Partizan</h3>
           <div class="stats-table-wrapper">
-            <table class="player-stats-table">
+            <table class="stats-table modern-stats">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>EFF</th>
-                  <th>FG</th>
-                  <th>2P</th>
-                  <th>3P</th>
-                  <th>FT</th>
-                  <th>REB O/D</th>
-                  <th>AST</th>
-                  <th>STL</th>
-                  <th>BLK</th>
-                  <th>PTS</th>
+                  <th class="player-header"># IGRAČ</th>
+                  <th class="eff-header">EFF</th>
+                  <th class="fg-header">FG</th>
+                  <th class="twoP-header">2P</th>
+                  <th class="threeP-header">3P</th>
+                  <th class="ft-header">FT</th>
+                  <th class="reb-header">REB</th>
+                  <th class="ast-header">AST</th>
+                  <th class="stl-header">STL</th>
+                  <th class="blk-header">BLK</th>
+                  <th class="pts-header">PTS</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="player in ourTeamPlayers" :key="player.playerId">
-                  <td class="player-name-cell">
-                    <div class="player-info">
-                      <span class="name">{{ player.firstName }} {{ player.lastName }}</span>
-                      <span class="number">#{{ player.jerseyNumber }}</span>
+                  <td class="player-info-cell">
+                    <div class="player-number">{{ player.jerseyNumber }}</div>
+                    <div class="player-details">
+                      <div class="player-name">{{ player.firstName }} {{ player.lastName }}</div>
+                      <div class="foul-dots">
+                        <span 
+                          v-for="foul in player.fouls" 
+                          :key="foul" 
+                          class="foul-dot"
+                        >●</span>
+                      </div>
                     </div>
                   </td>
-                  <td class="efficiency">{{ player.efficiency || 0 }}</td>
-                  <td>{{ player.fieldGoals.made }}/{{ player.fieldGoals.attempts }}</td>
-                  <td>{{ player.twoPointers.made }}/{{ player.twoPointers.attempts }}</td>
-                  <td>{{ player.threePointers.made }}/{{ player.threePointers.attempts }}</td>
-                  <td>{{ player.freeThrows.made }}/{{ player.freeThrows.attempts }}</td>
-                  <td>{{ player.rebounds.offensive }}/{{ player.rebounds.defensive }}</td>
-                  <td>{{ player.assists }}</td>
-                  <td>{{ player.steals }}</td>
-                  <td>{{ player.blocks }}</td>
-                  <td class="points">{{ player.points }}</td>
+                  <td class="efficiency-cell" :class="{ 'negative-eff': (player.efficiency || 0) < 0 }">{{ player.efficiency || 0 }}</td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.fieldGoals.made }}/{{ player.fieldGoals.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.fieldGoals.made, player.fieldGoals.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.twoPointers.made }}/{{ player.twoPointers.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.twoPointers.made, player.twoPointers.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.threePointers.made }}/{{ player.threePointers.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.threePointers.made, player.threePointers.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.freeThrows.made }}/{{ player.freeThrows.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.freeThrows.made, player.freeThrows.attempts) }}%</div>
+                  </td>
+                  <td class="reb-cell">
+                    <div class="reb-total">{{ (player.rebounds.offensive || 0) + (player.rebounds.defensive || 0) }}</div>
+                    <div class="reb-breakdown">{{ player.rebounds.offensive || 0 }} {{ player.rebounds.defensive || 0 }}</div>
+                  </td>
+                  <td class="simple-stat">{{ player.assists }}</td>
+                  <td class="simple-stat">{{ player.steals }}</td>
+                  <td class="simple-stat">{{ player.blocks }}</td>
+                  <td class="points-cell">{{ player.points }}</td>
                 </tr>
               </tbody>
             </table>
@@ -249,40 +262,62 @@
         <div class="team-player-stats">
           <h3>{{ opponentTeam }}</h3>
           <div class="stats-table-wrapper">
-            <table class="player-stats-table">
+            <table class="stats-table modern-stats">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>EFF</th>
-                  <th>FG</th>
-                  <th>2P</th>
-                  <th>3P</th>
-                  <th>FT</th>
-                  <th>REB O/D</th>
-                  <th>AST</th>
-                  <th>STL</th>
-                  <th>BLK</th>
-                  <th>PTS</th>
+                  <th class="player-header"># IGRAČ</th>
+                  <th class="eff-header">EFF</th>
+                  <th class="fg-header">FG</th>
+                  <th class="twoP-header">2P</th>
+                  <th class="threeP-header">3P</th>
+                  <th class="ft-header">FT</th>
+                  <th class="reb-header">REB</th>
+                  <th class="ast-header">AST</th>
+                  <th class="stl-header">STL</th>
+                  <th class="blk-header">BLK</th>
+                  <th class="pts-header">PTS</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="player in opponentTeamPlayers" :key="player.playerId">
-                  <td class="player-name-cell">
-                    <div class="player-info">
-                      <span class="name">{{ player.firstName }} {{ player.lastName }}</span>
-                      <span class="number">#{{ player.jerseyNumber }}</span>
+                  <td class="player-info-cell">
+                    <div class="player-number">{{ player.jerseyNumber }}</div>
+                    <div class="player-details">
+                      <div class="player-name">{{ player.firstName }} {{ player.lastName }}</div>
+                      <div class="foul-dots">
+                        <span 
+                          v-for="foul in player.fouls" 
+                          :key="foul" 
+                          class="foul-dot"
+                        >●</span>
+                      </div>
                     </div>
                   </td>
-                  <td class="efficiency">{{ player.efficiency || 0 }}</td>
-                  <td>{{ player.fieldGoals.made }}/{{ player.fieldGoals.attempts }}</td>
-                  <td>{{ player.twoPointers.made }}/{{ player.twoPointers.attempts }}</td>
-                  <td>{{ player.threePointers.made }}/{{ player.threePointers.attempts }}</td>
-                  <td>{{ player.freeThrows.made }}/{{ player.freeThrows.attempts }}</td>
-                  <td>{{ player.rebounds.offensive }}/{{ player.rebounds.defensive }}</td>
-                  <td>{{ player.assists }}</td>
-                  <td>{{ player.steals }}</td>
-                  <td>{{ player.blocks }}</td>
-                  <td class="points">{{ player.points }}</td>
+                  <td class="efficiency-cell" :class="{ 'negative-eff': (player.efficiency || 0) < 0 }">{{ player.efficiency || 0 }}</td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.fieldGoals.made }}/{{ player.fieldGoals.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.fieldGoals.made, player.fieldGoals.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.twoPointers.made }}/{{ player.twoPointers.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.twoPointers.made, player.twoPointers.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.threePointers.made }}/{{ player.threePointers.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.threePointers.made, player.threePointers.attempts) }}%</div>
+                  </td>
+                  <td class="stat-cell">
+                    <div class="stat-made-attempts">{{ player.freeThrows.made }}/{{ player.freeThrows.attempts }}</div>
+                    <div class="stat-percentage">{{ calculatePercentage(player.freeThrows.made, player.freeThrows.attempts) }}%</div>
+                  </td>
+                  <td class="reb-cell">
+                    <div class="reb-total">{{ (player.rebounds.offensive || 0) + (player.rebounds.defensive || 0) }}</div>
+                    <div class="reb-breakdown">{{ player.rebounds.offensive || 0 }} {{ player.rebounds.defensive || 0 }}</div>
+                  </td>
+                  <td class="simple-stat">{{ player.assists }}</td>
+                  <td class="simple-stat">{{ player.steals }}</td>
+                  <td class="simple-stat">{{ player.blocks }}</td>
+                  <td class="points-cell">{{ player.points }}</td>
                 </tr>
               </tbody>
             </table>
@@ -734,6 +769,11 @@ const calculateFormattedStats = (player) => {
   // Efficiency for the EFF column in table
   player.efficiency = player.eff
 }
+
+// Helper function to calculate shooting percentages - identical to MatchDetail
+const calculatePercentage = (made, attempts) => {
+  return attempts > 0 ? Math.round((made / attempts) * 100) : 0
+}
 const formatMatchTime = () => {
   if (!match.value?.scheduledAt) {
     return 'Time TBD'
@@ -785,7 +825,7 @@ onMounted(() => {
 .previous-match-detail {
   min-height: 100vh;
   background-color: #f8f9fa;
-  padding: 2rem 10rem;
+  padding: 1rem 15rem;
 }
 
 .loading, .error {
@@ -840,6 +880,66 @@ onMounted(() => {
   color: white;
 }
 
+/* Combined Match Section */
+.combined-match-section {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  position: relative;
+  text-align: center;
+}
+
+.btn-back-absolute {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-back-absolute:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.centered-match-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.match-header-info h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.match-time-location {
+  justify-content: center;
+  color: #666;
+  flex-wrap: wrap;
+}
+
+.time-info, .location-info {
+  font-size: 1.1rem;
+}
+
+.score-section {
+  width: 100%;
+  max-width: 800px;
+}
+
 .match-header {
   background: white;
   border-radius: 12px;
@@ -855,12 +955,6 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.match-time-location {
-  display: flex;
-  gap: 2rem;
-  color: #666;
-}
-
 .time-info, .location-info {
   font-size: 1.1rem;
 }
@@ -869,18 +963,22 @@ onMounted(() => {
 .final-score-section {
   background: white;
   border-radius: 16px;
-  padding: 3rem 2rem;
-  margin-bottom: 2rem;
+  padding: 2rem 1.5rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .score-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   max-width: 600px;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
 }
 
 .team-score {
@@ -888,6 +986,8 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  width: 200px;
+  flex-shrink: 0;
 }
 
 .team-logo {
@@ -907,7 +1007,8 @@ onMounted(() => {
 }
 
 .team-name {
-  font-size: 1.2rem;
+  padding: 0 1rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #333;
 }
@@ -963,8 +1064,8 @@ onMounted(() => {
 .team-stats-section {
   background: white;
   border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
@@ -985,7 +1086,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #007bff;
 }
@@ -1016,7 +1117,6 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 1rem;
   background: #f8f9fa;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -1086,7 +1186,7 @@ onMounted(() => {
 .player-stats-section {
   background: white;
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
@@ -1099,7 +1199,7 @@ onMounted(() => {
 }
 
 .team-player-stats {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .team-player-stats:last-child {
@@ -1121,71 +1221,186 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.player-stats-table {
+/* Modern Table Styles - identical to MatchDetail */
+.stats-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
+  font-size: 13px;
 }
 
-.player-stats-table th {
+.stats-table.modern-stats th {
   background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   color: white;
-  padding: 1rem 0.75rem;
-  text-align: left;
   font-weight: 600;
+  text-align: center;
+  padding: 12px 8px;
   border-bottom: 2px solid #004494;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.player-stats-table td {
-  padding: 0.75rem;
+.stats-table.modern-stats td {
+  padding: 8px 8px;
+  vertical-align: middle;
   border-bottom: 1px solid #e9ecef;
+}
+
+.player-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-number {
+  background: #007bff;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.player-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-details .player-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+}
+
+.foul-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.foul-dot {
+  color: #dc3545;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.efficiency-cell {
+  font-weight: 700;
+  font-size: 16px;
+  color: #28a745;
   text-align: center;
 }
 
-.player-stats-table tbody tr:hover {
+.efficiency-cell.negative-eff {
+  color: #dc3545;
+}
+
+.stat-cell {
+  text-align: center;
+}
+
+.stat-made-attempts {
+  font-weight: 600;
+  font-size: 13px;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.stat-percentage {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+.reb-cell {
+  text-align: center;
+}
+
+.reb-total {
+  font-weight: 600;
+  font-size: 14px;
+  color: #212529;
+}
+
+.reb-breakdown {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+.simple-stat {
+  text-align: center;
+  font-weight: 500;
+  color: #212529;
+}
+
+.points-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #28a745;
+}
+
+.stats-table tbody tr:hover {
   background-color: #f8f9fa;
 }
 
-.player-stats-table tbody tr:nth-child(even) {
+.stats-table tbody tr:nth-child(even) {
   background-color: #fbfbfb;
 }
 
-.player-name-cell {
+/* Table Header Styles - identical to MatchDetail */
+.player-header {
+  width: 180px;
   text-align: left !important;
 }
 
-.player-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.player-info .name {
-  font-weight: 600;
-  color: #333;
-}
-
-.player-info .number {
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.efficiency {
-  font-weight: 600;
-  color: #007bff;
-}
-
-.points {
-  font-weight: 700;
-  color: #28a745;
-  font-size: 1.05rem;
+.eff-header,
+.fg-header,
+.twoP-header,
+.threeP-header,
+.ft-header,
+.reb-header,
+.ast-header,
+.stl-header,
+.blk-header,
+.pts-header {
+  width: 70px;
+  text-align: center !important;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .previous-match-detail {
     padding: 1rem;
+  }
+
+  .combined-match-section {
+    padding: 2rem 1rem;
+  }
+
+  .btn-back-absolute {
+    position: static;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+  }
+
+  .centered-match-content {
+    gap: 1.5rem;
+  }
+
+  .match-header-info h1 {
+    font-size: 2rem;
   }
 
   .score-container {
@@ -1199,11 +1414,6 @@ onMounted(() => {
 
   .vs-separator {
     order: 2;
-  }
-
-  .match-time-location {
-    flex-direction: column;
-    gap: 0.5rem;
   }
 
   .team-stats-header {
@@ -1233,15 +1443,6 @@ onMounted(() => {
     color: white;
     border-radius: 4px;
     margin-bottom: 0.5rem;
-  }
-
-  .player-stats-table {
-    font-size: 0.85rem;
-  }
-
-  .player-stats-table th,
-  .player-stats-table td {
-    padding: 0.5rem 0.25rem;
   }
 }
 </style>
