@@ -13,6 +13,7 @@ import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
+import PlayerDetail from '../views/analyst/PlayerDetail.vue'
 import MatchesOverview from '../views/analyst/MatchesOverview.vue'
 import MatchDetail from '../views/analyst/MatchDetail.vue'
 import PreviousMatchDetail from '../views/analyst/PreviousMatchDetail.vue'
@@ -154,6 +155,12 @@ const routes = [
     path: '/analyst/team/:id/edit',
     name: 'TeamEdit',
     component: TeamEdit,
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
+  },
+  {
+    path: '/analyst/player/:playerId/:teamId',
+    name: 'PlayerDetail',
+    component: PlayerDetail,
     meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {

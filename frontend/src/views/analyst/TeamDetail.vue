@@ -60,66 +60,149 @@
             Loading statistics...
           </div>
           <div v-else-if="teamStats" class="stats-content">
-            <div class="stats-row">
-              <span class="stat-label">Playing style:</span>
-              <span class="stat-value">{{ teamStats.playingStyle || 'N/A' }}</span>
-            </div>
-            <div class="stats-row">
-              <span class="stat-label">Head-to-head:</span>
-              <span class="stat-value">{{ teamStats.headToHead || 'N/A' }}</span>
-            </div>
-            
-            <!-- Performance Table -->
+            <!-- Horizontal Performance Table -->
             <div class="performance-table">
+              <!-- Header with playing style and head-to-head -->
               <div class="table-header">
-                <div class="header-cell"></div>
-                <div class="header-cell">2P</div>
-                <div class="header-cell">3P</div>
-                <div class="header-cell">FT</div>
-                <div class="header-cell">REB O/D</div>
-                <div class="header-cell">AST</div>
-                <div class="header-cell">STL</div>
-                <div class="header-cell">BLK</div>
-                <div class="header-cell">PTS</div>
+                <div class="header-cell team-name">Playing style: {{teamStats.playingStyle}}</div>
+                <div class="header-cell head-to-head">Head-to-head: {{teamStats.headToHead}}</div>
+              </div>
+
+              <!-- Stats columns header -->
+              <div class="stats-header">
+                <div class="stats-section shooting-section">
+                  <div class="stat-group">
+                    <div class="stat-header">2P</div>
+                    <div class="stat-subheaders">
+                      <span>2PTA</span>
+                      <span>2PTM</span>
+                    </div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-header">3P</div>
+                    <div class="stat-subheaders">
+                      <span>3PTA</span>
+                      <span>3PTM</span>
+                    </div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-header">FT</div>
+                    <div class="stat-subheaders">
+                      <span>FTA</span>
+                      <span>FTM</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stats-section other-section">
+                  <div class="stat-group">
+                    <div class="stat-header">REB O/D</div>
+                    <div class="stat-subheaders">
+                      <span>AVG/TOT</span>
+                    </div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-header">AST</div>
+                    <div class="stat-subheaders">
+                      <span>AVG/TOT</span>
+                    </div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-header">STL</div>
+                    <div class="stat-subheaders">
+                      <span>AVG/TOT</span>
+                    </div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-header">BLK</div>
+                    <div class="stat-subheaders">
+                      <span>AVG/TOT</span>
+                    </div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-header">PTS</div>
+                    <div class="stat-subheaders">
+                      <span>AVG/TOT</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div class="table-row">
-                <div class="cell row-label">{{ team.name }}</div>
-                <div class="cell">
-                  <div class="stat-fraction">{{ teamStats.performance.twoPoint.made }}/{{ teamStats.performance.twoPoint.attempted }}</div>
-                  <div class="stat-percentage">{{ teamStats.performance.twoPoint.percentage }}%</div>
+              <!-- Data rows -->
+              <div class="data-row">
+                <div class="stats-section shooting-section">
+                  <div class="stat-group">
+                    <div class="stat-values">
+                      <span>{{ teamStats.performance?.twoPoint?.attempted/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                      <span>{{ teamStats.performance?.twoPoint?.made || 0.0 }}</span>
+                    </div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-values">
+                      <span>{{ teamStats.performance?.threePoint?.attempted/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                      <span>{{ teamStats.performance?.threePoint?.made/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                    </div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-values">
+                      <span>{{ teamStats.performance?.freeThrow?.attempted/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                      <span>{{ teamStats.performance?.freeThrow?.made/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                    </div>
+                  </div>
                 </div>
-                <div class="cell">
-                  <div class="stat-fraction">{{ teamStats.performance.threePoint.made }}/{{ teamStats.performance.threePoint.attempted }}</div>
-                  <div class="stat-percentage">{{ teamStats.performance.threePoint.percentage }}%</div>
+                <div class="stats-section other-section">
+                  <div class="stat-group">
+                    <div class="stat-values">
+                      <span>{{ teamStats.performance?.rebounds?.offensive/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                      <span>{{ teamStats.performance?.rebounds?.defensive/teamStats.performance?.general?.totalGames || 0.0 }}</span>
+                    </div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-value-single">{{ teamStats.performance?.general?.assistsAvg || 0.0 }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-value-single">{{ teamStats.performance?.general?.stealsAvg || 0.0 }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-value-single">{{ teamStats.performance?.general?.blocksAvg || 0.0 }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-value-single total-points">{{ teamStats.performance?.general?.pointsAvg || 0.0 }}</div>
+                  </div>
                 </div>
-                <div class="cell">
-                  <div class="stat-fraction">{{ teamStats.performance.freeThrow.made }}/{{ teamStats.performance.freeThrow.attempted }}</div>
-                  <div class="stat-percentage">{{ teamStats.performance.freeThrow.percentage }}%</div>
-                </div>
-                <div class="cell">
-                  <div class="stat-fraction">{{ teamStats.performance.rebounds.offensive }}/{{ teamStats.performance.rebounds.defensive }}</div>
-                  <div class="stat-total">{{ teamStats.performance.rebounds.total }}</div>
-                </div>
-                <div class="cell">{{ teamStats.performance.general.assistsAvg }}</div>
-                <div class="cell">{{ teamStats.performance.general.stealsAvg }}</div>
-                <div class="cell">{{ teamStats.performance.general.blocksAvg }}</div>
-                <div class="cell">{{ teamStats.performance.general.pointsAvg }}</div>
               </div>
               
-              <div class="table-row totals-row">
-                <div class="cell row-label">TOT</div>
-                <div class="cell">{{ teamStats.performance.general.totalGames }}</div>
-                <div class="cell">{{ teamStats.performance.general.wins }}</div>
-                <div class="cell">{{ teamStats.performance.general.losses }}</div>
-                <div class="cell">{{ teamStats.performance.general.winPercentage }}%</div>
-                <div class="cell">{{ teamStats.performance.general.totalGames }}</div>
-                <div class="cell">{{ Math.round(teamStats.performance.general.pointsAvg * teamStats.performance.general.totalGames) }}</div>
-                <div class="cell"></div>
-                <div class="cell"></div>
+              <!-- Percentage/Total row -->
+              <div class="data-row percentage-row">
+                <div class="stats-section shooting-section">
+                  <div class="stat-group">
+                    <div class="stat-percentage">{{ teamStats.performance?.twoPoint?.percentage || 0.0 }}%</div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-percentage">{{ teamStats.performance?.threePoint?.percentage || 0.0 }}%</div>
+                  </div>
+                  <div class="stat-group">
+                    <div class="stat-percentage">{{ teamStats.performance?.freeThrow?.percentage || 0.0 }}%</div>
+                  </div>
+                </div>
+                <div class="stats-section other-section">
+                  <div class="stat-group">
+                    <div class="stat-total">{{ ((teamStats.performance?.rebounds?.offensive || 0.0) + (teamStats.performance?.rebounds?.defensive || 0.0)) || 0}}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-total">{{ Math.round((teamStats.performance?.general?.assistsAvg || 0.0) * (teamStats.performance?.general?.totalGames || 0)) }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-total">{{ Math.round((teamStats.performance?.general?.stealsAvg || 0.0) * (teamStats.performance?.general?.totalGames || 0)) }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-total">{{ Math.round((teamStats.performance?.general?.blocksAvg || 0.0) * (teamStats.performance?.general?.totalGames || 0)) }}</div>
+                  </div>
+                  <div class="stat-group-single">
+                    <div class="stat-total total-points">{{ Math.round((teamStats.performance?.general?.pointsAvg || 0.0) * (teamStats.performance?.general?.totalGames || 0)) }}</div>
+                  </div>
+                </div>
               </div>
             </div>
-
             <!-- Key Strengths and Weaknesses -->
             <div class="strengths-weaknesses">
               <div class="strengths">
@@ -133,7 +216,7 @@
                 <ul class="sw-list">
                   <li v-for="weakness in teamStats.keyWeaknesses" :key="weakness">{{ weakness }}</li>
                 </ul>
-              </div>
+              </div>  
             </div>
           </div>
         </div>
@@ -146,13 +229,19 @@
           Loading players...
         </div>
         <div v-else-if="players.length > 0" class="players-grid">
-          <div v-for="player in players" :key="player.idPlayer" class="player-card">
+          <div 
+            v-for="player in players" 
+            :key="player.idPlayer" 
+            class="player-card"
+            @click="goToPlayerDetail(player.playerId)"
+          >
             <h3>{{ player.playerName }} {{ player.playerSurname }} (#{{ player.jerseyNumber }})</h3>
             <p><strong>Position:</strong> {{ player.positionName }}</p>
             <p>Age: {{ player.age || 'N/A' }}</p>
             <p>Height: {{ player.height ? player.height + 'cm' : 'N/A' }}</p>
             <p>Weight: {{ player.weight ? player.weight + 'kg' : 'N/A' }}</p>
             <p>Status: {{ player.status || 'N/A' }}</p>
+            <div class="player-card-overlay"></div>
           </div>
         </div>
         <div v-else class="no-players">
@@ -173,8 +262,7 @@
             </div>
             <div class="match-info">
               <div class="match-name">
-                {{ parseInt(teamId) === 1 ? `KK Partizan vs ${getOpponentName(match)}` : 
-                                            `${getOpponentName(match)} vs KK Partizan` }}
+                {{ parseInt(teamId) === 1 ? `vs ${getOpponentName(match)}` : `vs KK Partizan` }}
               </div>
               <div class="match-details">
                 <div class="match-date">{{ formatMatchDate(match.scheduledAt) }}</div>
@@ -185,6 +273,7 @@
             <div class="match-score">
               {{ getOurScore(match) }}-{{ getOpponentScore(match) }}
             </div>
+            <div class="player-card-overlay"></div>
           </div>
         </div>
         <div v-else class="no-matches">
@@ -387,6 +476,11 @@ const handleMatchAction = (match) => {
   router.push(`/analyst/matches/${match.idMatch}/previous`)
 }
 
+const goToPlayerDetail = (playerId) => {
+  console.log('Navigating to player detail:', playerId, 'from team:', teamId)
+  router.push(`/analyst/player/${playerId}/${teamId}`)
+}
+
 onMounted(() => {
   fetchTeamData()
   fetchTeamStatistics()
@@ -530,6 +624,22 @@ onMounted(() => {
 }
 
 /* Statistics Section */
+.statistics {
+  background: white;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.statistics h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
 .loading-stats {
   text-align: center;
   color: #666;
@@ -540,100 +650,190 @@ onMounted(() => {
 .stats-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 24px;
+}
+
+.basic-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
 }
 
 .stats-row {
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   align-items: center;
-  padding: 0.5rem 0;
 }
 
 .stat-label {
-  font-weight: 500;
-  color: #666;
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
 }
 
 .stat-value {
-  font-weight: 600;
-  color: #333;
+  color: #1f2937;
 }
 
 /* Performance Table */
 .performance-table {
-  margin-top: 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
+  margin-top: 20px;
+  border: 1px solid #333;
+  border-radius: 8px;
   overflow: hidden;
+  background: white;
 }
 
-.table-header, .table-row {
+.table-header {
   display: grid;
-  grid-template-columns: 1fr repeat(8, 0.8fr);
-  border-bottom: 1px solid #e9ecef;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.header-cell, .cell {
-  padding: 0.5rem 0.25rem;
-  text-align: center;
-  font-size: 0.85rem;
-  border-right: 1px solid #e9ecef;
-}
-
-.header-cell:last-child, .cell:last-child {
-  border-right: none;
+  grid-template-columns: 1fr 1fr;
+  background: #f8fafc;
+  border-bottom: 1px solid #333;
 }
 
 .header-cell {
-  background-color: #f8f9fa;
+  padding: 12px 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
 }
 
-.row-label {
-  font-weight: 600;
-  text-align: left !important;
-  padding-left: 0.75rem;
+.header-cell:last-child {
+  border-right: none;
 }
 
-.stat-fraction {
-  font-size: 0.8rem;
-  color: #333;
+.head-to-head {
+  text-align: right;
+}
+
+.stats-header {
+  display: grid;
+  grid-template-columns: 3fr 6fr;
+  border-bottom: 1px solid #333;
+  background: #f8fafc;
+}
+
+.stats-section {
+  display: flex;
+  border-right: 1px solid #333;
+}
+
+.stats-section:last-child {
+  border-right: none;
+}
+
+.shooting-section {
+  background: #f0f9ff;
+}
+
+.other-section {
+  background: #f8fafc;
+}
+
+.stat-group {
+  flex: 1;
+  border-right: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.stat-group:last-child {
+  border-right: none;
+}
+
+.stat-group-single {
+  flex: 1;
+  border-right: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.stat-group-single:last-child {
+  border-right: none;
+}
+
+.stat-header {
+  padding: 8px 4px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stat-subheaders {
+  display: flex;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.stat-subheaders span {
+  flex: 1;
+  padding: 6px 2px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.stat-subheaders span:last-child {
+  border-right: none;
+}
+
+.data-row {
+  display: grid;
+  grid-template-columns: 3fr 6fr;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+.percentage-row {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.stat-values {
+  display: flex;
+  font-size: 14px;
+}
+
+.stat-values span {
+  flex: 1;
+  padding: 12px 4px;
+  border-right: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.stat-values span:last-child {
+  border-right: none;
+}
+
+.stat-value-single {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 14px;
 }
 
 .stat-percentage {
-  font-size: 0.75rem;
-  color: #666;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #059669;
+  font-weight: 600;
 }
 
 .stat-total {
-  font-size: 0.8rem;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 14px;
   font-weight: 600;
-  color: #333;
-}
-
-.totals-row {
-  background-color: #f8f9fa;
-  font-weight: 600;
-}
-
-/* Strengths and Weaknesses */
-.strengths-weaknesses {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
+  color: #1f2937;
 }
 
 .sw-label {
   font-weight: 600;
-  color: #333;
-  margin-bottom: 0.5rem;
+  color: #374151;
+  margin-bottom: 12px;
+  font-size: 16px;
 }
 
 .sw-list {
@@ -643,15 +843,35 @@ onMounted(() => {
 }
 
 .sw-list li {
-  padding: 0.25rem 0;
-  font-size: 0.9rem;
-  color: #666;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  color: #4b5563;
 }
 
-.sw-list li:before {
-  content: "• ";
-  color: #007bff;
-  font-weight: bold;
+.strengths .sw-list li {
+  background: #ecfdf5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.weaknesses .sw-list li {
+  background: #fef2f2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}
+
+.strengths-weaknesses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.total-points {
+  font-weight: 700;
+  color: #d97706;
 }
 
 /* Players Section */
@@ -692,19 +912,71 @@ onMounted(() => {
   border-radius: 8px;
   padding: 1rem;
   text-align: left;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform: translateY(0);
 }
+
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+.match-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
 
 .player-card h3 {
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: #333;
+  transition: color 0.3s ease;
+}
+
+.player-card:hover h3 {
+  color: #007bff;
+}
+.match-card:hover h3 {
+  color: #007bff;
 }
 
 .player-card p {
   font-size: 0.8rem;
   color: #666;
   margin: 0.2rem 0;
+  transition: color 0.3s ease;
+}
+
+.player-card:hover p {
+  color: #444;
+}
+
+.player-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 123, 255, 0.9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.player-card:hover .player-card-overlay {
+  opacity: 0.2;
+}
+.match-card:hover .player-card-overlay {
+  opacity: 0.2;
 }
 
 /* Match History Section */
@@ -744,6 +1016,10 @@ onMounted(() => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform: translateY(0);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -811,13 +1087,32 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .table-header, .table-row {
-    grid-template-columns: 1.2fr repeat(9, 0.6fr);
+  .stats-header {
+    grid-template-columns: 2fr 4fr;
   }
 
-  .header-cell, .cell {
-    padding: 0.4rem 0.15rem;
-    font-size: 0.75rem;
+  .data-row {
+    grid-template-columns: 2fr 4fr;
+  }
+
+  .stat-header {
+    font-size: 12px;
+    padding: 6px 2px;
+  }
+
+  .stat-subheaders span {
+    font-size: 10px;
+    padding: 4px 1px;
+  }
+
+  .stat-values span {
+    font-size: 12px;
+    padding: 8px 2px;
+  }
+
+  .stat-value-single, .stat-percentage, .stat-total {
+    font-size: 12px;
+    padding: 8px 4px;
   }
 
   .players-grid, .matches-grid {
@@ -844,8 +1139,23 @@ onMounted(() => {
     overflow-x: auto;
   }
 
-  .table-header, .table-row {
-    min-width: 600px;
+  .stats-header, .data-row {
+    min-width: 500px;
+  }
+
+  .stat-header {
+    font-size: 10px;
+    padding: 4px 1px;
+  }
+
+  .stat-subheaders span {
+    font-size: 8px;
+    padding: 2px;
+  }
+
+  .stat-values span, .stat-value-single, .stat-percentage, .stat-total {
+    font-size: 10px;
+    padding: 6px 2px;
   }
 }
 </style>
