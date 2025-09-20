@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { MatchService } from './match_service.js';
 
-const API_BASE_URL = 'https://localhost:5005/api';
+import { TICKETS_URL } from '../const_service.js';
 
 export class StatisticsService {
     static async getMatchStatistics(matchId) {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_BASE_URL}/Statistics/${matchId}`, {
+            const response = await axios.get(`${TICKETS_URL}/Statistics/${matchId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
