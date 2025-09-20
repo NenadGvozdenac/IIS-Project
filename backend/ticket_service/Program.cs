@@ -29,8 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseCors(corsPolicy);
-// Disable HTTPS redirection for internal service communication
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

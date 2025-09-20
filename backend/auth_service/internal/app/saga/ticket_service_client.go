@@ -2,6 +2,7 @@ package saga
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,10 +23,18 @@ type TicketServiceClient struct {
 
 // NewTicketServiceClient creates a new ticket service client
 func NewTicketServiceClient(baseURL string) *TicketServiceClient {
+	// Create a custom transport that skips certificate verification for internal service communication
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
 	return &TicketServiceClient{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		},
 		timeout: 30 * time.Second,
 	}

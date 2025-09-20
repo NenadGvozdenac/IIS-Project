@@ -11,7 +11,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=sportsdb
       - DB_PORT=5432
-      - TICKET_SERVICE_URL=http://ticket_service:5004
+      - TICKET_SERVICE_URL=https://ticket_service:5005
     depends_on:
       - postgres_db
 
@@ -44,17 +44,9 @@ services:
       dockerfile: backend/ticket_service/Dockerfile
     ports:
       - "5004:5004"
-      - "5005:5005" # HTTPS
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5004;https://+:5005
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=password
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - "5005:5005" # Web UI
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./docker-compose.yml:/docker-compose.yml:ro
       - ./database/graph_database:/database/graph_database:ro
-      - ~/.aspnet/https:/https:ro
     depends_on:
       - postgres_db
       - neo4j

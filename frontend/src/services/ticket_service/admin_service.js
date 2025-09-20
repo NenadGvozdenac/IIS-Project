@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:5005/api';
+import { TICKETS_URL } from '../const_service.js';
 
 export class AdminService {
     static async getSeasons() {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Seasons`, {
+            const response = await axios.get(`${TICKETS_URL}/Seasons`, {
                 headers: {
                     'accept': '*/*'
                 }
@@ -19,7 +19,7 @@ export class AdminService {
 
     static async getMatches() {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Matches`, {
+            const response = await axios.get(`${TICKETS_URL}/Matches`, {
                 headers: {
                     'accept': '*/*'
                 }
@@ -33,7 +33,7 @@ export class AdminService {
 
     static async getCompetitions() {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Competitions`, {
+            const response = await axios.get(`${TICKETS_URL}/Competitions`, {
                 headers: {
                     'accept': '*/*'
                 }
