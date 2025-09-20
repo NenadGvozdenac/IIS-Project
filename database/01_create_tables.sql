@@ -51,7 +51,7 @@ CREATE TABLE accommodation_offer (
     id_offer       INTEGER NOT NULL,
     name           VARCHAR(255),
     capacity       INTEGER,
-    type           VARCHAR(20) CHECK (type IN ('hotel', 'house', 'villa')),
+    accommodation_type VARCHAR(20) CHECK (accommodation_type IN ('hotel', 'house', 'villa')),
     id_agency      INTEGER NOT NULL,
     id_request     INTEGER NOT NULL,
     double_room    BOOLEAN NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE accommodation_request (
     number_of_rooms  INTEGER,
     check_in_date    DATE,
     check_out_date   DATE,
-    type             VARCHAR(20) CHECK (type IN ('hotel', 'house', 'villa')),
+    accommodation_type VARCHAR(20) CHECK (accommodation_type IN ('hotel', 'house', 'villa')),
     PRIMARY KEY (id_request)
 );
 

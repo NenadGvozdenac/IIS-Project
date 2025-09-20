@@ -127,9 +127,9 @@
       <!-- Details - uvek dostupan -->
       <div class="menu-item" @click="viewMatchDetails">Details</div>
       
-      <!-- Edit i Delete - samo za buduće mečeve i ako je ostalo više od 24h -->
+      <!-- Edit - samo za buduće mečeve i ako je ostalo više od 24h -->
       <div class="menu-item" @click="editMatch" v-if="canEditMatch(selectedMatch)">Edit</div>
-      <div class="menu-item danger" @click="deleteMatch" v-if="canDeleteMatch(selectedMatch)">Delete</div>
+      
       
       <!-- Report - samo za odigrane mečeve -->
       <div class="menu-item" @click="generateReport" v-if="isMatchPlayed(selectedMatch)">Report (ctrl+r)</div>
@@ -138,14 +138,16 @@
       <template v-if="showTransportOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="transportRequest">Transport request</div>
-        <div class="menu-item" @click="transportOffers">Transport offers</div>
+        <div class="menu-item" @click="transportRequestsActive">Transport active</div>
+        <div class="menu-item" @click="transportRequestsArchive">Transport archive</div>
       </template>
       
       <!-- Accommodation opcije - samo ako je potreban smeštaj i meč nije odigran -->
       <template v-if="showAccommodationOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="accommodationRequest">Accommodation request</div>
-        <div class="menu-item" @click="accommodationOffers">Accommodation offers</div>
+        <div class="menu-item" @click="accommodationRequestsActive">Accommodation active</div>
+        <div class="menu-item" @click="accommodationRequestsArchive">Accommodation archive</div>
       </template>
     </div>
 
@@ -273,21 +275,6 @@
       </div>
     </div>
 
-    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-      <div class="modal" @click.stop>
-        <div class="modal-header">
-          <h3>Delete Match</h3>
-          <button @click="closeDeleteModal" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete this match?</p>
-          <div class="modal-actions">
-            <button type="button" @click="closeDeleteModal" class="btn btn-secondary">Cancel</button>
-            <button type="button" @click="confirmDeleteMatch" class="btn btn-danger">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -427,12 +414,7 @@ const canEditMatch = (match) => {
          isTeamManager.value
 }
 
-const canDeleteMatch = (match) => {
-  const status = getMatchStatus(match)
-  return (status === 'future' || status === 'next') && 
-         isMoreThan24HoursAway(match) && 
-         isTeamManager.value
-}
+
 
 const isMatchPlayed = (match) => {
   const status = getMatchStatus(match)
@@ -563,9 +545,6 @@ const createMatch = async () => {
   }
 }
 
-const deleteMatch = () => {
-  showDeleteModal.value = true;
-}
 
 const previousMonth = () => {
   currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
@@ -610,7 +589,6 @@ const showMatchMenu = (match, event) => {
   console.log('Match menu opened for:', match.name, {
     status: getMatchStatus(match),
     canEdit: canEditMatch(match),
-    canDelete: canDeleteMatch(match),
     isPlayed: isMatchPlayed(match),
     position: { x, y },
     elementRect: rect
@@ -669,7 +647,6 @@ const viewMatchDetails = () => {
 }
 
 const showEditModal = ref(false)
-const showDeleteModal = ref(false)
 const editMatchData = ref({
   name: '',
   scheduledAt: '',
@@ -691,9 +668,6 @@ const closeMatchModal = () => {
   showEditModal.value = false
 }
 
-const closeDeleteModal = () => {
-  showDeleteModal.value = false
-}
 
 const editMatch = async () => {
   await Promise.all([
@@ -753,28 +727,7 @@ const updateMatch = async () => {
 }
 
 
-const confirmDeleteMatch = async () => {
-    console.log('Confirm delete for match:', selectedMatch.value)
-  if (!selectedMatch.value) return
-  const userId = getUserId()
-  if (!userId) {
-    alert('User not authenticated')
-    return
-  }
-  try {
-    await axios.delete(`https://localhost:5007/api/matches/${selectedMatch.value.idMatch}/${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    closeDeleteModal()
-    await fetchMatches()
-  } catch (error) {
-    console.error('Error deleting match:', error)
-    alert(error.response?.data?.error || 'Failed to delete match')
-  }
-  hideMenu()
-}
+
 
 const generateReport = () => {
   console.log('Generate report for match:', selectedMatch.value)
@@ -782,7 +735,32 @@ const generateReport = () => {
 }
 
 const transportRequest = () => {
-  console.log('Transport request for match:', selectedMatch.value)
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequest',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
+  hideMenu()
+}
+
+const transportRequestsActive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequestsActive',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
+  hideMenu()
+}
+
+const transportRequestsArchive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequestsArchive',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
   hideMenu()
 }
 
@@ -792,7 +770,23 @@ const transportOffers = () => {
 }
 
 const accommodationRequest = () => {
-  console.log('Accommodation request for match:', selectedMatch.value)
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-request/${selectedMatch.value.idMatch}`)
+  }
+  hideMenu()
+}
+
+const accommodationRequestsActive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-requests-active/${selectedMatch.value.idMatch}`)
+  }
+  hideMenu()
+}
+
+const accommodationRequestsArchive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-requests-archive/${selectedMatch.value.idMatch}`)
+  }
   hideMenu()
 }
 

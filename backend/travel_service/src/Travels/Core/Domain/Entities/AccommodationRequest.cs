@@ -15,7 +15,7 @@ public partial class AccommodationRequest
 
     public DateOnly? CheckOutDate { get; set; }
 
-    public string? Type { get; set; }
+    public string? AccommodationType { get; set; }
 
     public virtual Request IdRequestNavigation { get; set; } = null!;
 }

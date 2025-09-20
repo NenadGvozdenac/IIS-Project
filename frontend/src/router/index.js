@@ -23,6 +23,12 @@ import MatchDetails from '../views/teammanager/MatchDetails.vue'
 import MatchDetailsClubManager from '../views/clubmanager/MatchDetailsClubManager.vue'
 import Players from '../views/teammanager/Players.vue'
 import TravelInfos from '../views/clubmanager/TravelInfos.vue'
+import TransportationRequest from '../views/teammanager/TransportationRequest.vue'
+import TransportationRequestsActive from '../views/teammanager/TransportationRequestsActive.vue'
+import TransportationRequestsArchive from '../views/teammanager/TransportationRequestsArchive.vue'
+import AccommodationRequest from '../views/teammanager/AccommodationRequest.vue'
+import AccommodationRequestsActive from '../views/teammanager/AccommodationRequestsActive.vue'
+import AccommodationRequestsArchive from '../views/teammanager/AccommodationRequestsArchive.vue'
 import AdminDashboard from '../views/administrator/Dashboard.vue'
 import ClubOwnerDashboard from '../views/clubowner/Dashboard.vue'
 import ClubOwnerSeasons from '../views/clubowner/Seasons.vue'
@@ -208,6 +214,42 @@ const routes = [
     name: 'ClubManagerTravel',
     component: TravelInfos,
     meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/team-manager/transportation-request/:matchId',
+    name: 'TransportationRequest',
+    component: TransportationRequest,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/team-manager/transportation-requests-active/:matchId?',
+    name: 'TransportationRequestsActive',
+    component: TransportationRequestsActive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/transportation-requests-archive/:matchId?',
+    name: 'TransportationRequestsArchive',
+    component: TransportationRequestsArchive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/accommodation-request/:matchId',
+    name: 'AccommodationRequest',
+    component: AccommodationRequest,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/team-manager/accommodation-requests-active/:matchId?',
+    name: 'AccommodationRequestsActive',
+    component: AccommodationRequestsActive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/accommodation-requests-archive/:matchId?',
+    name: 'AccommodationRequestsArchive',
+    component: AccommodationRequestsArchive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
   }
 ]
 
@@ -231,12 +273,20 @@ router.beforeEach((to, _, next) => {
     }
   } 
   else if (to.meta.requiresRole) {
-  const userData = getUserData()
-  if (!userData || userData.userRole !== to.meta.requiresRole) {
-    next('/dashboard')
-  } else {
-    next()
+    const userData = getUserData()
+    if (!userData || userData.userRole !== to.meta.requiresRole) {
+      next('/dashboard')
+    } else {
+      next()
+    }
   }
+  else if (to.meta.requiresRoles) {
+    const userData = getUserData()
+    if (!userData || !to.meta.requiresRoles.includes(userData.userRole)) {
+      next('/dashboard')
+    } else {
+      next()
+    }
   }
   else {
     next()

@@ -124,6 +124,20 @@
     >
       <!-- Club manager vidi samo detalje meča -->
       <div class="menu-item" @click="viewMatchDetails">Details</div>
+
+      <!-- Transport opcije - samo ako je potreban transport i meč nije odigran -->
+      <template v-if="showTranspoOptions(selectedMatch)">
+        <hr>
+        <div class="menu-item" @click="transportRequestsActive">Transport active</div>
+        <div class="menu-item" @click="transportRequestsArchive">Transport archive</div>
+      </template>
+      
+      <!-- Accommodation opcije - samo ako je potreban smeštaj i meč nije odigran -->
+      <template v-if="showAccommodOptions(selectedMatch)">
+        <hr>
+        <div class="menu-item" @click="accommodationRequestsActive">Accommodation active</div>
+        <div class="menu-item" @click="accommodationRequestsArchive">Accommodation archive</div>
+      </template>
     </div>
 
     <!-- Create/Edit Match Modal -->
@@ -155,6 +169,63 @@ const getUserId = () => {
 }
 
 const currentDate = ref(new Date())
+
+const showTranspoOptions = (match) => {
+  return match.transportationRequired && !isMatchPlayed(match)
+}
+
+const showAccommodOptions = (match) => {
+  return match.accommodationRequired && !isMatchPlayed(match)
+}
+
+const transportRequestsActive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequestsActive',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
+  hideMenu()
+}
+
+const transportRequestsArchive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequestsArchive',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
+  hideMenu()
+}
+
+const transportOffers = () => {
+  console.log('Transport offers for match:', selectedMatch.value)
+  hideMenu()
+}
+
+const accommodationRequest = () => {
+  console.log('Accommodation request for match:', selectedMatch.value)
+  hideMenu()
+}
+
+const accommodationRequestsActive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-requests-active/${selectedMatch.value.idMatch}`)
+  }
+  hideMenu()
+}
+
+const accommodationRequestsArchive = () => {
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-requests-archive/${selectedMatch.value.idMatch}`)
+  }
+  hideMenu()
+}
+
+const accommodationOffers = () => {
+  console.log('Accommodation offers for match:', selectedMatch.value)
+  hideMenu()
+}
 
 const pad = (n) => n.toString().padStart(2, '0')
 const getMinDateTime = () => {
@@ -285,13 +356,6 @@ const isMatchPlayed = (match) => {
   return status === 'played'
 }
 
-const showTransportOptions = (match) => {
-  return match.transportationRequired && !isMatchPlayed(match)
-}
-
-const showAccommodationOptions = (match) => {
-  return match.accommodationRequired && !isMatchPlayed(match)
-}
 
 const fetchMatches = async () => {
   try {
@@ -627,25 +691,6 @@ const generateReport = () => {
   hideMenu()
 }
 
-const transportRequest = () => {
-  console.log('Transport request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const transportOffers = () => {
-  console.log('Transport offers for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const accommodationRequest = () => {
-  console.log('Accommodation request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const accommodationOffers = () => {
-  console.log('Accommodation offers for match:', selectedMatch.value)
-  hideMenu()
-}
 
 const resetNewMatch = () => {
   editMatchData.value = {

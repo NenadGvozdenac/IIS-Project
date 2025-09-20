@@ -57,7 +57,6 @@ public partial class TravelDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Visa> Visas { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -76,6 +75,9 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
+            entity.Property(e => e.AccommodationType)
+                .HasMaxLength(20)
+                .HasColumnName("accommodation_type");
             entity.Property(e => e.Breakfast).HasColumnName("breakfast");
             entity.Property(e => e.Capacity).HasColumnName("capacity");
             entity.Property(e => e.DoubleRoom).HasColumnName("double_room");
@@ -87,9 +89,6 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.QuadrupleRoom).HasColumnName("quadruple_room");
             entity.Property(e => e.Spa).HasColumnName("spa");
             entity.Property(e => e.TripleRoom).HasColumnName("triple_room");
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .HasColumnName("type");
             entity.Property(e => e.Wifi).HasColumnName("wifi");
 
             entity.HasOne(d => d.Id).WithOne(p => p.AccommodationOffer)
@@ -107,13 +106,13 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.IdRequest)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_request");
+            entity.Property(e => e.AccommodationType)
+                .HasMaxLength(20)
+                .HasColumnName("accommodation_type");
             entity.Property(e => e.CheckInDate).HasColumnName("check_in_date");
             entity.Property(e => e.CheckOutDate).HasColumnName("check_out_date");
             entity.Property(e => e.NumberOfGuests).HasColumnName("number_of_guests");
             entity.Property(e => e.NumberOfRooms).HasColumnName("number_of_rooms");
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .HasColumnName("type");
 
             entity.HasOne(d => d.IdRequestNavigation).WithOne(p => p.AccommodationRequest)
                 .HasForeignKey<AccommodationRequest>(d => d.IdRequest)
@@ -178,6 +177,8 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("match");
 
+            entity.HasIndex(e => e.ScheduledAt, "idx_match_scheduled_at");
+
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");
             entity.Property(e => e.City)
@@ -210,7 +211,6 @@ public partial class TravelDbContext : DbContext
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.Matches)
                 .HasForeignKey(d => d.IdSeason)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_season");
 
             entity.HasOne(d => d.IdTeamNavigation).WithMany(p => p.Matches)
@@ -330,6 +330,25 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdMatch)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_request_match");
+
+            entity.HasMany(d => d.IdManagementMembers).WithMany(p => p.IdRequests)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ManagementMemberRequest",
+                    r => r.HasOne<Management>().WithMany()
+                        .HasForeignKey("IdManagementMember")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_mgmt_mem_req_management"),
+                    l => l.HasOne<Request>().WithMany()
+                        .HasForeignKey("IdRequest")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_mgmt_mem_req_request"),
+                    j =>
+                    {
+                        j.HasKey("IdRequest", "IdManagementMember").HasName("management_member_request_pkey");
+                        j.ToTable("management_member_request");
+                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
+                        j.IndexerProperty<int>("IdManagementMember").HasColumnName("id_management_member");
+                    });
         });
 
         modelBuilder.Entity<Season>(entity =>
@@ -344,6 +363,8 @@ public partial class TravelDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.StartedAt).HasColumnName("started_at");
+            entity.Property(e => e.TicketsForSale).HasColumnName("tickets_for_sale");
+            entity.Property(e => e.TicketsWentOnSale).HasColumnName("tickets_went_on_sale");
         });
 
         modelBuilder.Entity<SentRequest>(entity =>
@@ -422,6 +443,26 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdTeam)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_team_member_team");
+
+            entity.HasMany(d => d.IdRequests).WithMany(p => p.Ids)
+                .UsingEntity<Dictionary<string, object>>(
+                    "TeamMemberRequest",
+                    r => r.HasOne<Request>().WithMany()
+                        .HasForeignKey("IdRequest")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_team_mem_req_request"),
+                    l => l.HasOne<TeamMember>().WithMany()
+                        .HasForeignKey("IdTeam", "IdPlayer")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_team_mem_req_team_member"),
+                    j =>
+                    {
+                        j.HasKey("IdTeam", "IdPlayer", "IdRequest").HasName("team_member_request_pkey");
+                        j.ToTable("team_member_request");
+                        j.IndexerProperty<int>("IdTeam").HasColumnName("id_team");
+                        j.IndexerProperty<int>("IdPlayer").HasColumnName("id_player");
+                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
+                    });
         });
 
         modelBuilder.Entity<TransportationOffer>(entity =>

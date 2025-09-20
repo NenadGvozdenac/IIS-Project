@@ -198,7 +198,7 @@ const fetchMyTeam = async () => {
     })
     const allTeams = response.data.value || []
     if (allTeams.length > 0) {
-      myTeamId.value = allTeams[0].idTeam // Prvi tim je "moj tim"
+      myTeamId.value = allTeams[0].idTeam 
     }
   } catch (error) {
     console.error('Error fetching my team:', error)
@@ -268,7 +268,7 @@ const addNote = async () => {
       Role: "player", 
       IdTeam: myTeamId.value 
     };
-    
+    console.log('Payload for new player note:', payload);
     console.log('Creating player note with data:', payload);
     const response = await axios.post(`https://localhost:5007/api/travelinformations/${userId}`, payload, {
       headers: {
