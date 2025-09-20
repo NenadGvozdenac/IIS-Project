@@ -129,6 +129,8 @@ public partial class MatchDbContext : DbContext
 
             entity.ToTable("match");
 
+            entity.HasIndex(e => e.ScheduledAt, "idx_match_scheduled_at");
+
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");
             entity.Property(e => e.City)
