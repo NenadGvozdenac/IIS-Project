@@ -31,6 +31,7 @@ public static class ApplicationStartup
         services.AddScoped<IPersonalEventRepository, PersonalEventRepository>();
         services.AddScoped<ITeamEventRepository, TeamEventRepository>();
         services.AddScoped<IGeneralEventRepository, GeneralEventRepository>();
+        services.AddScoped<IAutomaticRecommendationRepository, AutomaticRecommendationRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)
