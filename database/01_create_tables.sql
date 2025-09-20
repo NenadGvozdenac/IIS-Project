@@ -231,6 +231,7 @@ CREATE TABLE offer (
     id_match     INTEGER NOT NULL,
     id_agency    INTEGER NOT NULL,
     id_request   INTEGER NOT NULL,
+    chosen       BOOLEAN DEFAULT FALSE,
     type         VARCHAR(20) CHECK (type IN ('accommodation', 'transportation')),
     PRIMARY KEY (id_offer, id_agency, id_request)
 );

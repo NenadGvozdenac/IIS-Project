@@ -57,6 +57,7 @@ public partial class TravelDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Visa> Visas { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -240,6 +241,9 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
+            entity.Property(e => e.Chosen)
+                .HasDefaultValueSql("false")
+                .HasColumnName("chosen");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.Price).HasColumnName("price");
             entity.Property(e => e.Type)
