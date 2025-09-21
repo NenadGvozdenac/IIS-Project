@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Agencies.GetAllAgencies;
+using travel_service.src.Travels.Core.Application.Features.Agencies.GetAgenciesForMatchAndType;
 using travel_service.src.Travels.Core.Application.Features.Players.GetAllPlayers;
 
 namespace travel_service.src.Travels.API.Controllers;
@@ -24,4 +25,15 @@ public class AgenciesController : BaseController
         return CreateResponse(result);
     }
 
+    [HttpGet("{matchId}/{type}")]
+    public async Task<ActionResult> GetAgenciesForMatchAndType(int matchId, string type)
+    {
+        var query = new GetAgenciesForMatchAndTypeQuery
+        {
+            MatchId = matchId,
+            Type = type
+        };
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
 }

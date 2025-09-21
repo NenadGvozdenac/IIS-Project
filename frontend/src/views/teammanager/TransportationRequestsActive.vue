@@ -56,7 +56,10 @@
               </div>
 
               <div class="action-buttons">
-                <button class="action-btn view-offers-btn">
+                <button 
+                  class="action-btn view-offers-btn"
+                  @click="goToTransportationOffers(request)"
+                >
                   View offers
                 </button>
                 <button 
@@ -186,6 +189,17 @@ export default {
         this.expandedRequests.splice(index, 1)
       } else {
         this.expandedRequests.push(requestId)
+      }
+    },
+
+    goToTransportationOffers(request) {
+      // Navigate to transportation offers page using the matchId from request
+      if (request.idMatch) {
+        this.$router.push(`/offers/transportation/${request.idMatch}`)
+      } else if (this.matchId) {
+        this.$router.push(`/offers/transportation/${this.matchId}`)
+      } else {
+        alert('Match ID not available for this request')
       }
     },
 

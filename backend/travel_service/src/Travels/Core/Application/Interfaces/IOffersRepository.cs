@@ -9,7 +9,7 @@ public interface IOffersRepository
     IEnumerable<Offer> GetOffersByTypeAndMatch(string type, int idMatch);
     Offer? GetChosenOfferByTypeAndMatch(string type, int idMatch);
     Offer? GetOfferById(int idOffer);
+    Offer? GetOfferByCompositeKey(int idOffer, int idAgency, int idRequest);
     Offer CreateOffer(Offer offer);
-    void UpdateOffer(Offer offer);
-    void DeleteOffer(int idOffer);
+    void UpdateOfferStatus(int idOffer, int idAgency, int idRequest, bool chosen);
 }

@@ -20,7 +20,6 @@ public class CreateOfferHandler : IRequestHandler<CreateOfferCommand, Result<Cre
     {
         try
         {
-            // Validacija korisnika
             var user = _userRepository.GetById(request.UserId);
             if (user == null)
             {
@@ -34,7 +33,6 @@ public class CreateOfferHandler : IRequestHandler<CreateOfferCommand, Result<Cre
                     .WithCode((int)ResultCode.Forbidden));
             }
 
-            // Validacija osnovnih polja
             if (string.IsNullOrWhiteSpace(request.Type) || 
                 (request.Type != "accommodation" && request.Type != "transportation"))
             {
@@ -42,7 +40,6 @@ public class CreateOfferHandler : IRequestHandler<CreateOfferCommand, Result<Cre
                     .WithCode((int)ResultCode.BadRequest));
             }
 
-            // Kreiranje osnovnog Offer-a
             var newOffer = new Offer
             {
                 Price = request.Price,
@@ -54,7 +51,6 @@ public class CreateOfferHandler : IRequestHandler<CreateOfferCommand, Result<Cre
                 Chosen = false
             };
 
-            // Kreiranje specifičnog tipa ponude
             if (request.Type == "accommodation")
             {
                 if (string.IsNullOrWhiteSpace(request.Name) || request.Capacity == null)
@@ -103,13 +99,12 @@ public class CreateOfferHandler : IRequestHandler<CreateOfferCommand, Result<Cre
                 };
             }
 
-            // Čuvanje Offer-a
             var createdOffer = _offersRepository.CreateOffer(newOffer);
 
             var response = new CreateOfferResponse
             {
                 IdOffer = createdOffer.IdOffer,
-                Type = createdOffer.Type ?? string.Empty,
+                Type = createdOffer.Type,
                 Price = createdOffer.Price,
                 IdMatch = createdOffer.IdMatch,
                 IdAgency = createdOffer.IdAgency,

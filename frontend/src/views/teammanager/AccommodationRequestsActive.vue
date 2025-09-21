@@ -58,7 +58,10 @@
               </div>
 
               <div class="action-buttons">
-                <button class="action-btn view-offers-btn">
+                <button 
+                  class="action-btn view-offers-btn"
+                  @click="goToAccommodationOffers(request)"
+                >
                   View offers
                 </button>
                 <button 
@@ -188,6 +191,17 @@ export default {
         this.expandedRequests.splice(index, 1)
       } else {
         this.expandedRequests.push(requestId)
+      }
+    },
+
+    goToAccommodationOffers(request) {
+      // Navigate to accommodation offers page using the matchId from request
+      if (request.idMatch) {
+        this.$router.push(`/offers/accommodation/${request.idMatch}`)
+      } else if (this.matchId) {
+        this.$router.push(`/offers/accommodation/${this.matchId}`)
+      } else {
+        alert('Match ID not available for this request')
       }
     },
 

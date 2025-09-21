@@ -72,18 +72,28 @@
                     <div class="section-body">
                         <div v-if="!match.transportationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no transportation is required
+                            Transportation is not required for this trip, you can optionally go to the transportation reservation page
                         </div>
                         <div v-else-if="!transportationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Transportation is required for this match. Please select a transportation offer below.
-                            <div class="offer-actions">
-                                <button class="btn btn-outline" @click="goToTransportOffers">View Transport Offers</button>
-                            </div>
+                            Transportation is required for this trip, please go to the transportation reservation page
                         </div>
                         <div v-else class="info-box selected-offer">
                             <span class="icon">&#10003;</span>
-                            Selected transportation offer: {{ transportationOffer.name }}
+                            <div class="offer-details">
+                                <h4>{{ transportationOffer.agencyName }}</h4>
+                                <p><strong>{{ transportationOffer.price }} EUR</strong></p>
+                                <p>{{ transportationOffer.transportationOffer?.vehicleType || 'Bus' }} - Capacity: {{ transportationOffer.transportationOffer?.capacity || 'N/A' }}</p>
+                                <p>Departure: {{ transportationOffer.transportationOffer?.departureTime || 'N/A' }}</p>
+                            </div>
+                            <div class="offer-actions">
+                                <button @click="goToTransportOffers" class="btn-outline">
+                                    Change Selection
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="match.transportationRequired && !transportationOffer" class="offer-actions">
+                            <button class="btn btn-primary" @click="goToTransportOffers">View Transport Offers</button>
                         </div>
                     </div>
                 </div>
@@ -98,18 +108,28 @@
                     <div class="section-body">
                         <div v-if="!match.accommodationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no accommodation is required
+                            Accommodation is not required for this trip, you can optionally go to the accommodation booking page
                         </div>
                         <div v-else-if="!accommodationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Accommodation is required for this match. Please select an accommodation offer below.
-                            <div class="offer-actions">
-                                <button class="btn btn-outline" @click="goToAccommodationOffers">View Accommodation Offers</button>
-                            </div>
+                            Accommodation is required for this trip, please go to the accommodation booking page
                         </div>
                         <div v-else class="info-box selected-offer">
                             <span class="icon">&#10003;</span>
-                            Selected accommodation offer: {{ accommodationOffer.name }}
+                            <div class="offer-details">
+                                <h4>{{ accommodationOffer.agencyName }}</h4>
+                                <p><strong>{{ accommodationOffer.price }} EUR</strong></p>
+                                <p>{{ accommodationOffer.accommodationOffer?.accommodationType || 'Hotel' }} - Capacity: {{ accommodationOffer.accommodationOffer?.capacity || 'N/A' }}</p>
+                                <p>Room types: {{ accommodationOffer.accommodationOffer?.roomType || 'N/A' }}</p>
+                            </div>
+                            <div class="offer-actions">
+                                <button @click="goToAccommodationOffers" class="btn-outline">
+                                    Change Selection
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="match.accommodationRequired && !accommodationOffer" class="offer-actions">
+                            <button class="btn btn-primary" @click="goToAccommodationOffers">View Accommodation Offers</button>
                         </div>
                     </div>
                 </div>
@@ -160,19 +180,48 @@ const matchStatus = computed(() => {
 })
 
 const goBack = () => {
-	router.push('/team-manager/matches')
+	router.push('/club-manager/matches')
 }
+
 const goToCreateTravel = () => {
   // Implement navigation to create travel page or modal
   alert('Go to create travel (implement route/modal)')
 }
+
 const goToTransportOffers = () => {
-  // Implement navigation to transport offers page/modal
-  alert('Go to transport offers (implement route/modal)')
+  router.push(`/offers/transportation/${match.value.idMatch}`)
 }
+
 const goToAccommodationOffers = () => {
-  // Implement navigation to accommodation offers page/modal
-  alert('Go to accommodation offers (implement route/modal)')
+  router.push(`/offers/accommodation/${match.value.idMatch}`)
+}
+
+const fetchChosenOffers = async () => {
+  if (!match.value) return
+
+  try {
+    // Fetch chosen transportation offer
+    const transportResponse = await axios.get(`https://localhost:5007/api/offers/chosen/transportation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    if (transportResponse.data.isSuccess) {
+      transportationOffer.value = transportResponse.data.value
+    }
+
+    // Fetch chosen accommodation offer
+    const accommodationResponse = await axios.get(`https://localhost:5007/api/offers/chosen/accommodation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    if (accommodationResponse.data.isSuccess) {
+      accommodationOffer.value = accommodationResponse.data.value
+    }
+  } catch (error) {
+    console.error('Error fetching chosen offers:', error)
+  }
 }
 
 const fetchMatchDetails = async () => {
@@ -223,7 +272,9 @@ const fetchMatchDetails = async () => {
             competition.value = response3.data.value
 			console.log('Fetched competition:', competition.value)
 		}
-		// TODO: Fetch transportation/accommodation offers if needed
+		
+		// Fetch chosen offers
+		await fetchChosenOffers()
 	} catch (error) {
 		console.error('Error fetching match details:', error)
 	}
@@ -464,5 +515,30 @@ onMounted(() => {
 .btn-outline:hover {
   background: #2563eb;
   color: white;
+}
+
+.offer-details {
+  flex: 1;
+}
+
+.offer-details h4 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.offer-details p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.selected-offer {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.selected-offer .icon {
+  margin-top: 0.25rem;
 }
 </style>

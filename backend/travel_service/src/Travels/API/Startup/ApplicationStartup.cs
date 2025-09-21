@@ -34,6 +34,7 @@ public static class ApplicationStartup
         services.AddScoped<IAgenciesRepository, AgenciesRepository>();
         services.AddScoped<IRequestsRepository, RequestsRepository>();
         services.AddScoped<IOffersRepository, OffersRepository>();
+        services.AddScoped<ITripRepository, TripRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

@@ -11,4 +11,5 @@ public interface IRequestsRepository
     Request CreateRequest(Request request);
     void AddTeamMembersToRequest(int requestId, List<TeamMemberRequest> teamMemberRequests);
     void AddManagementMembersToRequest(int requestId, List<int> managementMemberIds);
+    void SendRequestToAgencies(int requestId, List<int> agencyIds);
 }

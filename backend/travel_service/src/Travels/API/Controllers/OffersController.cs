@@ -4,6 +4,7 @@ using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Offers.CreateOffer;
 using travel_service.src.Travels.Core.Application.Features.Offers.GetAllOffers;
 using travel_service.src.Travels.Core.Application.Features.Offers.GetOfferByIds;
+using travel_service.src.Travels.Core.Application.Features.Offers.UpdateOfferStatus;
 
 namespace travel_service.src.Travels.API.Controllers;
 
@@ -40,6 +41,13 @@ public class OffersController : BaseController
     {
         var query = new GetOfferByIdsQuery(type, idMatch);
         var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("status")]
+    public async Task<ActionResult> UpdateOfferStatus([FromBody] UpdateOfferStatusCommand command)
+    {
+        var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
 }

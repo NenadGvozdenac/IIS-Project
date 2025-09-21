@@ -19,6 +19,9 @@ public class OfferDto
     public string? Type { get; set; }
     public bool? Chosen { get; set; }
     
+    // Agency information
+    public string? AgencyName { get; set; }
+    
     // Accommodation specific properties
     public string? Name { get; set; }
     public int? Capacity { get; set; }

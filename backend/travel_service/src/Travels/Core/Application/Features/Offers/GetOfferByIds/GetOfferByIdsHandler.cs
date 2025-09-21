@@ -1,7 +1,6 @@
 using MediatR;
 using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Interfaces;
-using travel_service.src.Travels.Core.Application.Features.Offers.GetAllOffers;
 
 namespace travel_service.src.Travels.Core.Application.Features.Offers.GetOfferByIds;
 
@@ -45,6 +44,9 @@ public class GetOfferByIdsHandler : IRequestHandler<GetOfferByIdsQuery, Result<G
                 Type = chosenOffer.Type,
                 Chosen = chosenOffer.Chosen,
                 
+                // Agency information
+                AgencyName = chosenOffer.Id?.IdAgencyNavigation?.Name,
+                
                 // Accommodation properties
                 Name = chosenOffer.AccommodationOffer?.Name,
                 Capacity = chosenOffer.AccommodationOffer?.Capacity ?? chosenOffer.TransportationOffer?.Capacity,
@@ -70,6 +72,7 @@ public class GetOfferByIdsHandler : IRequestHandler<GetOfferByIdsQuery, Result<G
 
             var successResponse = new GetOfferByIdsResponse
             {
+                
                 ChosenOffer = offerDto,
                 Type = request.Type,
                 IdMatch = request.IdMatch,

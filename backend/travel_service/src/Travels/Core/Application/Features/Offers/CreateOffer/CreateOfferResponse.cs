@@ -9,5 +9,4 @@ public class CreateOfferResponse
     public int IdAgency { get; set; }
     public int IdRequest { get; set; }
     public int UserId { get; set; }
-    public string Message { get; set; } = "Offer created successfully";
 }

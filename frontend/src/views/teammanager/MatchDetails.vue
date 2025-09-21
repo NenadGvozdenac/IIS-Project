@@ -12,6 +12,12 @@
                 </nav>
             </div>
             <div class="header-right">
+                <button 
+                    v-if="isTeamManager && canCreateTravel" 
+                    @click="showCreateTravelModal = true"
+                    class="btn btn-primary">
+                    🧳 Create Travel
+                </button>
             </div>
         </header>
 
@@ -71,15 +77,34 @@
                     <div class="section-body">
                         <div v-if="!match.transportationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no transportation is required
+                            Transportation is not required for this trip, please go to the transportation reservation page
                         </div>
                         <div v-else-if="!transportationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Transportation is required for this match.
+                            Transportation is required for this trip, please go to the transportation reservation page
                         </div>
                         <div v-else class="info-box selected-offer">
-                            <span class="icon">&#10003;</span>
-                            Selected transportation offer: {{ transportationOffer.name }}
+                            <div class="offer-details">
+                                <h4>{{ transportationOffer.agencyName }}</h4>
+                                <p><strong>{{ transportationOffer.price }} EUR</strong></p>
+                                <p>{{ transportationOffer.vehicleType || 'Bus' }} - Capacity: {{ transportationOffer.capacity || 'N/A' }}</p>
+                            <p>Benefits: {{
+										[
+											transportationOffer.airConditioning ? 'Air Conditioning' : null,
+											transportationOffer.tv ? 'TV' : null,
+											transportationOffer.wifiTransport ? 'WIFI' : null,
+											transportationOffer.restroom ? 'WC' : null
+										].filter(Boolean).join(', ') || 'N/A'
+										}}</p>
+							</div>
+                            <div class="offer-actions">
+                                <button @click="goToTransportOffers" class="btn-outline">
+                                    <span class="icon">🔄</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="match.transportationRequired && !transportationOffer" class="offer-actions">
+                            <button @click="goToTransportOffers" class="btn-outline">Choose an offer</button>
                         </div>
                     </div>
                 </div>
@@ -94,18 +119,69 @@
                     <div class="section-body">
                         <div v-if="!match.accommodationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no accommodation is required
+                            Accommodation is required for this trip, please go to the transport booking page
                         </div>
                         <div v-else-if="!accommodationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Accommodation is required for this match. 
+                            Accommodation is required for this trip, please go to the transport booking page
                         </div>
                         <div v-else class="info-box selected-offer">
-                            <span class="icon">&#10003;</span>
-                            Selected accommodation offer: {{ accommodationOffer.name }}
+                            <div class="offer-details">
+                                <h4>{{ accommodationOffer.agencyName }}</h4>
+                                <p><strong>{{ accommodationOffer.price }} EUR</strong></p>
+                                <p>{{ accommodationOffer.accommodationType || 'Hotel' }} - Capacity: {{ accommodationOffer.capacity || 'N/A' }}</p>
+                                <p>Benefits: {{
+										[
+											accommodationOffer.breakfast ? 'Breakfast' : null,
+											accommodationOffer.fitnessCenter ? 'Fitness Center' : null,
+											accommodationOffer.pool ? 'Pool' : null,
+											accommodationOffer.wifi ? 'WIFI' : null,
+											accommodationOffer.spa ? 'SPA' : null
+										].filter(Boolean).join(', ') || 'N/A'
+										}}</p>
+										<p>Room types: {{
+											[
+												accommodationOffer.doubleRoom ? '1/2' : null,
+												accommodationOffer.tripleRoom ? '1/3' : null,
+												accommodationOffer.quadrupleRoom ? '1/4' : null
+											].filter(Boolean).join(', ') || 'N/A'
+										}}</p>
+                            </div>
+                            <div class="offer-actions">
+                                <button @click="goToAccommodationOffers" class="btn-outline">
+                                    <span class="icon">Edit</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="match.accommodationRequired && !accommodationOffer" class="offer-actions">
+                            <button @click="goToAccommodationOffers" class="btn-outline">Choose an offer</button>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Create Travel Modal -->
+        <div v-if="showCreateTravelModal" class="modal-overlay" @click="closeCreateTravelModal">
+            <div class="modal-content" @click.stop>
+                <h2>Create Travel</h2>
+                <form @submit.prevent="createTravel">
+                    <div class="form-group">
+                        <label for="travelNotes">Add Travel Note</label>
+                        <textarea 
+                            id="travelNotes"
+                            v-model="travelNotes" 
+                            rows="5"
+                            placeholder="Enter any additional notes for this travel..."
+                            class="form-control">
+                        </textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" @click="closeCreateTravelModal" class="btn btn-outline">Cancel</button>
+                        <button type="submit" :disabled="loading" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -114,6 +190,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { AuthService } from '../../services/auth_service.js'
 import axios from 'axios'
 
 const route = useRoute()
@@ -125,6 +202,11 @@ const team = ref(null)
 const competition = ref(null)
 const transportationOffer = ref(null)
 const accommodationOffer = ref(null)
+
+// Create Travel Modal
+const showCreateTravelModal = ref(false)
+const travelNotes = ref('')
+const loading = ref(false)
 
 const formatDate = (dt) => {
 	if (!dt) return ''
@@ -154,6 +236,115 @@ const matchStatus = computed(() => {
 
 const goBack = () => {
 	router.push('/team-manager/matches')
+}
+
+const getUserId = () => {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+  
+  const userData = AuthService.decode(token)
+  return userData?.userID || null
+}
+//const isTeamManager = computed(() => getUserId() == 6)
+
+const canCreateTravel = computed(() => {
+  if (!match.value) return false
+  
+  // Check if transportation is required and chosen
+  const transportationOk = !match.value.transportationRequired || transportationOffer.value
+  
+  // Check if accommodation is required and chosen
+  const accommodationOk = !match.value.accommodationRequired || accommodationOffer.value
+  
+  return transportationOk && accommodationOk
+})
+
+// Navigation methods
+const goToTransportOffers = () => {
+  router.push(`/offers/transportation/${match.value.idMatch}`)
+}
+
+const goToAccommodationOffers = () => {
+  router.push(`/offers/accommodation/${match.value.idMatch}`)
+}
+
+// Create Travel Modal methods
+const closeCreateTravelModal = () => {
+  showCreateTravelModal.value = false
+  travelNotes.value = ''
+}
+
+const fetchChosenOffers = async () => {
+  if (!match.value) return
+
+  try {
+    // Fetch chosen transportation offer
+    const transportResponse = await axios.get(`https://localhost:5007/api/offers/chosen/transportation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+	console.log('Transport response:', transportResponse.data)
+    if (transportResponse.data.isSuccess) {
+		if(transportResponse.data.value.hasChosenOffer == false){
+			console.log('No chosen transportation offer')	
+		}
+		else{
+      	transportationOffer.value = transportResponse.data.value.chosenOffer
+		}
+    }
+
+    // Fetch chosen accommodation offer
+    const accommodationResponse = await axios.get(`https://localhost:5007/api/offers/chosen/accommodation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+	console.log('Accommodation response:', accommodationResponse.data)
+    if (accommodationResponse.data.isSuccess) {
+		if(accommodationResponse.data.value.hasChosenOffer == false){
+			console.log('No chosen accommodation offer')	
+		}
+		else{
+      	accommodationOffer.value = accommodationResponse.data.value.chosenOffer
+		}
+    }
+  } catch (error) {
+    console.error('Error fetching chosen offers:', error)
+  }
+}
+
+const createTravel = async () => {
+  if (loading.value || !match.value) return
+  
+  loading.value = true
+  
+  try {
+    const travelData = {
+      notes: travelNotes.value,
+      matchIdMatch: match.value.idMatch,
+      idTransportationOffer: transportationOffer.value?.idOffer,
+      idTransportationAgency: transportationOffer.value?.idAgency,
+      idTransportationRequest: transportationOffer.value?.idRequest,
+      idAccommodationOffer: accommodationOffer.value?.idOffer || null,
+      idAccommodationAgency: accommodationOffer.value?.idAgency || null,
+      idAccommodationRequest: accommodationOffer.value?.idRequest || null
+    }
+    
+    const response = await axios.post('https://localhost:5007/api/trip', travelData)
+    
+    if (response.data.isSuccess) {
+      alert('Travel created successfully!')
+      closeCreateTravelModal()
+    } else {
+      alert(response.data.error || 'Failed to create travel')
+    }
+  } catch (error) {
+    console.error('Error creating travel:', error)
+    alert('Failed to create travel')
+  } finally {
+    loading.value = false
+  }
 }
 
 const fetchMatchDetails = async () => {
@@ -204,7 +395,9 @@ const fetchMatchDetails = async () => {
             competition.value = response3.data.value
 			console.log('Fetched competition:', competition.value)
 		}
-		// TODO: Fetch transportation/accommodation offers if needed
+		
+		// Fetch chosen offers
+		await fetchChosenOffers()
 	} catch (error) {
 		console.error('Error fetching match details:', error)
 	}

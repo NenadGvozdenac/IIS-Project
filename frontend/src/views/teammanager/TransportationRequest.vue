@@ -396,7 +396,8 @@ export default {
           endDate: this.formData.endDate,
           vehicleType: this.formData.vehicleType,
           teamMemberRequests: this.selectedTeamMembers,
-          managementMemberIds: this.selectedManagementMembers
+          managementMemberIds: this.selectedManagementMembers,
+          agencyIds: this.selectedAgencies
         }
         console.log('Request Data:', requestData); 
         console.log('Debug log', this.userId);

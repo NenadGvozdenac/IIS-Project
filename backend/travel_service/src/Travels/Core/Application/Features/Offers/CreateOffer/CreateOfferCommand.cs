@@ -12,7 +12,6 @@ public class CreateOfferCommand : IRequest<Result<CreateOfferResponse>>
     public int IdRequest { get; set; }
     public string Type { get; set; } = string.Empty;
     
-    // Accommodation Offer properties
     public string? Name { get; set; }
     public int? Capacity { get; set; }
     public string? AccommodationType { get; set; }
@@ -25,7 +24,6 @@ public class CreateOfferCommand : IRequest<Result<CreateOfferResponse>>
     public bool Wifi { get; set; }
     public bool Spa { get; set; }
     
-    // Transportation Offer properties
     public string? CompanyName { get; set; }
     public string? VehicleType { get; set; }
     public bool EquipmentSpace { get; set; }

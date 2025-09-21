@@ -32,4 +32,5 @@ public class CreateRequestsCommand : IRequest<Result<CreateRequestsResponse>>
 
     public List<TeamMemberRequest> TeamMemberRequests { get; set; } = new List<TeamMemberRequest>();
     public List<int> ManagementMemberIds { get; set; } = new List<int>();
+    public List<int> AgencyIds { get; set; } = new List<int>();
 }

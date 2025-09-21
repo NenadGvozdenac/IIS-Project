@@ -20,7 +20,6 @@ public class CreateRequestsHandler : IRequestHandler<CreateRequestsCommand, Resu
     {
         try
         {
-            // Validacija korisnika
             var user = _userRepository.GetById(request.UserId);
             if (user == null)
             {
@@ -34,7 +33,6 @@ public class CreateRequestsHandler : IRequestHandler<CreateRequestsCommand, Resu
                     .WithCode((int)ResultCode.Forbidden));
             }
 
-            // Validacija osnovnih polja
             if (string.IsNullOrWhiteSpace(request.Type) || 
                 (request.Type != "accommodation" && request.Type != "transportation"))
             {
@@ -53,7 +51,6 @@ public class CreateRequestsHandler : IRequestHandler<CreateRequestsCommand, Resu
                 Type = request.Type
             };
 
-            // Kreiranje specifičnog tipa zahteva
             if (request.Type == "accommodation")
             {
                 if (request.NumberOfGuests == null || request.CheckInDate == null || request.CheckOutDate == null)
@@ -88,12 +85,12 @@ public class CreateRequestsHandler : IRequestHandler<CreateRequestsCommand, Resu
                 };
             }
 
-            // Čuvanje Request-a i dobijanje ID-ja
             var createdRequest = _requestsRepository.CreateRequest(newRequest);
 
-            // Povezivanje sa TeamMember-ima i Management članovima
             _requestsRepository.AddTeamMembersToRequest(createdRequest.IdRequest, request.TeamMemberRequests);
             _requestsRepository.AddManagementMembersToRequest(createdRequest.IdRequest, request.ManagementMemberIds);
+            _requestsRepository.SendRequestToAgencies(createdRequest.IdRequest, request.AgencyIds);
+            
 
             var response = new CreateRequestsResponse
             {

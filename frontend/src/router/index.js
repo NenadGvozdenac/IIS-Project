@@ -36,6 +36,8 @@ import ClubOwnerCompetitions from '../views/clubowner/Competitions.vue'
 import UpcomingMatches from '../views/clubowner/UpcomingMatches.vue'
 import SeasonTickets from '../views/clubowner/SeasonTickets.vue'
 import PricingStatistics from '../views/clubowner/PricingStatistics.vue'
+import TransportationOffers from '../views/offers/TransportationOffers.vue'
+import AccommodationOffers from '../views/offers/AccommodationOffers.vue'
 
 const routes = [
   {
@@ -249,6 +251,18 @@ const routes = [
     path: '/team-manager/accommodation-requests-archive/:matchId?',
     name: 'AccommodationRequestsArchive',
     component: AccommodationRequestsArchive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/offers/transportation/:matchId',
+    name: 'TransportationOffers',
+    component: TransportationOffers,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/offers/accommodation/:matchId',
+    name: 'AccommodationOffers',
+    component: AccommodationOffers,
     meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
   }
 ]

@@ -52,7 +52,6 @@ public class RequestsRepository : IRequestsRepository
     {
         foreach (var teamMemberRequest in teamMemberRequests)
         {
-            // Directly insert into the join table team_member_request
             _travelDbContext.Database.ExecuteSqlRaw(
                 "INSERT INTO team_member_request (id_team, id_player, id_request) VALUES ({0}, {1}, {2})",
                 teamMemberRequest.IdTeam, teamMemberRequest.IdPlayer, requestId);
@@ -63,11 +62,24 @@ public class RequestsRepository : IRequestsRepository
     {
         foreach (var managementId in managementMemberIds)
         {
-            // Directly insert into the join table management_member_request
             _travelDbContext.Database.ExecuteSqlRaw(
                 "INSERT INTO management_member_request (id_request, id_management_member) VALUES ({0}, {1})",
                 requestId, managementId);
         }
     }
+    public void SendRequestToAgencies(int requestId, List<int> agencyIds)
+    {
+        foreach (var agencyId in agencyIds)
+        {
+            var sentRequest = new SentRequest
+            {
+                IdRequest = requestId,
+                IdAgency = agencyId
+            };
 
+            _travelDbContext.SentRequests.Add(sentRequest);
+        }
+
+        _travelDbContext.SaveChanges();
+    }
 }

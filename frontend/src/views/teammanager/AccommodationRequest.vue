@@ -397,8 +397,8 @@ export default {
           checkOutDate: this.formData.checkOutDate.split('T')[0],
           accommodationType: this.formData.accommodationType,
           teamMemberRequests: this.selectedTeamMembers,
-          managementMemberIds: this.selectedManagementMembers
-
+          managementMemberIds: this.selectedManagementMembers,
+          agencyIds: this.selectedAgencies
           
         }
         console.log('Request Data:', requestData); // Debug log
