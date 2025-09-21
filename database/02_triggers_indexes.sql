@@ -464,3 +464,48 @@ CREATE INDEX IF NOT EXISTS idx_zone_status ON zone (status);
 CREATE INDEX IF NOT EXISTS idx_cart_item_cart_offer ON cart_item (id_cart, id_purchase_offer);
 
 -- KRAJ INDEXA NENAD GVOZDENAC
+
+--------------------------------------------------------------------------
+-- SRDJAN ILIC - TRIGGER ZA AUTOMATSKO AŽURIRANJE REZULTATA U MATCH_TRACKING
+-- Kada se upiše personal event sa tipom +2p, +3p ili +ft, automatski se ažurira rezultat
+
+CREATE OR REPLACE FUNCTION update_match_score_on_personal_event()
+RETURNS TRIGGER AS $$
+DECLARE
+    points_to_add INTEGER := 0;
+BEGIN
+    -- Proveravamo da li je event tip koji donosi poene
+    CASE NEW.type
+        WHEN '+2p' THEN points_to_add := 2;
+        WHEN '+3p' THEN points_to_add := 3;
+        WHEN '+ft' THEN points_to_add := 1;
+        ELSE points_to_add := 0;
+    END CASE;
+    
+    -- Ako event donosi poene, ažuriramo rezultat u match_tracking
+    IF points_to_add > 0 THEN
+        UPDATE match_tracking 
+        SET 
+            our_points = CASE 
+                WHEN NEW.id_team = 1 THEN COALESCE(our_points, 0) + points_to_add
+                ELSE COALESCE(our_points, 0)
+            END,
+            opponent_points = CASE 
+                WHEN NEW.id_team != 1 THEN COALESCE(opponent_points, 0) + points_to_add
+                ELSE COALESCE(opponent_points, 0)
+            END,
+            last_update_time = CURRENT_TIMESTAMP
+        WHERE id_match = NEW.id_match;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Kreiranje triggera koji poziva funkciju kada se upisuje novi personal event
+CREATE TRIGGER trigger_update_match_score_on_personal_event
+    AFTER INSERT ON personal_event
+    FOR EACH ROW
+    EXECUTE FUNCTION update_match_score_on_personal_event();
+
+-- KRAJ TRIGGERA SRDJAN ILIC

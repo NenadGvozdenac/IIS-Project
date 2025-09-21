@@ -205,9 +205,9 @@
                   <span class="player-number">#{{ player.number }}</span>
                 </div>
                 <div class="card-body">
-                  <div class="time-stat">
-                    <span class="label">in game:</span>
-                    <span class="value">{{ player.timeInGame }}</span>
+                  <div class="points-stat">
+                    <span class="label">points:</span>
+                    <span class="value">{{ player.points || 0 }}</span>
                   </div>
                   <div class="fouls-stat">
                     <span class="label">fouls:</span>
@@ -272,9 +272,9 @@
                   <span class="player-number">#{{ player.number }}</span>
                 </div>
                 <div class="card-body">
-                  <div class="time-stat">
-                    <span class="label">in game:</span>
-                    <span class="value">{{ player.timeInGame }}</span>
+                  <div class="points-stat">
+                    <span class="label">points:</span>
+                    <span class="value">{{ player.points || 0 }}</span>
                   </div>
                   <div class="fouls-stat">
                     <span class="label">fouls:</span>
@@ -650,6 +650,7 @@ const gameStatus = ref('Unknown game status')
 const timerRunning = ref(false)
 const ourTeamId = 1
 const ourTeamFouls = ref([])
+const ourTeamTimeouts = ref([])
 
 // Selected player for actions
 const selectedPlayer = ref(null)
@@ -881,6 +882,28 @@ const callTimeoutAPI = async (teamId) => {
       console.log('Timeout called successfully')
       await fetchMatchTrackingData(matchId)
       await fetchMatchEvents(matchId)
+      
+      // Track our team's timeouts (team events of type 'timeout')
+      ourTeamTimeouts.value = gameEvents.value.filter(e => {
+        const type = (e.type || '').toString().toLowerCase()
+        const teamId = e.teamId || null
+        const isTeamEvent = e.eventType === 'team'
+        return isTeamEvent && type === 'timeout' && Number(teamId) === ourTeamId // ourTeamId = 1
+      })
+      //console.log('Our team timeouts:', ourTeamTimeouts.value)
+      //console.log('Our team timeouts count:', ourTeamTimeouts.value.length)
+
+      // If we've just reached 4 timeouts, create a one-time recommendation (warn 1 timeout left)
+      try {
+        const currentTimeouts = ourTeamTimeouts.value.length
+        console.log('Current timeouts used:', currentTimeouts)
+        if (currentTimeouts === 4) {
+          // Create medium priority recommendation once when reaching 4 timeouts
+          createRecommendation('medium priority', 'team timeout warning', 'Team has used 4 timeouts - only 1 left')
+        }
+      } catch (err) {
+        console.error('Error checking timeouts for recommendations:', err)
+      }
       stopTimer()
     }
   } catch (error) {
@@ -1284,6 +1307,15 @@ const checkFoulRecommendations = async (playerId, teamId) => {
     }
     // 3. Check if our team reached 4 fouls in current period using recorded foul events
     try {
+      // Populate ourTeamFouls with personal 'foul' events that belong to our team
+      ourTeamFouls.value = gameEvents.value.filter(e => {
+        const type = (e.type || '').toString().toLowerCase()
+        // support multiple possible team id field names from backend
+        const teamId = e.teamId
+        const isPersonal = (e.eventType === 'personal')
+        return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
+      })
+
       const currentPeriodStr = String(matchTrackingState.value.currentPeriod || '').trim()
       const foulsThisPeriod = (ourTeamFouls.value || []).filter(ev => {
         const evPeriod = ev.period !== undefined && ev.period !== null ? String(ev.period) : null
@@ -1361,18 +1393,21 @@ const fetchMatchEvents = async (matchId) => {
         id: event.id,
         time: formatEventTime(event),
         description: formatEventDescription(event),
-        //raw: event // keep original payload for debugging/logic
+        eventType: event.eventType || '',
+        type: event.type || event.Type || '',
+        teamId: event.teamId || null,
+        period: event.period || null,
+        raw: event // original payload for debugging/logic
       }))
 
-      // Populate ourTeamFouls with personal 'foul' events that belong to our team
-      ourTeamFouls.value = rawEvents.filter(e => {
-        const type = (e.type || e.Type || '').toString().toLowerCase()
-        // support multiple possible team id field names from backend
-        const teamId = e.teamId
-        const isPersonal = (e.eventType === 'personal')
-        return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
-      })
-      console.log('FOUL Events loaded:', ourTeamFouls.value)
+      // // Populate ourTeamFouls with personal 'foul' events that belong to our team
+      // ourTeamFouls.value = rawEvents.filter(e => {
+      //   const type = (e.type || e.Type || '').toString().toLowerCase()
+      //   // support multiple possible team id field names from backend
+      //   const teamId = e.teamId
+      //   const isPersonal = (e.eventType === 'personal')
+      //   return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
+      // })
 
       console.log('Events loaded:', gameEvents.value)
     }
@@ -2402,7 +2437,7 @@ onUnmounted(() => {
 .active-players-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -2418,14 +2453,14 @@ onUnmounted(() => {
 /* Modern Card Style */
 .player-card.modern-card {
   border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 8px;
+  border-radius: 6px;
+  padding: 12px;
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-family: system-ui, -apple-system, sans-serif;
-  font-size: 12px;
-  line-height: 1.2;
-  min-height: 80px;
+  font-size: 13px;
+  line-height: 1.25;
+  min-height: 100px;
 }
 
 .player-card.modern-card:hover {
@@ -2465,32 +2500,36 @@ onUnmounted(() => {
 .modern-card .card-body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
 }
 
 .modern-card .time-stat,
+.modern-card .points-stat,
 .modern-card .fouls-stat,
 .modern-card .eff-stat {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 0px;
+  vertical-align: middle;
 }
 
 .modern-card .label {
-  font-size: 15px;
+  font-size: 18px;
   color: #666;
-  font-weight: normal;
+  font-weight: 500;
+  min-width: 64px; /* keep labels aligned and values close */
 }
 
 .modern-card .value {
-  font-size: 15px;
+  font-size: 20px;
   color: #333;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .modern-card .foul-dots {
   display: flex;
-  gap: 1px;
+  gap: 4px;
 }
 
 .modern-card .foul-dot {
@@ -3025,9 +3064,18 @@ onUnmounted(() => {
 
 /* Main Content Layout */
 .main-content-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
+}
+
+/* Align with the game-interface grid layout above */
+.game-interface {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1rem;
 }
 
 .players-table-section {

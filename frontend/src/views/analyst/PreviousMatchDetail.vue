@@ -20,6 +20,14 @@
           ← Back to Matches
         </button>
         
+        <!-- Download Report Button for finished matches -->
+        <button  
+          @click="downloadMatchReport" 
+          class="btn-download-report-absolute"
+        >
+          📊 Download Report
+        </button>
+        
         <!-- Centered content -->
         <div class="centered-match-content">
           <!-- Match Header Info -->
@@ -333,6 +341,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
+import matchReportService from '../../services/matchReportService'
 
 const route = useRoute()
 const router = useRouter()
@@ -816,6 +825,27 @@ const goBack = () => {
   router.push('/analyst/matches')
 }
 
+// Download match report
+const downloadMatchReport = () => {
+  if (!match.value) {
+    console.error('Match data not available')
+    return
+  }
+  
+  try {
+    matchReportService.generateMatchReport(
+      match.value,
+      ourTeamPlayers.value,
+      opponentTeamPlayers.value,
+      ourTeamStats.value,
+      opponentTeamStats.value
+    )
+  } catch (error) {
+    console.error('Error generating match report:', error)
+    //alert('Error generating match report. Please try again.')
+  }
+}
+
 onMounted(() => {
   fetchMatchDetails()
 })
@@ -909,6 +939,29 @@ onMounted(() => {
 .btn-back-absolute:hover {
   background-color: #007bff;
   color: white;
+}
+
+.btn-download-report-absolute {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  z-index: 10;
+}
+
+.btn-download-report-absolute:hover {
+  background: linear-gradient(135deg, #218838, #1ea87a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
 .centered-match-content {

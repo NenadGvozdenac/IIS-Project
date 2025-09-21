@@ -713,6 +713,12 @@ onMounted(() => {
   color: white;
 }
 
+/* When the previous match is a loss, make the final score badge red to indicate loss */
+.match-card.previous.loss .final-score {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e53935 100%); /* softer red -> deeper red */
+  color: white;
+}
+
 .result-indicator {
   position: absolute;
   top: -5px;
