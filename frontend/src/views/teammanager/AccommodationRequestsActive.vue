@@ -3,12 +3,12 @@
     <!-- Header Navigation -->
     <div class="header-nav">
       <div class="nav-tabs">
-        <span class="tab" @click="navigateToTab('transportRequest')">Transportation request</span>
-        <span class="tab" @click="navigateToTab('accommodationRequest')">Accommodation request</span>
-        <span class="tab" @click="navigateToTab('transportActive')">Transport active</span>
-        <span class="tab active" @click="navigateToTab('accommodationActive')">Accommodation active</span>
-        <span class="tab" @click="navigateToTab('transportArchive')">Transport archive</span>
-        <span class="tab" @click="navigateToTab('accommodationArchive')">Accommodation archive</span>
+        <span class="tab" @click="navigateToTab('transportRequest')">Transportation Request</span>
+        <span class="tab" @click="navigateToTab('accommodationRequest')">Accommodation Request</span>
+        <span class="tab" @click="navigateToTab('transportActive')">Transportation Active</span>
+        <span class="tab active" @click="navigateToTab('accommodationActive')">Accommodation Active</span>
+        <span class="tab" @click="navigateToTab('transportArchive')">Transportation Archive</span>
+        <span class="tab" @click="navigateToTab('accommodationArchive')">Accommodation Archive</span>
       </div>
     </div>
 

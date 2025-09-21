@@ -27,7 +27,7 @@ public class RequestsRepository : IRequestsRepository
             .ToList();
     }
 
-    public IEnumerable<Request> GetRequestsByTypeWithDetails(string type, int idMatch)
+    public IEnumerable<Request> GetRequestsByTypeWithDetails(string type)
     {
         return _travelDbContext.Requests
             .Include(r => r.AccommodationRequest)
@@ -37,7 +37,7 @@ public class RequestsRepository : IRequestsRepository
                 .ThenInclude(tm => tm.IdPlayerNavigation)
             .Include(r => r.Ids)
                 .ThenInclude(tm => tm.IdTeamNavigation)
-            .Where(r => r.Type == type && r.IdMatch == idMatch)
+            .Where(r => r.Type == type)
             .ToList();
     }
 

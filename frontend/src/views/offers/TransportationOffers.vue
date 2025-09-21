@@ -9,9 +9,17 @@
       </div>
       <div class="header-center">
         <div class="nav-menu">
-          <router-link :to="'/matches'" class="nav-link">Matches</router-link>
-          <router-link :to="'/players'" class="nav-link">Players</router-link>
-          <router-link :to="'/travel-organization'" class="nav-link active">Travel Organization</router-link>
+          <router-link :to="userRole === 'TeamManager' ? '/team-manager/matches' : '/club-manager/matches'" class="nav-link">Matches</router-link>
+          <router-link :to="userRole === 'TeamManager' ? '/team-manager/players' : '/club-manager/travelinfo'" class="nav-link">Players</router-link>
+          <div class="nav-dropdown">
+                <span class="nav-link dropdown-toggle">Requests</span>
+                <div class="dropdown-menu">
+                    <router-link to="/team-manager/transportation-requests-active" class="dropdown-item">Transportation - Active</router-link>
+                    <router-link to="/team-manager/transportation-requests-archive" class="dropdown-item">Transportation - Archive</router-link>
+                    <router-link to="/team-manager/accommodation-requests-active" class="dropdown-item">Accommodation - Active</router-link>
+                    <router-link to="/team-manager/accommodation-requests-archive" class="dropdown-item">Accommodation - Archive</router-link>
+                </div>
+            </div>
         </div>
       </div>
       <div class="header-right">
@@ -78,10 +86,6 @@
               <span class="detail-label">Capacity:</span>
               <span>{{ offer.capacity || 'N/A' }}</span>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">Equipment space:</span>
-              <span>{{ offer.placeForEquipment ? 'YES' : 'NO' }}</span>
-            </div>
           </div>
 
           <!-- Additional benefits -->
@@ -102,7 +106,7 @@
           </div>
 
           <!-- Choose button -->
-          <div class="offer-actions">
+          <div class="offer-actions" v-if="!isTeamManager">
             <button 
               @click="chooseOffer(offer)"
               class="btn btn-choose"
@@ -233,17 +237,20 @@ const route = useRoute()
 const router = useRouter()
 
 // Get user role from token
-// const getUserRole = () => {
-//   try {
-//     const token = localStorage.getItem('token')
-//     if (!token) return null
+const getUserRole = () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return null
     
-//     const payload = JSON.parse(atob(token.split('.')[1]))
-//     return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-//   } catch (error) {
-//     console.error('Error getting user role:', error)
-//     return null
-//   }
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+  } catch (error) {
+    console.error('Error getting user role:', error)
+    return null
+  }
+}
+
+const userRole = computed(() => getUserRole())
 // }
 
 // Get user ID from token
@@ -353,7 +360,15 @@ const chooseOffer = async (offer) => {
     loading.value = false
   }
 }
-
+const mapVehicleType = (vehicleType) => {
+  const mapping = {
+    'bus': 'autobus',
+    'plane': 'plane',
+    'train': 'train',
+    'van': 'van'
+  }
+  return mapping[vehicleType.toLowerCase()] || vehicleType.toLowerCase()
+}
 const addOffer = async () => {
   if (loading.value || !newOffer.value.selectedAgency) return
   
@@ -361,15 +376,16 @@ const addOffer = async () => {
   
   try {
     const offerData = {
+      userId: getUserId(),
       idAgency: newOffer.value.selectedAgency.idAgency,
       idRequest: newOffer.value.selectedAgency.idRequest,
       idMatch: matchId.value,
       price: parseFloat(newOffer.value.price),
+      chosen: false,
       type: 'transportation',
-      // Transportation specific fields - matching CreateOfferCommand
       companyName: newOffer.value.companyName,
       capacity: parseInt(newOffer.value.capacity),
-      vehicleType: newOffer.value.vehicleType.toLowerCase(),
+      vehicleType: mapVehicleType(newOffer.value.vehicleType),
       equipmentSpace: newOffer.value.placeForEquipment,
       airConditioning: newOffer.value.benefits.airConditioner,
       tv: newOffer.value.benefits.tv,
@@ -432,6 +448,61 @@ onMounted(() => {
 
 <style scoped>
 /* Header styles */
+/* Dropdown styles */
+.nav-dropdown {
+  position: relative;
+  padding: 0.5rem;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-toggle::after {
+  content: ' ▼';
+  font-size: 12px;
+}
+
+.nav-dropdown:hover .dropdown-toggle::after {
+  content: ' ▲';
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.3s;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
 .details-header {
   display: flex;
   align-items: center;

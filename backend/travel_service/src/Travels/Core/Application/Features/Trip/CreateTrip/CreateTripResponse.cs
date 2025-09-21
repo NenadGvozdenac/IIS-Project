@@ -11,5 +11,4 @@ public class CreateTripResponse
     public int? IdAccommodationOffer { get; set; }
     public int? IdAccommodationAgency { get; set; }
     public int? IdAccommodationRequest { get; set; }
-    public string Message { get; set; } = "Trip created successfully";
 }

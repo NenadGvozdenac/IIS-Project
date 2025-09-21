@@ -7,7 +7,15 @@
           <nav class="nav-menu" v-if="isTeamManager">
             <router-link to="/team-manager/matches" class="nav-link active">Matches</router-link>
             <router-link to="/team-manager/players" class="nav-link">Players</router-link>
-            <router-link to="/team-manager/travel" class="nav-link">Travel Organization</router-link>
+            <div class="nav-dropdown">
+                <span class="nav-link dropdown-toggle">Requests</span>
+                <div class="dropdown-menu">
+                    <router-link to="/team-manager/transportation-requests-active" class="dropdown-item">Transportation - Active</router-link>
+                    <router-link to="/team-manager/transportation-requests-archive" class="dropdown-item">Transportation - Archive</router-link>
+                    <router-link to="/team-manager/accommodation-requests-active" class="dropdown-item">Accommodation - Active</router-link>
+                    <router-link to="/team-manager/accommodation-requests-archive" class="dropdown-item">Accommodation - Archive</router-link>
+                </div>
+            </div>
           </nav>
         </div>
       </div>
@@ -138,16 +146,12 @@
       <template v-if="showTransportOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="transportRequest">Transport request</div>
-        <div class="menu-item" @click="transportRequestsActive">Transport active</div>
-        <div class="menu-item" @click="transportRequestsArchive">Transport archive</div>
       </template>
       
       <!-- Accommodation opcije - samo ako je potreban smeštaj i meč nije odigran -->
       <template v-if="showAccommodationOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="accommodationRequest">Accommodation request</div>
-        <div class="menu-item" @click="accommodationRequestsActive">Accommodation active</div>
-        <div class="menu-item" @click="accommodationRequestsArchive">Accommodation archive</div>
       </template>
     </div>
 
@@ -744,54 +748,10 @@ const transportRequest = () => {
   hideMenu()
 }
 
-const transportRequestsActive = () => {
-  if (selectedMatch.value && selectedMatch.value.idMatch) {
-    router.push({
-      name: 'TransportationRequestsActive',
-      params: { matchId: selectedMatch.value.idMatch }
-    })
-  }
-  hideMenu()
-}
-
-const transportRequestsArchive = () => {
-  if (selectedMatch.value && selectedMatch.value.idMatch) {
-    router.push({
-      name: 'TransportationRequestsArchive',
-      params: { matchId: selectedMatch.value.idMatch }
-    })
-  }
-  hideMenu()
-}
-
-const transportOffers = () => {
-  console.log('Transport offers for match:', selectedMatch.value)
-  hideMenu()
-}
-
 const accommodationRequest = () => {
   if (selectedMatch.value && selectedMatch.value.idMatch) {
     router.push(`/team-manager/accommodation-request/${selectedMatch.value.idMatch}`)
   }
-  hideMenu()
-}
-
-const accommodationRequestsActive = () => {
-  if (selectedMatch.value && selectedMatch.value.idMatch) {
-    router.push(`/team-manager/accommodation-requests-active/${selectedMatch.value.idMatch}`)
-  }
-  hideMenu()
-}
-
-const accommodationRequestsArchive = () => {
-  if (selectedMatch.value && selectedMatch.value.idMatch) {
-    router.push(`/team-manager/accommodation-requests-archive/${selectedMatch.value.idMatch}`)
-  }
-  hideMenu()
-}
-
-const accommodationOffers = () => {
-  console.log('Accommodation offers for match:', selectedMatch.value)
   hideMenu()
 }
 
@@ -917,6 +877,61 @@ onUnmounted(() => {
 .nav-link.active {
   color: var(--color-primary);
   background-color: #f3f4f6;
+}
+
+/* Dropdown styles */
+.nav-dropdown {
+  position: relative;
+  padding: 0.5rem;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-toggle::after {
+  content: ' ▼';
+  font-size: 12px;
+}
+
+.nav-dropdown:hover .dropdown-toggle::after {
+  content: ' ▲';
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.3s;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
 }
 
 .user-actions {

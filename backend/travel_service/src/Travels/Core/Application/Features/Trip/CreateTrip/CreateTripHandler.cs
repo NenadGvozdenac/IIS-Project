@@ -25,13 +25,6 @@ public class CreateTripHandler : IRequestHandler<CreateTripCommand, Result<Creat
                     .WithCode((int)ResultCode.NotFound));
             }
 
-            // Validacija - proverava da li već postoji putovanje za taj match
-            if (_tripRepository.DoesTripExistForMatch(request.MatchIdMatch))
-            {
-                return Task.FromResult(Result<CreateTripResponse>.Failure("Trip already exists for this match")
-                    .WithCode((int)ResultCode.BadRequest));
-            }
-
             // Validacija - proverava da li transportation offer postoji
             if (!_tripRepository.DoesTransportationOfferExist(
                 request.IdTransportationOffer, 
@@ -53,19 +46,10 @@ public class CreateTripHandler : IRequestHandler<CreateTripCommand, Result<Creat
             }
 
             // Validacija za accommodation offer (samo ako je prosleđen)
-            if (request.IdAccommodationOffer.HasValue || 
-                request.IdAccommodationAgency.HasValue || 
+            if (request.IdAccommodationOffer.HasValue && 
+                request.IdAccommodationAgency.HasValue && 
                 request.IdAccommodationRequest.HasValue)
             {
-                // Ako je bilo koji accommodation podatak prosleđen, svi moraju biti prosleđeni
-                if (!request.IdAccommodationOffer.HasValue || 
-                    !request.IdAccommodationAgency.HasValue || 
-                    !request.IdAccommodationRequest.HasValue)
-                {
-                    return Task.FromResult(Result<CreateTripResponse>.Failure("If any accommodation data is provided, all accommodation fields (IdAccommodationOffer, IdAccommodationAgency, IdAccommodationRequest) must be provided")
-                        .WithCode((int)ResultCode.BadRequest));
-                }
-
                 if (!_tripRepository.DoesAccommodationOfferExist(
                     request.IdAccommodationOffer.Value, 
                     request.IdAccommodationAgency.Value, 
@@ -106,13 +90,12 @@ public class CreateTripHandler : IRequestHandler<CreateTripCommand, Result<Creat
                 IdTrip = createdTrip.IdTrip,
                 Notes = createdTrip.Notes,
                 MatchIdMatch = createdTrip.MatchIdMatch,
-                IdTransportationOffer = request.IdTransportationOffer,
-                IdTransportationAgency = request.IdTransportationAgency,
-                IdTransportationRequest = request.IdTransportationRequest,
+                IdTransportationOffer = createdTrip.IdTransportationOffer.Value,
+                IdTransportationAgency = createdTrip.IdTransportationAgency.Value,
+                IdTransportationRequest = createdTrip.IdTransportationRequest.Value,
                 IdAccommodationOffer = createdTrip.IdAccommodationOffer,
                 IdAccommodationAgency = createdTrip.IdAccommodationAgency,
-                IdAccommodationRequest = createdTrip.IdAccommodationRequest,
-                Message = "Trip created successfully"
+                IdAccommodationRequest = createdTrip.IdAccommodationRequest
             };
 
             return Task.FromResult(Result<CreateTripResponse>.Success(response));

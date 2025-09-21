@@ -18,7 +18,7 @@ public class GetAllRequestsHandler : IRequestHandler<GetAllRequestsQuery, Result
     {
         try
         {
-            var requests = _requestsRepository.GetRequestsByTypeWithDetails(request.Type, request.IdMatch);
+            var requests = _requestsRepository.GetRequestsByTypeWithDetails(request.Type);
             var response = new GetAllRequestsResponse
             {
                 Requests = requests.Select(r => new RequestDto

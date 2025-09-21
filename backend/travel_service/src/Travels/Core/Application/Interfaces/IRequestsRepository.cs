@@ -7,7 +7,7 @@ public interface IRequestsRepository
 {
     IEnumerable<Request> GetAllRequests();
     IEnumerable<Request> GetRequestsByType(string type);
-    IEnumerable<Request> GetRequestsByTypeWithDetails(string type, int idMatch);
+    IEnumerable<Request> GetRequestsByTypeWithDetails(string type);
     Request CreateRequest(Request request);
     void AddTeamMembersToRequest(int requestId, List<TeamMemberRequest> teamMemberRequests);
     void AddManagementMembersToRequest(int requestId, List<int> managementMemberIds);
