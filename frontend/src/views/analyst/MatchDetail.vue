@@ -1756,6 +1756,66 @@ const selectPlayer = (player, team) => {
   console.log('Selected player:', selectedPlayer.value)
 }
 
+// Save event to InfluxDB for analytics
+const saveEventToInfluxDB = async (eventData, action, createdEventId) => {
+  try {
+    const eventTypeMap = {
+      '+2p': '2point made',
+      '2p': '2point miss', 
+      '+3p': '3point made',
+      '3p': '3point miss',
+      '+ft': 'free throw made',
+      'ft': 'free throw miss',
+      'assist': 'assist',
+      'reb of': 'rebound offensive',
+      'reb def': 'rebound defensive', 
+      'steal': 'steal',
+      'block': 'block',
+      'foul': 'foul'
+    }
+
+    // Determine event category based on action type
+    let eventCategory = 'personal' // default for player actions
+    if (['timeout', 'substitution'].includes(action)) {
+      eventCategory = 'team'
+    } else if (['period_start', 'period_end', 'match_start', 'match_end'].includes(action)) {
+      eventCategory = 'general'
+    }
+
+    const influxEventData = {
+      matchId: eventData.matchId.toString(),
+      eventCategory: eventCategory,
+      eventType: eventTypeMap[action] || action,
+      period: matchTrackingState.value.currentPeriod || 'Q1',
+      periodTime: matchTrackingState.value.elapsedPeriodTime || 0,
+      teamId: eventData.teamId?.toString(),
+      playerId: eventData.playerId?.toString(),
+      eventId: createdEventId || Date.now(), // Use created event ID or timestamp
+      notes: eventData.notes,
+      ourPoints: matchTrackingState.value.ourPoints || 0,
+      opponentPoints: matchTrackingState.value.opponentPoints || 0,
+      timestamp: new Date().toISOString()
+    }
+
+    console.log('Saving event to InfluxDB:', influxEventData)
+    
+    const response = await axios.post(`${MATCHES_URL}/ChronologicalEventInflux`, influxEventData)
+    
+    if (response.data.isSuccess) {
+      console.log('Event saved to InfluxDB successfully:', response.data)
+      return true
+    } else {
+      console.warn('Failed to save to InfluxDB:', response.data)
+      return false
+    }
+    
+  } catch (error) {
+    console.error('Error saving event to InfluxDB:', error)
+    // Don't throw error - InfluxDB save is supplementary to main event save
+    return false
+  }
+}
+
 // Record action
 const recordAction = async (action, teamId) => {
   if (!selectedPlayer.value) {
@@ -1801,6 +1861,18 @@ const recordAction = async (action, teamId) => {
     
     if (response.data.isSuccess) {
       console.log('Event recorded successfully:', response.data)
+
+      // Save event to InfluxDB for analytics (in parallel with other operations)
+      const createdEventId = response.data.value?.eventId || response.data.value?.id
+      saveEventToInfluxDB(eventData, action, createdEventId)
+        .then(success => {
+          if (success) {
+            console.log('Event also saved to InfluxDB for analytics')
+          }
+        })
+        .catch(error => {
+          console.warn('InfluxDB save failed but continuing with main flow:', error)
+        })
 
       if (matchTrackingState.value.periodStatus === 'active') {
         await refreshScoresOnly(matchId)

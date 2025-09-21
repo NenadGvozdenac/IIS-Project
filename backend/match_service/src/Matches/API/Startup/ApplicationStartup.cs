@@ -14,6 +14,7 @@ public static class ApplicationStartup
         SetupDatabases(services, configuration);
         SetupRepositories(services);
         SetupMediatR(services);
+        services.ConfigureInfluxDB(configuration);
 
         return services;
     }
