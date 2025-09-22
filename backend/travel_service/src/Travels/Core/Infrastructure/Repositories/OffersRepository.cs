@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using travel_service.src.Travels.Core.Application.Interfaces;
 using travel_service.src.Travels.Core.Domain.Entities;
 using travel_service.src.Travels.Core.Infrastructure;
+using travel_service.src.Travels.Core.Application.Commands.AutoSelectBestOffer;
+using Npgsql;
 
 namespace travel_service.src.Travels.Core.Infrastructure.Repositories;
 
@@ -42,7 +44,7 @@ public class OffersRepository : IOffersRepository
             .Include(o => o.TransportationOffer)
             .Include(o => o.IdMatchNavigation)
             .Include(o => o.UserIdUserNavigation)
-            .Include(o => o.Id.IdAgencyNavigation) // Include Agency through SentRequest
+            .Include(o => o.Id.IdAgencyNavigation) 
             .Where(o => o.Type == type && o.IdMatch == idMatch)
             .ToList();
     }
@@ -54,7 +56,7 @@ public class OffersRepository : IOffersRepository
             .Include(o => o.TransportationOffer)
             .Include(o => o.IdMatchNavigation)
             .Include(o => o.UserIdUserNavigation)
-            .Include(o => o.Id.IdAgencyNavigation) // Include Agency through SentRequest
+            .Include(o => o.Id.IdAgencyNavigation) 
             .Where(o => o.Type == type && o.IdMatch == idMatch && o.Chosen == true)
             .FirstOrDefault();
     }
@@ -199,6 +201,56 @@ public class OffersRepository : IOffersRepository
         catch (Exception ex)
         {
             throw new Exception($"Error updating offer status: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<AutoSelectBestOfferResponse?> AutoSelectBestOffer(int matchId, string offerType, decimal weightPrice, decimal weightCapacity, decimal weightBenefits, decimal weightAgency)
+    {
+        try
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("p_match_id", matchId),
+                new NpgsqlParameter("p_offer_type", offerType),
+                new NpgsqlParameter("p_weight_price", weightPrice),
+                new NpgsqlParameter("p_weight_capacity", weightCapacity),
+                new NpgsqlParameter("p_weight_benefits", weightBenefits),
+                new NpgsqlParameter("p_weight_agency", weightAgency)
+            };
+
+            var sql = "SELECT * FROM auto_select_best_offer(@p_match_id, @p_offer_type, @p_weight_price, @p_weight_capacity, @p_weight_benefits, @p_weight_agency)";
+
+            using var command = _travelDbContext.Database.GetDbConnection().CreateCommand();
+            command.CommandText = sql;
+            command.Parameters.AddRange(parameters);
+
+            await _travelDbContext.Database.OpenConnectionAsync();
+
+            using var reader = await command.ExecuteReaderAsync();
+            
+            if (await reader.ReadAsync())
+            {
+                var selectedOfferId = reader.IsDBNull(0) ? (int?)null : reader.GetInt32(0);
+                var selectedAgencyName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                var selectionScore = reader.IsDBNull(2) ? 0m : reader.GetDecimal(2);
+                var selectionReason = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                var totalOffersAnalyzed = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+
+                return new AutoSelectBestOfferResponse
+                {
+                    SelectedOfferId = selectedOfferId,
+                    SelectedAgencyName = selectedAgencyName,
+                    SelectionScore = selectionScore,
+                    SelectionReason = selectionReason,
+                    TotalOffersAnalyzed = totalOffersAnalyzed
+                };
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error in auto-select best offer: {ex.Message}", ex);
         }
     }
 

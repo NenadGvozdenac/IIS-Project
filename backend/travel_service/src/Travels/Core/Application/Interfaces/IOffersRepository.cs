@@ -1,4 +1,5 @@
 using travel_service.src.Travels.Core.Domain.Entities;
+using travel_service.src.Travels.Core.Application.Commands.AutoSelectBestOffer;
 
 namespace travel_service.src.Travels.Core.Application.Interfaces;
 
@@ -12,4 +13,5 @@ public interface IOffersRepository
     Offer? GetOfferByCompositeKey(int idOffer, int idAgency, int idRequest);
     Offer CreateOffer(Offer offer);
     void UpdateOfferStatus(int idOffer, int idAgency, int idRequest, bool chosen);
+    Task<AutoSelectBestOfferResponse?> AutoSelectBestOffer(int matchId, string offerType, decimal weightPrice, decimal weightCapacity, decimal weightBenefits, decimal weightAgency);
 }

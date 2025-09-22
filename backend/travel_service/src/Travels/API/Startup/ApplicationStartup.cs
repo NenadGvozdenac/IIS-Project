@@ -40,6 +40,10 @@ public static class ApplicationStartup
     private static void SetupMediatR(IServiceCollection services)
     {
         services.AddMediatR(Assembly.GetExecutingAssembly());
+        
+        // Registruj current assembly
+        var currentAssembly = typeof(ApplicationStartup).Assembly;
+        services.AddMediatR(currentAssembly);
     }
     
     private static void SetupDatabases(IServiceCollection services, IConfiguration configuration)

@@ -20,12 +20,7 @@
                 </nav>
             </div>
             <div class="header-right">
-                <button 
-                    v-if="isTeamManager && canCreateTravel" 
-                    @click="showCreateTravelModal = true"
-                    class="btn btn-primary">
-                    🧳 Create Travel
-                </button>
+                <!-- Team manager ne kreira putovanja, to radi club manager -->
             </div>
         </header>
 
@@ -94,7 +89,7 @@
                         <div v-else class="offer-card-display">
                             <div class="offer-header">
                                 <h3>{{ transportationOffer.agencyName || 'N/A' }}</h3>
-                                <span class="status-badge chosen">Chosen</span>
+                                <span class="status-badge chosen">{{ trip ? 'Final Selection' : 'Chosen' }}</span>
                             </div>
                             
                             <div class="offer-price">
@@ -157,7 +152,7 @@
                         <div v-else class="offer-card-display">
                             <div class="offer-header">
                                 <h3>{{ accommodationOffer.agencyName || 'N/A' }}</h3>
-                                <span class="status-badge chosen">Chosen</span>
+                                <span class="status-badge chosen">{{ trip ? 'Final Selection' : 'Chosen' }}</span>
                             </div>
                             
                             <div class="offer-price">
@@ -214,29 +209,7 @@
             </div>
         </div>
 
-        <!-- Create Travel Modal -->
-        <div v-if="showCreateTravelModal" class="modal-overlay" @click="closeCreateTravelModal">
-            <div class="modal-content" @click.stop>
-                <h2>Create Travel</h2>
-                <form @submit.prevent="createTravel">
-                    <div class="form-group">
-                        <label for="travelNotes">Add Travel Note</label>
-                        <textarea 
-                            id="travelNotes"
-                            v-model="travelNotes" 
-                            rows="5"
-                            placeholder="Enter any additional notes for this travel..."
-                            class="form-control">
-                        </textarea>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" @click="closeCreateTravelModal" class="btn btn-outline">Cancel</button>
-                        <button type="submit" :disabled="loading" class="btn btn-primary">Create</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        
     </div>
 </template>
 
@@ -255,11 +228,7 @@ const team = ref(null)
 const competition = ref(null)
 const transportationOffer = ref(null)
 const accommodationOffer = ref(null)
-
-// Create Travel Modal
-const showCreateTravelModal = ref(false)
-const travelNotes = ref('')
-const loading = ref(false)
+const trip = ref(null)
 
 const formatDate = (dt) => {
 	if (!dt) return ''
@@ -299,18 +268,7 @@ const getUserId = () => {
   return userData?.userID || null
 }
 //const isTeamManager = computed(() => getUserId() == 6)
-
-const canCreateTravel = computed(() => {
-  if (!match.value) return false
-  
-  // Check if transportation is required and chosen
-  const transportationOk = !match.value.transportationRequired || transportationOffer.value
-  
-  // Check if accommodation is required and chosen
-  const accommodationOk = !match.value.accommodationRequired || accommodationOffer.value
-  
-  return transportationOk && accommodationOk
-})
+const isTeamManager = computed(() => true) // Temporarily always true for demo
 
 // Navigation methods
 const goToTransportOffers = () => {
@@ -319,12 +277,6 @@ const goToTransportOffers = () => {
 
 const goToAccommodationOffers = () => {
   router.push(`/offers/accommodation/${match.value.idMatch}`)
-}
-
-// Create Travel Modal methods
-const closeCreateTravelModal = () => {
-  showCreateTravelModal.value = false
-  travelNotes.value = ''
 }
 
 const fetchChosenOffers = async () => {
@@ -364,39 +316,6 @@ const fetchChosenOffers = async () => {
     }
   } catch (error) {
     console.error('Error fetching chosen offers:', error)
-  }
-}
-
-const createTravel = async () => {
-  if (loading.value || !match.value) return
-  
-  loading.value = true
-  
-  try {
-    const travelData = {
-      notes: travelNotes.value,
-      matchIdMatch: match.value.idMatch,
-      idTransportationOffer: transportationOffer.value?.idOffer,
-      idTransportationAgency: transportationOffer.value?.idAgency,
-      idTransportationRequest: transportationOffer.value?.idRequest,
-      idAccommodationOffer: accommodationOffer.value?.idOffer || null,
-      idAccommodationAgency: accommodationOffer.value?.idAgency || null,
-      idAccommodationRequest: accommodationOffer.value?.idRequest || null
-    }
-    
-    const response = await axios.post('https://localhost:5007/api/trip', travelData)
-    
-    if (response.data.isSuccess) {
-      alert('Travel created successfully!')
-      closeCreateTravelModal()
-    } else {
-      alert(response.data.error || 'Failed to create travel')
-    }
-  } catch (error) {
-    console.error('Error creating travel:', error)
-    alert('Failed to create travel')
-  } finally {
-    loading.value = false
   }
 }
 
@@ -451,8 +370,33 @@ const fetchMatchDetails = async () => {
 		
 		// Fetch chosen offers
 		await fetchChosenOffers()
+		
+		// Fetch trip if exists
+		await fetchTrip()
 	} catch (error) {
 		console.error('Error fetching match details:', error)
+	}
+}
+
+const fetchTrip = async () => {
+	if (!match.value) return
+	
+	try {
+		const response = await axios.get(`https://localhost:5007/api/Trip/match/${match.value.idMatch}`, {
+			headers: {
+				'Authorization': `Bearer ${localStorage.getItem('token')}`
+			}
+		})
+		
+		if (response.data.isSuccess && response.data.value.hasTrip) {
+			trip.value = response.data.value.trip
+			console.log('Fetched trip:', trip.value)
+		} else {
+			trip.value = null
+		}
+	} catch (error) {
+		console.error('Error fetching trip:', error)
+		trip.value = null
 	}
 }
 
@@ -854,5 +798,49 @@ onMounted(() => {
 	border-radius: 1rem;
 	font-size: 0.875rem;
 	font-weight: 500;
+}
+
+/* Travel Status Styles */
+.travel-status-card {
+	background: white;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	margin-top: 24px;
+}
+
+.travel-status-title {
+	margin: 0 0 16px 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.travel-status-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.travel-info p {
+	margin: 0 0 8px 0;
+	color: #374151;
+}
+
+.status-badge {
+	padding: 4px 12px;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.status-confirmed {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.no-travel-message {
+	color: #6b7280;
+	font-style: italic;
 }
 </style>

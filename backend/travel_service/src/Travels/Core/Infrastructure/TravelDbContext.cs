@@ -32,6 +32,8 @@ public partial class TravelDbContext : DbContext
 
     public virtual DbSet<Offer> Offers { get; set; }
 
+    public virtual DbSet<OfferSelectionLog> OfferSelectionLogs { get; set; }
+
     public virtual DbSet<Player> Players { get; set; }
 
     public virtual DbSet<Position> Positions { get; set; }
@@ -238,6 +240,12 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("offer");
 
+            entity.HasIndex(e => e.Type, "idx_offer_type");
+
+            entity.HasIndex(e => new { e.Type, e.IdMatch }, "idx_offer_type_match");
+
+            entity.HasIndex(e => new { e.Type, e.IdMatch, e.Chosen }, "idx_offer_type_match_chosen");
+
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
@@ -264,6 +272,33 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => new { d.IdAgency, d.IdRequest })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_offer_sent_request");
+        });
+
+        modelBuilder.Entity<OfferSelectionLog>(entity =>
+        {
+            entity.HasKey(e => e.IdSelection).HasName("offer_selection_log_pkey");
+
+            entity.ToTable("offer_selection_log");
+
+            entity.Property(e => e.IdSelection).HasColumnName("id_selection");
+            entity.Property(e => e.IdMatch).HasColumnName("id_match");
+            entity.Property(e => e.OfferType)
+                .HasMaxLength(20)
+                .HasColumnName("offer_type");
+            entity.Property(e => e.SelectedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("selected_at");
+            entity.Property(e => e.SelectedBy)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'AUTO'::character varying")
+                .HasColumnName("selected_by");
+            entity.Property(e => e.SelectedOfferId).HasColumnName("selected_offer_id");
+            entity.Property(e => e.SelectionReason).HasColumnName("selection_reason");
+            entity.Property(e => e.SelectionScore)
+                .HasPrecision(5, 2)
+                .HasColumnName("selection_score");
+            entity.Property(e => e.TotalOffersAnalyzed).HasColumnName("total_offers_analyzed");
         });
 
         modelBuilder.Entity<Player>(entity =>
@@ -313,6 +348,8 @@ public partial class TravelDbContext : DbContext
             entity.HasKey(e => e.IdRequest).HasName("request_pkey");
 
             entity.ToTable("request");
+
+            entity.HasIndex(e => new { e.IdMatch, e.Type }, "idx_request_match_type");
 
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
             entity.Property(e => e.Budget).HasColumnName("budget");

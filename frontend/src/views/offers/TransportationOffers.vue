@@ -31,12 +31,22 @@
     <!-- Page title and new offer button -->
     <div class="page-header">
       <h1>Transportation offers</h1>
-      <button 
-        v-if="isTeamManager" 
-        @click="showAddOfferModal = true"
-        class="btn btn-primary">
-        + New transportation offer
-      </button>
+      <div class="header-buttons">
+        <button 
+          v-if="isClubManager && offers.length > 1" 
+          @click="autoSelectBestOffer"
+          class="btn btn-auto-select"
+          :disabled="autoSelectLoading">
+          <span v-if="autoSelectLoading">🤖 Selecting...</span>
+          <span v-else>🤖 Auto Select Best</span>
+        </button>
+        <button 
+          v-if="isTeamManager" 
+          @click="showAddOfferModal = true"
+          class="btn btn-primary">
+          + New transportation offer
+        </button>
+      </div>
     </div>
 
     <!-- Loading state -->
@@ -95,7 +105,7 @@
               <span class="benefit-tag">
                 {{
                 [
-                    offer.airConditioner ? 'Air Conditioning' : null,
+                    offer.airConditioning ? 'Air Conditioning' : null,
                     offer.tv ? 'TV' : null,
                     offer.wifiTransport ? 'WIFI' : null,
                     offer.restroom ? 'WC' : null
@@ -224,6 +234,61 @@
         </form>
       </div>
     </div>
+
+    <!-- Auto Select Result Modal -->
+    <div v-if="showAutoSelectResult" class="modal-overlay" @click="closeAutoSelectResult">
+      <div class="modal-content auto-select-modal" @click.stop>
+        <div class="modal-header">
+          <h2>🤖 Auto Selection Completed!</h2>
+          <button @click="closeAutoSelectResult" class="close-btn">×</button>
+        </div>
+        
+        <div class="result-content" v-if="autoSelectResult">
+          <div class="success-badge">
+            ✅ Best offer selected successfully!
+          </div>
+          
+          <div class="result-details">
+            <div class="detail-card">
+              <div class="detail-icon">🏢</div>
+              <div class="detail-info">
+                <h4>Selected Agency</h4>
+                <p>{{ autoSelectResult.selectedAgencyName }}</p>
+              </div>
+            </div>
+            
+            <div class="detail-card">
+              <div class="detail-icon">⭐</div>
+              <div class="detail-info">
+                <h4>Selection Score</h4>
+                <p>{{ (autoSelectResult.selectionScore * 100).toFixed(1) }}%</p>
+              </div>
+            </div>
+            
+            <div class="detail-card">
+              <div class="detail-icon">📊</div>
+              <div class="detail-info">
+                <h4>Offers Analyzed</h4>
+                <p>{{ autoSelectResult.totalOffersAnalyzed }} offers</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="reason-section">
+            <h4>📋 Selection Analysis</h4>
+            <div class="reason-text">
+              {{ autoSelectResult.selectionReason }}
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button @click="closeAutoSelectResult" class="btn btn-primary">
+              Perfect! Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -264,13 +329,17 @@ const getUserId = () => {
 
 // Reactive data
 const loading = ref(false)
+const autoSelectLoading = ref(false)
 const error = ref('')
 const offers = ref([])
 const availableAgencies = ref([])
 const showAddOfferModal = ref(false)
+const showAutoSelectResult = ref(false)
+const autoSelectResult = ref(null)
 
 // Computed
 const isTeamManager = computed(() => getUserId() == 6)
+const isClubManager = computed(() => getUserId() == 2)
 const matchId = computed(() => parseInt(route.params.matchId))
 
 // New offer form data
@@ -415,6 +484,11 @@ const closeAddOfferModal = () => {
   resetNewOffer()
 }
 
+const closeAutoSelectResult = () => {
+  showAutoSelectResult.value = false
+  autoSelectResult.value = null
+}
+
 const resetNewOffer = () => {
   newOffer.value = {
     selectedAgency: '',
@@ -435,6 +509,51 @@ const resetNewOffer = () => {
 const parseBenefits = (benefitsString) => {
   if (!benefitsString) return []
   return benefitsString.split(',').map(b => b.trim()).filter(b => b.length > 0)
+}
+
+const autoSelectBestOffer = async () => {
+  if (autoSelectLoading.value || offers.value.length <= 1) return
+  
+  autoSelectLoading.value = true
+  error.value = ''
+  
+  try {
+    const autoSelectData = {
+      matchId: matchId.value,
+      offerType: 'transportation',
+      weightPrice: 0.4,      // 40% weight for price
+      weightCapacity: 0.3,   // 30% weight for capacity
+      weightBenefits: 0.2,   // 20% weight for benefits
+      weightAgency: 0.1      // 10% weight for agency reliability
+    }
+    
+    const response = await axios.post('https://localhost:5007/api/offers/auto-select', autoSelectData)
+    
+    if (response.data.isSuccess) {
+      const result = response.data.value
+      
+      // Store result and show modal
+      autoSelectResult.value = {
+        selectedAgencyName: result.selectedAgencyName,
+        selectionScore: result.selectionScore,
+        totalOffersAnalyzed: result.totalOffersAnalyzed,
+        selectionReason: result.selectionReason
+      }
+      showAutoSelectResult.value = true
+      
+      // Refresh offers to show the selected one
+      await fetchOffers()
+    } else {
+      error.value = response.data.error || 'Auto-selection failed'
+      alert(`❌ Auto-selection failed: ${error.value}`)
+    }
+  } catch (err) {
+    console.error('Error in auto-select:', err)
+    error.value = 'Failed to auto-select best offer'
+    alert(`❌ Error: ${error.value}`)
+  } finally {
+    autoSelectLoading.value = false
+  }
 }
 
 // Lifecycle
@@ -587,6 +706,12 @@ onMounted(() => {
   margin: 0;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .btn {
   padding: 0.75rem 1.5rem;
   border-radius: 0.375rem;
@@ -607,6 +732,26 @@ onMounted(() => {
 
 .btn-primary:hover {
   background: #1406a0;
+}
+
+.btn-auto-select {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 2px solid #667eea;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-auto-select:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-auto-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-outline {
@@ -852,5 +997,121 @@ onMounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Auto Select Result Modal */
+.auto-select-modal {
+  max-width: 600px;
+  width: 95%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.success-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.result-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-card {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.detail-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detail-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-info p {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.reason-section {
+  background: #f0f9ff;
+  border: 2px solid #0ea5e9;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.reason-section h4 {
+  margin: 0 0 1rem 0;
+  color: #0c4a6e;
+  font-weight: 600;
+}
+
+.reason-text {
+  color: #0f172a;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 </style>

@@ -5,6 +5,7 @@ using travel_service.src.Travels.Core.Application.Features.Offers.CreateOffer;
 using travel_service.src.Travels.Core.Application.Features.Offers.GetAllOffers;
 using travel_service.src.Travels.Core.Application.Features.Offers.GetOfferByIds;
 using travel_service.src.Travels.Core.Application.Features.Offers.UpdateOfferStatus;
+using travel_service.src.Travels.Core.Application.Commands.AutoSelectBestOffer;
 
 namespace travel_service.src.Travels.API.Controllers;
 
@@ -46,6 +47,13 @@ public class OffersController : BaseController
 
     [HttpPut("status")]
     public async Task<ActionResult> UpdateOfferStatus([FromBody] UpdateOfferStatusCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPost("auto-select")]
+    public async Task<ActionResult> AutoSelectBestOffer([FromBody] AutoSelectBestOfferCommand command)
     {
         var result = await _mediator.Send(command);
         return CreateResponse(result);

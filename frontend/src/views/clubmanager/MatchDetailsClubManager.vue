@@ -229,21 +229,6 @@
 		</div>
     </div>
 
-    <!-- Warning Modal -->
-    <div v-if="showWarningModal" class="modal-overlay" @click="closeWarningModal">
-        <div class="modal-content warning-modal" @click.stop>
-            <div class="modal-header">
-                <h3>⚠️ Warning</h3>
-                <button @click="closeWarningModal" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="warning-text">{{ warningMessage }}</p>
-            </div>
-            <div class="modal-footer">
-                <button @click="closeWarningModal" class="btn btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Create Travel Modal -->
     <div v-if="showCreateTravelModal" class="modal-overlay" @click="closeCreateTravelModal">
@@ -336,12 +321,13 @@ const transportationOffer = ref(null)
 const accommodationOffer = ref(null)
 
 // Create Travel Modal
+const travelCreated = ref(false)
 const showCreateTravelModal = ref(false)
 const showWarningModal = ref(false)
 const warningMessage = ref('')
 const travelNotes = ref('')
 const loading = ref(false)
-const travelCreated = ref(false) // Track if travel has been created
+const trip = ref(null) // Actual trip data from API
 
 const formatDate = (dt) => {
 	if (!dt) return ''
@@ -356,14 +342,18 @@ const formatTime = (dt) => {
 
 const allMatches = ref([])
 
+// Computed property to check if travel exists
+// const travelCreated = computed(() => {
+//   console.log('travelCreated computed - trip.value:', trip.value)
+//   return trip.value !== null && trip.value !== undefined
+// })
+
 const matchStatus = computed(() => {
 	if (!match.value) return ''
 	const now = new Date()
 	const matchDate = new Date(match.value.scheduledAt)
 	if (matchDate < now) return 'archived'
-	// Find all future matches
 	const futureMatches = allMatches.value.filter(m => new Date(m.scheduledAt) > now)
-	// Sort by date
 	futureMatches.sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
 	if (futureMatches.length && futureMatches[0].idMatch === match.value.idMatch) return 'next'
 	return 'future'
@@ -373,11 +363,36 @@ const goBack = () => {
 	router.push('/club-manager/matches')
 }
 
+// Fetch trip data for this match
+const fetchTrip = async () => {
+  if (!match.value) return
+  
+  try {
+    const response = await axios.get(`https://localhost:5007/api/Trip/match/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+    if (response.data.isSuccess && response.data.value.trip != null) {
+      trip.value = response.data.value
+	  travelCreated.value = true
+      console.log('Fetched trip:', trip.value)
+    } else {
+      trip.value = null
+	  travelCreated.value = false
+    }
+  } catch (error) {
+    console.error('Error fetching trip:', error)
+    trip.value = null
+  }
+}
+
 const goToCreateTravel = () => {
   // Check if travel has already been created
-  if (travelCreated.value) {
-    return // Travel already created, don't allow recreation
-  }
+//   if (travelCreated.value) {
+//     return // Travel already created, don't allow recreation
+//   }
   
   // Check if required offers are selected
   if (!transportationOffer.value) {
@@ -446,14 +461,21 @@ const createTravel = async () => {
     
     console.log('Creating travel with data:', travelData)
     
-    const response = await axios.post('https://localhost:5007/api/Trip', travelData)
+    const response = await axios.post('https://localhost:5007/api/Trip', travelData, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
     
     console.log('Travel creation response:', response)
     
-    if (response.status === 200 || response.status === 201) {
-      travelCreated.value = true // Mark travel as created
+    if (response.data.isSuccess) {
+      // Refresh trip data after creation
+      await fetchTrip()
       alert('Travel created successfully!')
       closeCreateTravelModal()
+    } else {
+      alert(response.data.error || 'Failed to create travel')
     }
     
   } catch (error) {
@@ -575,6 +597,9 @@ const fetchMatchDetails = async () => {
 		
 		// Fetch chosen offers
 		await fetchChosenOffers()
+		
+		// Fetch trip data
+		await fetchTrip()
 	} catch (error) {
 		console.error('Error fetching match details:', error)
 	}
@@ -624,6 +649,7 @@ const fetchOpponent = async (opponentId) => {
 
 onMounted(() => {
 	fetchMatchDetails()
+	fetchTrip()
 })
 </script>
 

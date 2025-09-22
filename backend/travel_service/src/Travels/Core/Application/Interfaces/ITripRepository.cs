@@ -7,6 +7,7 @@ public interface ITripRepository
     Trip CreateTrip(Trip trip);
     bool DoesMatchExist(int matchId);
     bool DoesTripExistForMatch(int matchId);
+    Trip? GetTripByMatch(int matchId);
     bool DoesTransportationOfferExist(int idOffer, int idAgency, int idRequest);
     bool DoesAccommodationOfferExist(int idOffer, int idAgency, int idRequest);
     bool IsTransportationOfferChosen(int idOffer, int idAgency, int idRequest);

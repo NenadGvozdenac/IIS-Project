@@ -533,6 +533,19 @@ CREATE TABLE match_zone_sales_summary (
     UNIQUE (id_match, id_zone)
 );
 
+-- Tabela za logovanje automatskih izbora
+CREATE TABLE IF NOT EXISTS offer_selection_log (
+    id_selection SERIAL PRIMARY KEY,
+    id_match INTEGER NOT NULL,
+    offer_type VARCHAR(20) NOT NULL,
+    selected_offer_id INTEGER,
+    selection_score NUMERIC(5,2),
+    selection_reason TEXT,
+    total_offers_analyzed INTEGER,
+    selected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    selected_by VARCHAR(20) DEFAULT 'AUTO'
+);
+
 -- FOREIGN KEY CONSTRAINTS
 ALTER TABLE accommodation_offer
     ADD CONSTRAINT fk_acc_offer_offer

@@ -30,6 +30,11 @@ public class TripRepository : ITripRepository
         return _travelDbContext.Trips.Any(t => t.MatchIdMatch == matchId);
     }
 
+    public Trip? GetTripByMatch(int matchId)
+    {
+        return _travelDbContext.Trips.FirstOrDefault(t => t.MatchIdMatch == matchId);
+    }
+
     public bool DoesTransportationOfferExist(int idOffer, int idAgency, int idRequest)
     {
         return _travelDbContext.Offers.Any(o => 
