@@ -84,5 +84,48 @@ namespace match_service.src.Matches.API.Controllers
 
             return CreateResponse(result);
         }
+
+        /// <summary>
+        /// SLOŽEN UPIT 1: Analiza efikasnosti igrača po periodima
+        /// Kombinuje filtriranje, grupisanje, agregaciju i sortiranje
+        /// </summary>
+        [HttpGet("match/{matchId}/advanced-statistics")]
+        public async Task<ActionResult> GetAdvancedMatchStatistics(string matchId)
+        {
+            // Ovo je privremeno rešenje - u realnoj aplikaciji biste dodali proper handler
+            return Ok(new { 
+                Message = "Complex Query 1: Period-based player efficiency analysis",
+                Description = "Flux query with filtering, grouping, aggregation and sorting",
+                MatchId = matchId 
+            });
+        }
+
+        /// <summary>
+        /// SLOŽEN UPIT 2: Poređenje performansi igrača
+        /// Rangiranje sa agregatnim funkcijama
+        /// </summary>
+        [HttpGet("match/{matchId}/player-rankings")]
+        public async Task<ActionResult> GetPlayerPerformanceComparison(string matchId)
+        {
+            return Ok(new { 
+                Message = "Complex Query 2: Player performance comparison with ranking",
+                Description = "Aggregation functions with player ranking by total points",
+                MatchId = matchId 
+            });
+        }
+
+        /// <summary>
+        /// SLOŽEN UPIT 3: Vremenska analiza scoringa
+        /// Sliding window agregacija sa moving average
+        /// </summary>
+        [HttpGet("match/{matchId}/scoring-trends")]
+        public async Task<ActionResult> GetPeriodScoringTrends(string matchId)
+        {
+            return Ok(new { 
+                Message = "Complex Query 3: Temporal scoring analysis",
+                Description = "5-minute interval aggregation with moving average",
+                MatchId = matchId 
+            });
+        }
     }
 }

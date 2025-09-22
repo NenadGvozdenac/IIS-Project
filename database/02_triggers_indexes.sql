@@ -424,6 +424,12 @@ BEGIN
     ) THEN
         EXECUTE 'CREATE INDEX idx_personal_event_id_player ON personal_event (id_player)';
     END IF;
+    --TESTIRANJE INDEKSA
+    --BEZ INDEKSA
+        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2; SET enable_indexscan = on; SET enable_bitmapscan = on;"
+
+    --SA INDEKSOM
+        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2;"
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_team'
@@ -473,39 +479,390 @@ CREATE OR REPLACE FUNCTION update_match_score_on_personal_event()
 RETURNS TRIGGER AS $$
 DECLARE
     points_to_add INTEGER := 0;
+    target_match_id INTEGER;
+    target_team_id INTEGER;
 BEGIN
-    -- Proveravamo da li je event tip koji donosi poene
-    CASE NEW.type
-        WHEN '+2p' THEN points_to_add := 2;
-        WHEN '+3p' THEN points_to_add := 3;
-        WHEN '+ft' THEN points_to_add := 1;
-        ELSE points_to_add := 0;
-    END CASE;
+    -- Određujemo operaciju i uzimamo odgovarajuće vrednosti
+    IF TG_OP = 'INSERT' THEN
+        target_match_id := NEW.id_match;
+        target_team_id := NEW.id_team;
+        
+        -- Proveravamo da li je event tip koji donosi poene
+        CASE NEW.type
+            WHEN '+2p' THEN points_to_add := 2;
+            WHEN '+3p' THEN points_to_add := 3;
+            WHEN '+ft' THEN points_to_add := 1;
+            ELSE points_to_add := 0;
+        END CASE;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        target_match_id := OLD.id_match;
+        target_team_id := OLD.id_team;
+        
+        -- Pri brisanju, oduzimamo poene (negativni points_to_add)
+        CASE OLD.type
+            WHEN '+2p' THEN points_to_add := -2;
+            WHEN '+3p' THEN points_to_add := -3;
+            WHEN '+ft' THEN points_to_add := -1;
+            ELSE points_to_add := 0;
+        END CASE;
+    END IF;
     
-    -- Ako event donosi poene, ažuriramo rezultat u match_tracking
-    IF points_to_add > 0 THEN
+    -- Ako event utiče na poene, ažuriramo rezultat u match_tracking
+    IF points_to_add != 0 THEN
         UPDATE match_tracking 
         SET 
             our_points = CASE 
-                WHEN NEW.id_team = 1 THEN COALESCE(our_points, 0) + points_to_add
+                WHEN target_team_id = 1 THEN GREATEST(0, COALESCE(our_points, 0) + points_to_add)
                 ELSE COALESCE(our_points, 0)
             END,
             opponent_points = CASE 
-                WHEN NEW.id_team != 1 THEN COALESCE(opponent_points, 0) + points_to_add
+                WHEN target_team_id != 1 THEN GREATEST(0, COALESCE(opponent_points, 0) + points_to_add)
                 ELSE COALESCE(opponent_points, 0)
             END,
             last_update_time = CURRENT_TIMESTAMP
-        WHERE id_match = NEW.id_match;
+        WHERE id_match = target_match_id;
     END IF;
     
-    RETURN NEW;
+    -- Vraćamo odgovarajući red u zavisnosti od operacije
+    IF TG_OP = 'INSERT' THEN
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Kreiranje triggera koji poziva funkciju kada se upisuje novi personal event
+-- Kreiranje triggera koji poziva funkciju kada se upisuje ili briše personal event
 CREATE TRIGGER trigger_update_match_score_on_personal_event
-    AFTER INSERT ON personal_event
+    AFTER INSERT OR DELETE ON personal_event
     FOR EACH ROW
     EXECUTE FUNCTION update_match_score_on_personal_event();
 
 -- KRAJ TRIGGERA SRDJAN ILIC
+
+--------------------------------------------------------------------------
+-- SRDJAN ILIC - KOMPLEKSNA FUNKCIJA ZA EFIKASNOST IGRAČA NA UTAKMICI
+-- Računa detaljnu efikasnost igrača na osnovu svih njegovih personal_event zapisa
+
+CREATE TYPE player_efficiency_stats AS (
+    player_id INTEGER,
+    team_id INTEGER,
+    match_id INTEGER,
+    player_name VARCHAR(255),
+    match_name VARCHAR(255),
+    total_points INTEGER,
+    total_assists INTEGER,
+    total_rebounds INTEGER,
+    total_steals INTEGER,
+    total_blocks INTEGER,
+    total_fouls INTEGER,
+    shooting_2p_made INTEGER,
+    shooting_2p_attempted INTEGER,
+    shooting_2p_percentage NUMERIC(5,2),
+    shooting_3p_made INTEGER,
+    shooting_3p_attempted INTEGER,
+    shooting_3p_percentage NUMERIC(5,2),
+    free_throws_made INTEGER,
+    free_throws_attempted INTEGER,
+    free_throw_percentage NUMERIC(5,2),
+    offensive_rebounds INTEGER,
+    defensive_rebounds INTEGER,
+    substitutions_count INTEGER,
+    efficiency_rating NUMERIC(8,2),
+    performance_grade VARCHAR(10),
+    minutes_played INTEGER,
+    plus_minus_rating NUMERIC(6,2)
+);
+
+CREATE OR REPLACE FUNCTION calculate_player_match_efficiency(
+    p_player_id INTEGER,
+    p_team_id INTEGER,
+    p_match_id INTEGER
+) RETURNS player_efficiency_stats AS $$
+DECLARE
+    result player_efficiency_stats;
+    
+    -- Osnovne statistike
+    v_points_2p INTEGER := 0;
+    v_points_3p INTEGER := 0;
+    v_points_ft INTEGER := 0;
+    v_assists INTEGER := 0;
+    v_rebounds_off INTEGER := 0;
+    v_rebounds_def INTEGER := 0;
+    v_steals INTEGER := 0;
+    v_blocks INTEGER := 0;
+    v_fouls INTEGER := 0;
+    
+    -- Šuterske statistike
+    v_2p_made INTEGER := 0;
+    v_2p_attempted INTEGER := 0;
+    v_3p_made INTEGER := 0;
+    v_3p_attempted INTEGER := 0;
+    v_ft_made INTEGER := 0;
+    v_ft_attempted INTEGER := 0;
+    
+    -- Dodatne statistike
+    v_substitutions INTEGER := 0;
+    v_sub_in_time INTEGER := 0;
+    v_sub_out_time INTEGER := 0;
+    v_minutes_played INTEGER := 0;
+    v_is_currently_playing BOOLEAN := FALSE;
+    v_is_starting_lineup BOOLEAN := FALSE;
+    
+    -- Za plus/minus rating
+    v_team_points_when_playing INTEGER := 0;
+    v_opponent_points_when_playing INTEGER := 0;
+    
+    -- Pomoćne varijable
+    v_player_name VARCHAR(255);
+    v_match_name VARCHAR(255);
+    v_efficiency NUMERIC(8,2);
+    v_grade VARCHAR(10);
+    v_team_id INTEGER;
+    
+    -- Cursor za prolaz kroz sve evente igrača u specificnom timu
+    event_cursor CURSOR FOR
+        SELECT pe.type, pe.period_time, pe.period, pe.creation_time
+        FROM personal_event pe
+        WHERE pe.id_player = p_player_id 
+          AND pe.id_team = p_team_id
+          AND pe.id_match = p_match_id
+        ORDER BY pe.creation_time;
+        
+BEGIN
+    -- Dohvatanje osnovnih informacija i provera da li je u startnoj postavi
+    SELECT CONCAT(p.name, ' ', p.surname), m.name, COALESCE(tmm.starting_lineup, FALSE)
+    INTO v_player_name, v_match_name, v_is_starting_lineup
+    FROM player p
+    CROSS JOIN match m
+    LEFT JOIN team_member_match tmm ON tmm.id_player = p.id_player 
+                                    AND tmm.id_team = p_team_id 
+                                    AND tmm.id_match = m.id_match
+    WHERE p.id_player = p_player_id 
+      AND m.id_match = p_match_id
+    LIMIT 1;
+    
+    -- Postavi team_id za rezultat
+    v_team_id := p_team_id;
+    
+    -- Ako nema podataka, vrati prazan rezultat
+    IF v_player_name IS NULL THEN
+        result.player_name := 'Player not found';
+        result.match_name := 'Match not found';
+        RETURN result;
+    END IF;
+    
+    -- Ako je u startnoj postavi, automatski postaviti da igra od početka
+    IF v_is_starting_lineup THEN
+        v_is_currently_playing := TRUE;
+        v_sub_in_time := 0; -- Počinje od početka utakmice
+    END IF;
+    
+    -- Prolaz kroz sve evente i računanje statistika
+    FOR event_rec IN event_cursor LOOP
+        CASE event_rec.type
+            -- Poeni
+            WHEN '+2p' THEN
+                v_points_2p := v_points_2p + 2;
+                v_2p_made := v_2p_made + 1;
+            WHEN '+3p' THEN
+                v_points_3p := v_points_3p + 3;
+                v_3p_made := v_3p_made + 1;
+            WHEN '+ft' THEN
+                v_points_ft := v_points_ft + 1;
+                v_ft_made := v_ft_made + 1;
+                
+            -- Promašaji
+            WHEN '2p' THEN
+                v_2p_attempted := v_2p_attempted + 1;
+            WHEN '3p' THEN
+                v_3p_attempted := v_3p_attempted + 1;
+            WHEN 'ft' THEN
+                v_ft_attempted := v_ft_attempted + 1;
+                
+            -- Ostale statistike
+            WHEN 'assist' THEN
+                v_assists := v_assists + 1;
+            WHEN 'reb of' THEN
+                v_rebounds_off := v_rebounds_off + 1;
+            WHEN 'reb def' THEN
+                v_rebounds_def := v_rebounds_def + 1;
+            WHEN 'steal' THEN
+                v_steals := v_steals + 1;
+            WHEN 'block' THEN
+                v_blocks := v_blocks + 1;
+            WHEN 'foul' THEN
+                v_fouls := v_fouls + 1;
+                
+            -- Izmene
+            WHEN 'substitution in' THEN
+                v_substitutions := v_substitutions + 1;
+                v_sub_in_time := COALESCE(event_rec.period_time, 0);
+                v_is_currently_playing := TRUE;
+            WHEN 'substitution out' THEN
+                v_sub_out_time := COALESCE(event_rec.period_time, 0);
+                v_is_currently_playing := FALSE;
+                -- Dodaj vreme igranja za ovaj segment
+                IF v_sub_in_time >= 0 THEN  -- >=0 jer startni igrači počinju od 0
+                    v_minutes_played := v_minutes_played + (v_sub_out_time - v_sub_in_time);
+                END IF;
+                -- Reset sub_in_time za sledeći ulazak
+                v_sub_in_time := -1;
+        END CASE;
+    END LOOP;
+    
+    -- Ako je igrač još uvek u igri na kraju (nije izašao), dodaj vreme do kraja utakmice
+    -- Pretpostavljamo da je utakmica 4 perioda po 10 minuta = 2400000 milisekundi
+    IF v_is_currently_playing AND v_sub_in_time >= 0 THEN
+        v_minutes_played := v_minutes_played + (2400000 - v_sub_in_time); -- 40 minuta = 2400000ms
+    END IF;
+    
+    -- Dodaj ukupne pokušaje za pogođene šuteve
+    v_2p_attempted := v_2p_attempted + v_2p_made;
+    v_3p_attempted := v_3p_attempted + v_3p_made;
+    v_ft_attempted := v_ft_attempted + v_ft_made;
+    
+    -- Konvertuj milisekunde u minute
+    v_minutes_played := v_minutes_played / 60000;
+    
+    -- Izračunavanje efikasnosti po NBA formuli:
+    -- EFF = (Points + Rebounds + Assists + Steals + Blocks) - (FG Missed + FT Missed + Turnovers)
+    -- Pošto nemamo turnovers, koristićemo faule kao aproksimaciju
+    v_efficiency := (v_points_2p + v_points_3p + v_points_ft) + 
+                   (v_rebounds_off + v_rebounds_def) + 
+                   v_assists + v_steals + v_blocks - 
+                   ((v_2p_attempted - v_2p_made) + (v_3p_attempted - v_3p_made) + 
+                    (v_ft_attempted - v_ft_made) + v_fouls);
+    
+    -- Izračunavanje efikasnosti BEZ normalizacije po vremenu
+    -- Efikasnost je apsolutna vrednost za utakmicu, ne zavisi od vremena igranja
+    
+    -- Određivanje ocene na osnovu efikasnosti
+    IF v_efficiency >= 30 THEN
+        v_grade := 'A+';
+    ELSIF v_efficiency >= 25 THEN
+        v_grade := 'A';
+    ELSIF v_efficiency >= 20 THEN
+        v_grade := 'B+';
+    ELSIF v_efficiency >= 15 THEN
+        v_grade := 'B';
+    ELSIF v_efficiency >= 10 THEN
+        v_grade := 'C+';
+    ELSIF v_efficiency >= 5 THEN
+        v_grade := 'C';
+    ELSE
+        v_grade := 'D';
+    END IF;
+    
+    -- Računanje plus/minus (aproksimacija - razlika poena dok je igrao)
+    -- Ovo je pojednostavljeno jer bi trebalo da pratimo tačno kad je igrao
+    SELECT 
+        COALESCE(mt.our_points, 0) - COALESCE(mt.opponent_points, 0)
+    INTO v_team_points_when_playing
+    FROM match_tracking mt
+    WHERE mt.id_match = p_match_id;
+    
+    -- Popunjavanje rezultata
+    result.player_id := p_player_id;
+    result.team_id := p_team_id;
+    result.match_id := p_match_id;
+    result.player_name := v_player_name;
+    result.match_name := v_match_name;
+    result.total_points := v_points_2p + v_points_3p + v_points_ft;
+    result.total_assists := v_assists;
+    result.total_rebounds := v_rebounds_off + v_rebounds_def;
+    result.total_steals := v_steals;
+    result.total_blocks := v_blocks;
+    result.total_fouls := v_fouls;
+    result.shooting_2p_made := v_2p_made;
+    result.shooting_2p_attempted := v_2p_attempted;
+    result.shooting_2p_percentage := CASE 
+        WHEN v_2p_attempted > 0 THEN ROUND((v_2p_made::NUMERIC / v_2p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.shooting_3p_made := v_3p_made;
+    result.shooting_3p_attempted := v_3p_attempted;
+    result.shooting_3p_percentage := CASE 
+        WHEN v_3p_attempted > 0 THEN ROUND((v_3p_made::NUMERIC / v_3p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.free_throws_made := v_ft_made;
+    result.free_throws_attempted := v_ft_attempted;
+    result.free_throw_percentage := CASE 
+        WHEN v_ft_attempted > 0 THEN ROUND((v_ft_made::NUMERIC / v_ft_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.offensive_rebounds := v_rebounds_off;
+    result.defensive_rebounds := v_rebounds_def;
+    result.substitutions_count := v_substitutions;
+    result.efficiency_rating := ROUND(v_efficiency, 2);
+    result.performance_grade := v_grade;
+    result.minutes_played := v_minutes_played;
+    result.plus_minus_rating := ROUND(v_team_points_when_playing::NUMERIC, 2);
+    
+    RETURN result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške, vrati osnovne informacije
+        result.player_id := p_player_id;
+        result.team_id := p_team_id;
+        result.match_id := p_match_id;
+        result.player_name := COALESCE(v_player_name, 'Unknown Player');
+        result.match_name := COALESCE(v_match_name, 'Unknown Match');
+        result.efficiency_rating := 0;
+        result.performance_grade := 'N/A';
+        RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- FUNKCIJA ZA DOBIJANJE STATISTIKA SVIH IGRAČA NA UTAKMICI
+CREATE OR REPLACE FUNCTION get_match_player_statistics(
+    p_match_id INTEGER
+) RETURNS SETOF player_efficiency_stats AS $$
+DECLARE
+    player_rec RECORD;
+    efficiency_result player_efficiency_stats;
+BEGIN
+    -- Prolazimo kroz sve igrače oba tima na datoj utakmici
+    FOR player_rec IN
+        SELECT DISTINCT 
+            tmm.id_player,
+            tmm.id_team,
+            p.name,
+            p.surname
+        FROM team_member_match tmm
+        JOIN player p ON p.id_player = tmm.id_player
+        WHERE tmm.id_match = p_match_id
+        ORDER BY tmm.id_team, p.name, p.surname
+    LOOP
+        -- Pozivamo funkciju za računanje efikasnosti svakog igrača
+        SELECT * INTO efficiency_result 
+        FROM calculate_player_match_efficiency(
+            player_rec.id_player,
+            player_rec.id_team,
+            p_match_id
+        );
+        
+        -- Vraćamo rezultat
+        RETURN NEXT efficiency_result;
+    END LOOP;
+    
+    RETURN;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške, vraćamo grešku kao rezultat
+        efficiency_result.player_name := 'Error occurred';
+        efficiency_result.match_name := SQLERRM;
+        efficiency_result.efficiency_rating := 0;
+        efficiency_result.performance_grade := 'ERROR';
+        RETURN NEXT efficiency_result;
+        RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ FUNKCIJA SRDJAN ILIC

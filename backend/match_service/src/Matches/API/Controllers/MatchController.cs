@@ -4,6 +4,7 @@ using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Features.Match.GetAllMatches;
 using match_service.src.Matches.Core.Application.Features.Match.GetFinishedMatchesByTeam;
 using match_service.src.Matches.Core.Application.Features.Match.GetMatchById;
+using match_service.src.Matches.Core.Application.Features.Match.GetMatchPlayerStatistics;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.PrepareMatchTracking;
 using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.GetTeamMembersByMatch;
@@ -72,6 +73,14 @@ public class MatchController : BaseController
             AnalystId = request.AnalystId
         };
         var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("{matchId}/player-statistics")]
+    public async Task<ActionResult> GetMatchPlayerStatistics(int matchId)
+    {
+        var query = new GetMatchPlayerStatisticsQuery(matchId);
+        var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
 }

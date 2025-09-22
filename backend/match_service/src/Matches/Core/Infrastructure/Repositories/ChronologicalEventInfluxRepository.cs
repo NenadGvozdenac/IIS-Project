@@ -221,6 +221,7 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                   |> range(start: -1y)
                   |> filter(fn: (r) => r._measurement == ""basketball_events"")
                   |> filter(fn: (r) => r.match_id == ""{matchId}"")
+                  |> filter(fn: (r) => r._field == ""event_id"")
                   |> group(columns: [""event_type""])
                   |> count()";
 
@@ -310,6 +311,142 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
             }
         }
 
+        // SLOŽEN UPIT 1: Kombinuje filtriranje, grupisanje, agregaciju i sortiranje
+        // Analiza efikasnosti igrača po periodima (prosečni poeni, asistencije, faul-ovi)
+        public async Task<IEnumerable<dynamic>> GetAdvancedMatchStatisticsAsync(string matchId)
+        {
+            var flux = $@"
+                from(bucket: ""{_bucket}"")
+                  |> range(start: -1y)
+                  |> filter(fn: (r) => r._measurement == ""basketball_events"")
+                  |> filter(fn: (r) => r.match_id == ""{matchId}"")
+                  |> filter(fn: (r) => r.event_category == ""personal"")
+                  |> filter(fn: (r) => r.event_type == ""+2p"" or r.event_type == ""+3p"" or r.event_type == ""assist"" or r.event_type == ""foul"")
+                  |> group(columns: [""period"", ""event_type""])
+                  |> aggregateWindow(every: inf, fn: count, createEmpty: false)
+                  |> group(columns: [""period""])
+                  |> sort(columns: [""period""])";
+
+            try
+            {
+                var queryApi = _influxDBClient.GetQueryApi();
+                var tables = await queryApi.QueryAsync(flux, _org);
+                
+                var results = new List<dynamic>();
+                foreach (var table in tables)
+                {
+                    foreach (var record in table.Records)
+                    {
+                        results.Add(new
+                        {
+                            Period = record.GetValueByKey("period"),
+                            EventType = record.GetValueByKey("event_type"),
+                            Count = Convert.ToInt32(record.GetValue()),
+                            Timestamp = record.GetTime()
+                        });
+                    }
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get advanced match statistics for {MatchId}", matchId);
+                return new List<dynamic>();
+            }
+        }
+
+        // SLOŽEN UPIT 2: Poređenje performansi igrača sa agregatnim funkcijama
+        // Rangiranje igrača po ukupnim poenima sa detaljima po tipovima šuta
+        public async Task<IEnumerable<dynamic>> GetPlayerPerformanceComparisonAsync(string matchId)
+        {
+            var flux = $@"
+                from(bucket: ""{_bucket}"")
+                  |> range(start: -1y)
+                  |> filter(fn: (r) => r._measurement == ""basketball_events"")
+                  |> filter(fn: (r) => r.match_id == ""{matchId}"")
+                  |> filter(fn: (r) => r.event_category == ""personal"")
+                  |> filter(fn: (r) => r.event_type == ""+2p"" or r.event_type == ""+3p"" or r.event_type == ""+ft"")
+                  |> group(columns: [""player_id"", ""event_type""])
+                  |> aggregateWindow(every: inf, fn: count, createEmpty: false)
+                  |> group(columns: [""player_id""])
+                  |> sum()
+                  |> group()
+                  |> sort(columns: [""_value""], desc: true)";
+
+            try
+            {
+                var queryApi = _influxDBClient.GetQueryApi();
+                var tables = await queryApi.QueryAsync(flux, _org);
+                
+                var results = new List<dynamic>();
+                foreach (var table in tables)
+                {
+                    foreach (var record in table.Records)
+                    {
+                        results.Add(new
+                        {
+                            PlayerId = record.GetValueByKey("player_id"),
+                            EventType = record.GetValueByKey("event_type"),
+                            TotalEvents = Convert.ToInt32(record.GetValue()),
+                            Rank = results.Count + 1
+                        });
+                    }
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get player performance comparison for {MatchId}", matchId);
+                return new List<dynamic>();
+            }
+        }
+
+        // SLOŽEN UPIT 3: Vremenska analiza sa sliding window agregacijom
+        // Trend scoringa po 5-minutnim intervalima sa moving average
+        public async Task<IEnumerable<dynamic>> GetPeriodScoringTrendsAsync(string matchId)
+        {
+            var flux = $@"
+                from(bucket: ""{_bucket}"")
+                  |> range(start: -1y)
+                  |> filter(fn: (r) => r._measurement == ""basketball_events"")
+                  |> filter(fn: (r) => r.match_id == ""{matchId}"")
+                  |> filter(fn: (r) => r.event_category == ""personal"")
+                  |> filter(fn: (r) => r.event_type == ""+2p"" or r.event_type == ""+3p"" or r.event_type == ""+ft"")
+                  |> group(columns: [""team_id""])
+                  |> aggregateWindow(every: 5m, fn: count, createEmpty: true)
+                  |> fill(column: ""_value"", value: 0)
+                  |> movingAverage(n: 3)
+                  |> group()
+                  |> sort(columns: [""_time""])";
+
+            try
+            {
+                var queryApi = _influxDBClient.GetQueryApi();
+                var tables = await queryApi.QueryAsync(flux, _org);
+                
+                var results = new List<dynamic>();
+                foreach (var table in tables)
+                {
+                    foreach (var record in table.Records)
+                    {
+                        results.Add(new
+                        {
+                            TeamId = record.GetValueByKey("team_id"),
+                            TimeWindow = record.GetTime(),
+                            ScoringRate = Convert.ToDouble(record.GetValue()),
+                            MovingAverage = Convert.ToDouble(record.GetValue())
+                        });
+                    }
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get period scoring trends for {MatchId}", matchId);
+                return new List<dynamic>();
+            }
+        }
+
         private async Task<IEnumerable<ChronologicalEventInflux>> ExecuteQueryAsync(string flux)
         {
             try
@@ -317,21 +454,39 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                 var queryApi = _influxDBClient.GetQueryApi();
                 var tables = await queryApi.QueryAsync(flux, _org);
 
-                var events = new List<ChronologicalEventInflux>();
+                var eventDict = new Dictionary<string, ChronologicalEventInflux>();
+                
                 foreach (var table in tables)
                 {
                     foreach (var record in table.Records)
                     {
-                        var chronologicalEvent = new ChronologicalEventInflux
+                        var timestamp = record.GetTime()?.ToDateTimeUtc() ?? DateTime.UtcNow;
+                        var matchId = record.GetValueByKey("match_id")?.ToString() ?? "";
+                        var eventCategory = record.GetValueByKey("event_category")?.ToString() ?? "";
+                        var eventType = record.GetValueByKey("event_type")?.ToString() ?? "";
+                        var period = record.GetValueByKey("period")?.ToString() ?? "";
+                        var teamId = record.GetValueByKey("team_id")?.ToString();
+                        var playerId = record.GetValueByKey("player_id")?.ToString();
+                        
+                        // Create unique key for grouping records of the same event
+                        var eventKey = $"{timestamp:yyyy-MM-ddTHH:mm:ss.fff}_{matchId}_{eventCategory}_{eventType}_{period}_{teamId}_{playerId}";
+                        
+                        // Get or create event
+                        if (!eventDict.ContainsKey(eventKey))
                         {
-                            Timestamp = record.GetTime()?.ToDateTimeUtc() ?? DateTime.UtcNow,
-                            MatchId = record.GetValueByKey("match_id")?.ToString() ?? "",
-                            EventCategory = record.GetValueByKey("event_category")?.ToString() ?? "",
-                            EventType = record.GetValueByKey("event_type")?.ToString() ?? "",
-                            Period = record.GetValueByKey("period")?.ToString() ?? "",
-                            TeamId = record.GetValueByKey("team_id")?.ToString(),
-                            PlayerId = record.GetValueByKey("player_id")?.ToString()
-                        };
+                            eventDict[eventKey] = new ChronologicalEventInflux
+                            {
+                                Timestamp = timestamp,
+                                MatchId = matchId,
+                                EventCategory = eventCategory,
+                                EventType = eventType,
+                                Period = period,
+                                TeamId = teamId,
+                                PlayerId = playerId
+                            };
+                        }
+
+                        var chronologicalEvent = eventDict[eventKey];
 
                         // Handle different field types
                         var field = record.GetField();
@@ -358,15 +513,10 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                                 chronologicalEvent.PointDifference = Convert.ToInt32(value);
                                 break;
                         }
-
-                        events.Add(chronologicalEvent);
                     }
                 }
 
-                return events.GroupBy(e => new { e.Timestamp, e.EventId })
-                            .Select(g => g.First())
-                            .OrderBy(e => e.Timestamp)
-                            .ToList();
+                return eventDict.Values.OrderBy(e => e.Timestamp).ToList();
             }
             catch (Exception ex)
             {

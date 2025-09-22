@@ -453,8 +453,9 @@ const fetchMatchDetails = async () => {
       // Update match data from API response
       updateMatchData()
       
-      // Fetch team members and calculate statistics for this match
-      await fetchPlayerStatistics(matchId)
+      // Fetch team members and calculate statistics using SQL function
+      await calculatePlayerStatisticsSQLFunction(matchId)
+      //await fetchPlayerStatistics(matchId) // Alternative approach if needed
     }
     
   } catch (err) {
@@ -594,6 +595,119 @@ const fetchTeamMembers = async (matchId) => {
 // Fetch player statistics from match events - renamed to match MatchDetail
 const fetchPlayerStatistics = async (matchId) => {
   await fetchTeamMembers(matchId)
+}
+
+// NEW: Calculate player statistics using SQL function combined with team members
+const calculatePlayerStatisticsSQLFunction = async (matchId) => {
+  try {
+    console.log('Using SQL function to calculate player statistics for match:', matchId)
+    
+    // 1. First get team members to get complete player information
+    const teamMembersResponse = await axios.get(`${MATCHES_URL}/match/${matchId}/team-members`)
+    const teamMembers = teamMembersResponse.data.value.teamMembers
+    console.log('Team members:', teamMembers)
+
+    // 2. Get statistics from SQL function
+    const sqlStatsResponse = await axios.get(`${MATCHES_URL}/match/${matchId}/player-statistics`)
+    const sqlStatistics = sqlStatsResponse.data.value.playerStatistics
+    console.log('SQL statistics:', sqlStatistics)
+
+    // 3. Combine team member info with SQL statistics
+    const combinePlayerData = (teamMembers, sqlStats) => {
+      return teamMembers.map(member => {
+        // Find matching SQL stats for this player
+        const stats = sqlStats.find(s => 
+          s.playerId === member.idPlayer && s.teamId === member.idTeam
+        )
+
+        if (stats) {
+          // Player has stats from SQL function
+          return {
+            playerId: member.idPlayer,
+            firstName: member.playerName,
+            lastName: member.playerSurname,
+            jerseyNumber: member.jerseyNumber,
+            fieldGoals: { 
+              made: stats.shooting2PMade + stats.shooting3PMade, 
+              attempts: stats.shooting2PAttempted + stats.shooting3PAttempted 
+            },
+            twoPointers: { 
+              made: stats.shooting2PMade, 
+              attempts: stats.shooting2PAttempted 
+            },
+            threePointers: { 
+              made: stats.shooting3PMade, 
+              attempts: stats.shooting3PAttempted 
+            },
+            freeThrows: { 
+              made: stats.freeThrowsMade, 
+              attempts: stats.freeThrowsAttempted 
+            },
+            rebounds: { 
+              offensive: stats.offensiveRebounds, 
+              defensive: stats.defensiveRebounds 
+            },
+            assists: stats.totalAssists,
+            turnovers: 0, // Not available in SQL stats yet
+            steals: stats.totalSteals,
+            blocks: stats.totalBlocks,
+            fouls: stats.totalFouls,
+            points: stats.totalPoints,
+            efficiency: stats.efficiencyRating,
+            performanceGrade: stats.performanceGrade,
+            minutesPlayed: stats.minutesPlayed,
+            teamId: member.idTeam,
+            teamName: member.teamName
+          }
+        } else {
+          // No stats available, return empty stats
+          return {
+            playerId: member.idPlayer,
+            firstName: member.playerName,
+            lastName: member.playerSurname,
+            jerseyNumber: member.jerseyNumber,
+            fieldGoals: { made: 0, attempts: 0 },
+            twoPointers: { made: 0, attempts: 0 },
+            threePointers: { made: 0, attempts: 0 },
+            freeThrows: { made: 0, attempts: 0 },
+            rebounds: { offensive: 0, defensive: 0 },
+            assists: 0,
+            turnovers: 0,
+            steals: 0,
+            blocks: 0,
+            fouls: 0,
+            points: 0,
+            efficiency: 0,
+            performanceGrade: 'N/A',
+            minutesPlayed: 0,
+            teamId: member.idTeam,
+            teamName: member.teamName
+          }
+        }
+      })
+    }
+
+    // Combine all players
+    const allPlayers = combinePlayerData(teamMembers, sqlStatistics)
+
+    // Separate our team (team ID 1) and opponent team
+    ourTeamPlayers.value = allPlayers.filter(player => player.teamId === 1)
+    opponentTeamPlayers.value = allPlayers.filter(player => player.teamId !== 1)
+    
+    // Update opponent team name if we have data
+    if (opponentTeamPlayers.value.length > 0) {
+      opponentTeam.value = opponentTeamPlayers.value[0].teamName
+    }
+    
+    console.log('Our team players with SQL stats:', ourTeamPlayers.value)
+    console.log('Opponent team players with SQL stats:', opponentTeamPlayers.value)
+    
+  } catch (err) {
+    console.error('Error calculating player statistics with SQL function:', err)
+    // Fallback to original method
+    console.log('Falling back to original statistics calculation')
+    await fetchTeamMembers(matchId)
+  }
 }
 
 // Fallback method for fetching player statistics

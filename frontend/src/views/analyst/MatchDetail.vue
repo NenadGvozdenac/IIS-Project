@@ -1759,21 +1759,6 @@ const selectPlayer = (player, team) => {
 // Save event to InfluxDB for analytics
 const saveEventToInfluxDB = async (eventData, action, createdEventId) => {
   try {
-    const eventTypeMap = {
-      '+2p': '2point made',
-      '2p': '2point miss', 
-      '+3p': '3point made',
-      '3p': '3point miss',
-      '+ft': 'free throw made',
-      'ft': 'free throw miss',
-      'assist': 'assist',
-      'reb of': 'rebound offensive',
-      'reb def': 'rebound defensive', 
-      'steal': 'steal',
-      'block': 'block',
-      'foul': 'foul'
-    }
-
     // Determine event category based on action type
     let eventCategory = 'personal' // default for player actions
     if (['timeout', 'substitution'].includes(action)) {
@@ -1785,7 +1770,7 @@ const saveEventToInfluxDB = async (eventData, action, createdEventId) => {
     const influxEventData = {
       matchId: eventData.matchId.toString(),
       eventCategory: eventCategory,
-      eventType: eventTypeMap[action] || action,
+      eventType: action,
       period: matchTrackingState.value.currentPeriod || 'Q1',
       periodTime: matchTrackingState.value.elapsedPeriodTime || 0,
       teamId: eventData.teamId?.toString(),
