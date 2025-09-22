@@ -481,6 +481,7 @@ CREATE INDEX IF NOT EXISTS idx_offer_type ON offer (type);
 -- i da se uzmu samo one koje su bile cekirane u tom request-u
 CREATE INDEX IF NOT EXISTS idx_request_match_type ON request (id_match, type);
 
+
 -- KRAJ SEKCIJE SA INDEKSIMA SANJA RADIC
 
 -- SANJA RADIC - TRIGGER ZA AUTOMATSKO BIRANJE NAJBOLJE PONUDE
