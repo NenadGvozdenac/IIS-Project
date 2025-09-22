@@ -254,6 +254,9 @@ public partial class TravelDbContext : DbContext
                 .HasColumnName("chosen");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.Price).HasColumnName("price");
+            entity.Property(e => e.Score)
+                .HasPrecision(5, 2)
+                .HasColumnName("score");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .HasColumnName("type");

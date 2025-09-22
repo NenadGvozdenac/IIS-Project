@@ -774,6 +774,333 @@ $$ LANGUAGE plpgsql;
 
 -- KRAJ SEKCIJE SA FUNKCIJOM SANJA RADIC
 
--- SANJA RADIC - TRIGGER ZA ANALIZU PONUDA
+-- SANJA RADIC - TRIGGER ZA VALIDACIJU ISA HIJERARHIJE
 
 -- KRAJ SEKCIJE SA TRIGGEROM SANJA RADIC
+
+-- SANJA RADIC - TRIGGER ZA VALIDACIJU KAPACITETA PONUDE
+-- CREATE OR REPLACE FUNCTION validate_transportationoffer_capacity()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     v_team_members_count INTEGER := 0;
+--     v_management_members_count INTEGER := 0;
+--     v_total_travelers INTEGER := 0;
+--     v_offer_capacity INTEGER;
+--     v_capacity_difference INTEGER;
+--     v_warning_message TEXT;
+-- BEGIN
+--     -- Dohvata kapacitet iz accommodation_offer ili transportation_offer
+--     IF NEW.type = 'transportation' THEN
+--         SELECT capacity INTO v_offer_capacity 
+--         FROM transportation_offer 
+--         WHERE id_offer = NEW.id_offer 
+--           AND id_agency = NEW.id_agency 
+--           AND id_request = NEW.id_request;
+--     END IF;
+    
+--     -- Ako nema kapaciteta u child tabeli, preskoči validaciju
+--     IF v_offer_capacity IS NULL THEN
+--         RETURN NEW;
+--     END IF;
+    
+--     -- Broji igrače koji su označeni za putovanje (iz team_member_request)
+--     SELECT COUNT(*) INTO v_team_members_count
+--     FROM team_member_request tmr
+--     WHERE tmr.id_request = NEW.id_request;
+    
+--     -- Broji menadžment koji je označen za putovanje (iz management_member_request)
+--     SELECT COUNT(*) INTO v_management_members_count
+--     FROM management_member_request mmr
+--     WHERE mmr.id_request = NEW.id_request;
+    
+--     -- Ukupan broj putnika
+--     v_total_travelers := v_team_members_count + v_management_members_count;
+    
+--     -- Validacija kapaciteta
+--     IF v_offer_capacity < v_total_travelers THEN
+--         v_capacity_difference := v_total_travelers - v_offer_capacity;
+        
+--         v_warning_message := sprintf(
+--             'CAPACITY WARNING: Offer capacity (%s) is insufficient for travelers. ' ||
+--             'Total travelers: %s (Team members: %s + Management: %s). ' ||
+--             'Missing capacity: %s. Match ID: %s, Offer Type: %s',
+--             v_offer_capacity,
+--             v_total_travelers,
+--             v_team_members_count,
+--             v_management_members_count,
+--             v_capacity_difference,
+--             NEW.id_match,
+--             NEW.type
+--         );
+        
+--         -- Izda upozorenje ali ne prekida operaciju
+--         RAISE WARNING '%', v_warning_message;
+        
+--         -- Log poruku kroz NOTICE koja će biti vidljiva na frontend-u
+--         RAISE NOTICE 'CAPACITY_WARNING|%|%|%|%|%', 
+--             NEW.type, 
+--             v_offer_capacity, 
+--             v_total_travelers, 
+--             v_capacity_difference,
+--             NEW.id_match;
+            
+--     ELSE
+--         -- Poruka o uspešnoj validaciji
+--         RAISE NOTICE 'CAPACITY_OK|%|%|%|%', 
+--             NEW.type, 
+--             v_offer_capacity, 
+--             v_total_travelers,
+--             NEW.id_match;
+--     END IF;
+    
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- -- Trigger se poziva kada se kreira nova ponuda (INSERT na offer tabelu)
+-- CREATE TRIGGER validate_transportationoffer_capacity_trigger
+--     AFTER INSERT ON transportation_offer
+--     FOR EACH ROW
+--     EXECUTE FUNCTION validate_transportationoffer_capacity();
+
+-- CREATE OR REPLACE FUNCTION validate_accommodationoffer_capacity()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     v_team_members_count INTEGER := 0;
+--     v_management_members_count INTEGER := 0;
+--     v_total_travelers INTEGER := 0;
+--     v_offer_capacity INTEGER;
+--     v_capacity_difference INTEGER;
+--     v_warning_message TEXT;
+-- BEGIN
+--     IF NEW.type = 'accommodation' THEN
+--         SELECT capacity INTO v_offer_capacity 
+--         FROM accommodation_offer 
+--         WHERE id_offer = NEW.id_offer 
+--           AND id_agency = NEW.id_agency 
+--           AND id_request = NEW.id_request;
+--     END IF;
+    
+--     IF v_offer_capacity IS NULL THEN
+--         RETURN NEW;
+--     END IF;
+    
+--     SELECT COUNT(*) INTO v_team_members_count
+--     FROM team_member_request tmr
+--     WHERE tmr.id_request = NEW.id_request;
+    
+--     SELECT COUNT(*) INTO v_management_members_count
+--     FROM management_member_request mmr
+--     WHERE mmr.id_request = NEW.id_request;
+    
+--     v_total_travelers := v_team_members_count + v_management_members_count;
+    
+--     IF v_offer_capacity < v_total_travelers THEN
+--         v_capacity_difference := v_total_travelers - v_offer_capacity;
+        
+--         v_warning_message := sprintf(
+--             'CAPACITY WARNING: Offer capacity (%s) is insufficient for travelers. ' ||
+--             'Total travelers: %s (Team members: %s + Management: %s). ' ||
+--             'Missing capacity: %s. Match ID: %s, Offer Type: %s',
+--             v_offer_capacity,
+--             v_total_travelers,
+--             v_team_members_count,
+--             v_management_members_count,
+--             v_capacity_difference,
+--             NEW.id_match,
+--             NEW.type
+--         );
+        
+--         RAISE WARNING '%', v_warning_message;
+        
+--         RAISE NOTICE 'CAPACITY_WARNING|%|%|%|%|%', 
+--             NEW.type, 
+--             v_offer_capacity, 
+--             v_total_travelers, 
+--             v_capacity_difference,
+--             NEW.id_match;
+            
+--     ELSE
+--         RAISE NOTICE 'CAPACITY_OK|%|%|%|%', 
+--             NEW.type, 
+--             v_offer_capacity, 
+--             v_total_travelers,
+--             NEW.id_match;
+--     END IF;
+    
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER validate_accommodationoffer_capacity_trigger
+--     AFTER INSERT ON accommodation_offer
+--     FOR EACH ROW
+--     EXECUTE FUNCTION validate_accommodationoffer_capacity();
+-- KRAJ SEKCIJE SA TRIGGEROM ZA VALIDACIJU KAPACITETA SANJA RADIC
+
+--------------------------------------------------------------------------
+-- SANJA RADIC - FUNKCIJA ZA IZRAČUNAVANJE UKUPNOG BROJA PUTNIKA
+
+CREATE OR REPLACE FUNCTION calculate_total_travelers(
+    p_request_id INTEGER
+) RETURNS INTEGER AS $$
+DECLARE
+    v_team_members INTEGER := 0;
+    v_management_members INTEGER := 0;
+    v_total INTEGER := 0;
+BEGIN
+    -- Broji članove tima
+    SELECT COUNT(*) INTO v_team_members
+    FROM team_member_request tmr
+    WHERE tmr.id_request = p_request_id;
+    
+    -- Broji članove menadžmenta
+    SELECT COUNT(*) INTO v_management_members
+    FROM management_member_request mmr
+    WHERE mmr.id_request = p_request_id;
+    
+    v_total := v_team_members + v_management_members;
+    
+    RETURN v_total;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ FUNKCIJE ZA IZRAČUNAVANJE UKUPNOG BROJA PUTNIKA
+
+--------------------------------------------------------------------------
+-- SANJA RADIC - NAPREDNA FUNKCIJA ZA SCORING PONUDA
+
+CREATE OR REPLACE FUNCTION calculate_advanced_offer_score(
+    p_offer_id INTEGER,
+    p_agency_id INTEGER, 
+    p_request_id INTEGER,
+    p_weight_price NUMERIC DEFAULT 0.3,
+    p_weight_capacity NUMERIC DEFAULT 0.2,
+    p_weight_amenities NUMERIC DEFAULT 0.25,
+    p_weight_agency_rating NUMERIC DEFAULT 0.25
+) RETURNS NUMERIC AS $$
+DECLARE
+    v_offer_type VARCHAR(20);
+    v_offer_price NUMERIC;
+    v_min_price NUMERIC;
+    v_max_price NUMERIC;
+    v_price_score NUMERIC := 0;
+    v_capacity_score NUMERIC := 0;
+    v_amenities_score NUMERIC := 0;
+    v_agency_rating_score NUMERIC := 0;
+    v_final_score NUMERIC := 0;
+    v_offer_capacity INTEGER;
+    v_required_capacity INTEGER;
+    v_amenities_count INTEGER := 0;
+    v_max_amenities INTEGER;
+    v_match_id INTEGER;
+BEGIN
+    -- Get basic offer data
+    SELECT o.type, o.price, o.id_match 
+    INTO v_offer_type, v_offer_price, v_match_id
+    FROM offer o 
+    WHERE o.id_offer = p_offer_id 
+    AND o.id_agency = p_agency_id 
+    AND o.id_request = p_request_id;
+    
+    IF v_offer_type IS NULL THEN
+        RETURN 0;
+    END IF;
+    
+    -- 1. PRICE SCORE (lower price = higher score)
+    SELECT MIN(price), MAX(price) 
+    INTO v_min_price, v_max_price
+    FROM offer 
+    WHERE type = v_offer_type 
+    AND id_match = v_match_id 
+    AND price IS NOT NULL;
+    
+    IF v_offer_price IS NOT NULL AND v_max_price > v_min_price THEN
+        v_price_score := 100 * (1 - ((v_offer_price - v_min_price) / (v_max_price - v_min_price)));
+    ELSE
+        v_price_score := 50;
+    END IF;
+    
+    -- 2. CAPACITY SCORE
+    SELECT calculate_total_travelers(p_request_id) INTO v_required_capacity;
+    
+    IF v_offer_type = 'accommodation' THEN
+        SELECT capacity INTO v_offer_capacity
+        FROM accommodation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+    ELSIF v_offer_type = 'transportation' THEN
+        SELECT capacity INTO v_offer_capacity
+        FROM transportation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+    END IF;
+    
+    IF v_offer_capacity IS NOT NULL AND v_required_capacity > 0 THEN
+        IF v_offer_capacity >= v_required_capacity THEN
+            v_capacity_score := 100 * (1 - EXP(-2.0 * v_offer_capacity::NUMERIC / v_required_capacity::NUMERIC));
+        ELSE
+            v_capacity_score := 0;
+        END IF;
+    ELSE
+        v_capacity_score := 50;
+    END IF;
+    
+    -- 3. AMENITIES SCORE
+    IF v_offer_type = 'accommodation' THEN
+        SELECT 
+            (CASE WHEN breakfast THEN 1 ELSE 0 END) +
+            (CASE WHEN fitness_center THEN 1 ELSE 0 END) +
+            (CASE WHEN pool THEN 1 ELSE 0 END) +
+            (CASE WHEN wifi THEN 1 ELSE 0 END) +
+            (CASE WHEN spa THEN 1 ELSE 0 END) +
+            (CASE WHEN double_room THEN 1 ELSE 0 END) +
+            (CASE WHEN triple_room THEN 1 ELSE 0 END) +
+            (CASE WHEN quadruple_room THEN 1 ELSE 0 END)
+        INTO v_amenities_count
+        FROM accommodation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+        
+        v_max_amenities := 8;
+        
+    ELSIF v_offer_type = 'transportation' THEN
+        SELECT 
+            (CASE WHEN equipment_space THEN 1 ELSE 0 END) +
+            (CASE WHEN air_conditioning THEN 1 ELSE 0 END) +
+            (CASE WHEN tv THEN 1 ELSE 0 END) +
+            (CASE WHEN wifi THEN 1 ELSE 0 END) +
+            (CASE WHEN restroom THEN 1 ELSE 0 END)
+        INTO v_amenities_count
+        FROM transportation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+        
+        v_max_amenities := 5;
+    END IF;
+    
+    IF v_max_amenities > 0 THEN
+        v_amenities_score := 100 * (v_amenities_count::NUMERIC / v_max_amenities::NUMERIC);
+    ELSE
+        v_amenities_score := 0;
+    END IF;
+    
+    -- 4. AGENCY RATING SCORE - simplified for now
+    v_agency_rating_score := 50; -- Default neutral score
+    
+    -- FINAL WEIGHTED SCORE
+    v_final_score := 
+        (v_price_score * p_weight_price) +
+        (v_capacity_score * p_weight_capacity) +
+        (v_amenities_score * p_weight_amenities) +
+        (v_agency_rating_score * p_weight_agency_rating);
+    
+    RETURN ROUND(v_final_score, 3);
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ NAPREDNE FUNKCIJE ZA SCORING PONUDA

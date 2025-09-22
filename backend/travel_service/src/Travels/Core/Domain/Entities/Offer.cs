@@ -21,6 +21,8 @@ public partial class Offer
 
     public string? Type { get; set; }
 
+    public decimal? Score { get; set; }
+
     public virtual AccommodationOffer? AccommodationOffer { get; set; }
 
     public virtual SentRequest Id { get; set; } = null!;

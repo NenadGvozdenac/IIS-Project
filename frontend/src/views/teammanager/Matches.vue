@@ -324,6 +324,10 @@ const showCreateModal = ref(false)
 const isTeamManager = ref(true) 
 const userName = ref('Team Manager') 
 const loading = ref(false)
+const createdTRequest = ref(false)
+const createdARequest = ref(false)
+const requestsT = ref([]);
+const requestsA = ref([]);
 
 const competitions = ref([])
 const seasons = ref([])
@@ -418,7 +422,54 @@ const canEditMatch = (match) => {
          isTeamManager.value
 }
 
+const fetchTRequests = async () => {
 
+  try {
+    const response = await axios.get(`https://localhost:5007/api/requests/transportation/0`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.data.isSuccess) {
+      requestsT.value = Array.isArray(response.data.value.requests)
+      ? response.data.value.requests
+      : []
+    } else {
+      requestsT.value = [];
+    }
+  } catch (error) {
+    console.error("API error:", error);
+  }
+};
+
+const fetchARequests = async () => {
+
+  try {
+    const response = await axios.get(`https://localhost:5007/api/requests/accommodation/0`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.data.isSuccess) {
+      requestsA.value = Array.isArray(response.data.value.requests)
+      ? response.data.value.requests
+      : []
+    } else {
+      requestsA.value = [];
+    }
+  } catch (error) {
+    console.error("API error:", error);
+  }
+};
+const fetchTRequest = (match) => {
+  const existingTRequest = requestsT.value.find(req => req.idMatch === match.idMatch);
+  return existingTRequest ? 1 : 0;
+};
+
+const fetchARequest = (match) => {
+  const existingARequest = requestsA.value.find(req => req.idMatch == match.idMatch);
+  return existingARequest ? 2 : 0;
+};
 
 const isMatchPlayed = (match) => {
   const status = getMatchStatus(match)
@@ -426,11 +477,14 @@ const isMatchPlayed = (match) => {
 }
 
 const showTransportOptions = (match) => {
-  return match.transportationRequired && !isMatchPlayed(match)
+  const a = fetchTRequest(match);
+  console.log('Fetch requests result for transport:', a);
+  return match.transportationRequired && !isMatchPlayed(match) && a != 1;
 }
 
 const showAccommodationOptions = (match) => {
-  return match.accommodationRequired && !isMatchPlayed(match)
+  const a = fetchARequest(match);
+  return match.accommodationRequired && !isMatchPlayed(match) && a != 2;
 }
 
 const fetchMatches = async () => {
@@ -561,7 +615,6 @@ const nextMonth = () => {
 const showMatchMenu = (match, event) => {
   event.preventDefault()
   event.stopPropagation()
-  
   selectedMatch.value = match
   
   // Get the match element's position
@@ -593,7 +646,7 @@ const showMatchMenu = (match, event) => {
   console.log('Match menu opened for:', match.name, {
     status: getMatchStatus(match),
     canEdit: canEditMatch(match),
-    isPlayed: isMatchPlayed(match),
+    isPlayed: isMatchPlayed(match), 
     position: { x, y },
     elementRect: rect
   })
@@ -833,6 +886,8 @@ onMounted(() => {
   fetchCompetitions()
   fetchSeasons() 
   fetchTeams()
+  fetchTRequests()
+  fetchARequests()
   document.addEventListener('click', handleClickOutside)
 })
 

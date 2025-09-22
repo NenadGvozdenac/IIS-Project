@@ -82,4 +82,25 @@ public class RequestsRepository : IRequestsRepository
 
         _travelDbContext.SaveChanges();
     }
+
+    public IEnumerable<Request> GetRequestsByMatchId(int matchId)
+    {
+        return _travelDbContext.Requests
+            .Include(r => r.AccommodationRequest)
+            .Include(r => r.TransportationRequest)
+            .Include(r => r.IdManagementMembers)
+            .Include(r => r.Ids)
+                .ThenInclude(tm => tm.IdPlayerNavigation)
+            .Include(r => r.Ids)
+                .ThenInclude(tm => tm.IdTeamNavigation)
+            .Where(r => r.IdMatch == matchId)
+            .ToList();
+    }
+
+    public Request? GetRequestByMatchIdAndType(int matchId, string type)
+    {
+        return _travelDbContext.Requests
+            .Where(r => r.IdMatch == matchId && r.Type == type)
+            .FirstOrDefault();
+    }
 }

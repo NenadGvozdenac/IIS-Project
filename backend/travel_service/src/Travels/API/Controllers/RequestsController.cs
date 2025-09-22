@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Requests.GetAllRequests;
 using travel_service.src.Travels.Core.Application.Features.Requests.CreateRequests;
+using travel_service.src.Travels.Core.Application.Features.Requests.GetRequestsByMatch;
+using travel_service.src.Travels.Core.Application.Features.Requests.CheckExistingRequest;
 
 namespace travel_service.src.Travels.API.Controllers;
 
@@ -21,6 +23,22 @@ public class RequestsController : BaseController
     public async Task<ActionResult> GetAllRequests(string type, int idMatch)
     {
         var query = new GetAllRequestsQuery(type, idMatch);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("by-match/{matchId}")]
+    public async Task<ActionResult> GetRequestsByMatch(int matchId)
+    {
+        var query = new GetRequestsByMatchQuery(matchId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("check-existing/{matchId}/{type}")]
+    public async Task<ActionResult> CheckExistingRequest(int matchId, string type)
+    {
+        var query = new CheckExistingRequestQuery(matchId, type);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

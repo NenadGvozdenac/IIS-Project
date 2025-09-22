@@ -3,12 +3,24 @@
     <!-- Header Navigation -->
     <div class="header-nav">
       <div class="nav-tabs">
-        <span class="tab" @click="navigateToTab('transportRequest')">Transportation Request</span>
-        <span class="tab" @click="navigateToTab('accommodationRequest')">Accommodation Request</span>
         <span class="tab" @click="navigateToTab('transportActive')">Transportation Active</span>
         <span class="tab" @click="navigateToTab('accommodationActive')">Accommodation Active</span>
         <span class="tab" @click="navigateToTab('transportArchive')">Transportation Archive</span>
         <span class="tab active" @click="navigateToTab('accommodationArchive')">Accommodation Archive</span>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-controls">
+        <div class="filter-group">
+          <label for="match-filter">Filter by Match:</label>
+          <select id="match-filter" v-model="selectedMatchId" @change="filterByMatch">
+            <option value="">All Matches</option>
+            <option v-for="match in matches" :key="match.idMatch" :value="match.idMatch">
+              {{ match.name }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -28,6 +40,15 @@
                 Request {{ request.idRequest }} - Stay in {{ request.city }}, 
                 {{ formatDate(request.checkInDate) }}
               </h3>
+
+              <!-- Match Information -->
+             <div class="match-info" v-if="request.matchData">
+                <div class="match-details">
+                  <h4>Match: {{ request.matchData.name }}</h4>
+                  <p><strong>Type: </strong>{{ request.matchData.type }}</p>
+                  <p><strong>Location:</strong> {{ request.matchData.state }}, {{ request.matchData.city }}, {{ request.matchData.hall }}</p>
+                </div>
+              </div>
               
               <div class="request-details">
                 <div class="detail-left">
@@ -49,6 +70,9 @@
             </div>
 
             <div class="request-actions">
+              <div class="accommodation-type-badge" :class="getAccommodationTypeClass(request.accommodationType)">
+                {{ getAccommodationTypeLabel(request.accommodationType) }}
+              </div>
               <div class="status-badge archive">
                 Archived
               </div>
@@ -138,42 +162,127 @@ export default {
   data() {
     return {
       archivedRequests: [],
+      allRequests: [],
+      matches: [],
       expandedRequests: [],
       isLoading: false,
-      matchId: null
+      matchId: null,
+      selectedMatchId: '',
+      existingRequests: {
+        accommodation: false,
+        transportation: false
+      }
     }
   },
   async mounted() {
     this.matchId = this.$route.params.matchId ? parseInt(this.$route.params.matchId) : null
+    
+    await this.loadMatches()
     await this.loadArchivedRequests()
+    await this.checkExistingRequests()
   },
   methods: {
+     async loadMatches() {
+      try {
+        const response = await axios.get('https://localhost:5007/api/matches', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          })
+          console.log('Fetched matches:', response.data.value.matches)
+          this.matches = Array.isArray(response.data.value.matches)
+            ? response.data.value.matches
+            : []
+
+      } catch (error) {
+        console.error('Error loading matches:', error)
+      }
+    },
+
     async loadArchivedRequests() {
       this.isLoading = true
       try {
-        const url = this.matchId 
-          ? `https://localhost:5007/api/requests/accommodation/${this.matchId}`
-          : 'https://localhost:5007/api/requests/accommodation/0'
+        let requests = []
         
-        const response = await axios.get(url)
-        
-        if (response.data.isSuccess) {
-          const allRequests = response.data.value.requests || []
-          // Filter for archived requests (checkOutDate < today)
-          const today = new Date().toISOString().split('T')[0]
-          this.archivedRequests = allRequests.filter(request => 
-            request.checkOutDate < today
-          )
+        if (this.selectedMatchId !== '') {
+          const response = await axios.get(`https://localhost:5007/api/requests/by-match/${this.selectedMatchId}`)
+          if (response.data.isSuccess) {
+            requests = response.data.value.requests || []
+          }
         } else {
-          console.error('Failed to load requests:', response.data.error)
-          alert('Failed to load accommodation requests')
+          // Load all accommodation requests
+          const response = await axios.get('https://localhost:5007/api/requests/accommodation/0')
+          if (response.data.isSuccess) {
+            requests = response.data.value.requests || []
+          }
         }
+
+        // Add match data to each request
+        await this.addMatchDataToRequests(requests)
+        
+        // Filter for archived accommodation requests
+        const today = new Date().toISOString().split('T')[0]
+        this.allRequests = requests
+        this.archivedRequests = requests.filter(request => 
+          request.type === 'accommodation' && request.checkOutDate < today
+        )
+
       } catch (error) {
         console.error('Error loading archived requests:', error)
         alert('Failed to load accommodation requests')
       } finally {
         this.isLoading = false
       }
+    },
+
+    async addMatchDataToRequests(requests) {
+      for (let request of requests) {
+        if (request.idMatch) {
+          try {
+            const matchResponse = await axios.get(`https://localhost:5007/api/matches/${request.idMatch}`)
+            if (matchResponse.data.isSuccess) {
+              request.matchData = matchResponse.data.value
+            }
+          } catch (error) {
+            console.error(`Error loading match ${request.idMatch}:`, error)
+          }
+        }
+      }
+    },
+
+    async checkExistingRequests() {
+      if (!this.matchId) return
+
+      try {
+        // Check for existing accommodation request
+        const accommResponse = await axios.get(`https://localhost:5007/api/requests/check-existing/${this.matchId}/accommodation`)
+        if (accommResponse.data.isSuccess) {
+          this.existingRequests.accommodation = accommResponse.data.value.requestExists
+        }
+
+        // Check for existing transportation request
+        const transResponse = await axios.get(`https://localhost:5007/api/requests/check-existing/${this.matchId}/transportation`)
+        if (transResponse.data.isSuccess) {
+          this.existingRequests.transportation = transResponse.data.value.requestExists
+        }
+      } catch (error) {
+        console.error('Error checking existing requests:', error)
+      }
+    },
+
+    async filterByMatch() {
+      if (this.selectedMatchId) {
+        this.matchId = parseInt(this.selectedMatchId)
+        await this.checkExistingRequests()
+      } else {
+        this.matchId = null
+        this.existingRequests = { accommodation: false, transportation: false }
+      }
+      await this.loadArchivedRequests()
+    },
+
+    hasExistingRequest(type) {
+      return this.existingRequests[type]
     },
 
     toggleRequestDetails(requestId) {
@@ -194,24 +303,30 @@ export default {
       })
     },
 
+    formatDateTime(dateTimeString) {
+      const date = new Date(dateTimeString)
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+
     getAccommodationTypeLabel(accommodationType) {
       const labels = {
         'hotel': 'Hotel',
-        'hostel': 'Hostel',
-        'apartment': 'Apartment',
-        'guesthouse': 'Guest House'
+        'house': 'House',
+        'villa': 'Villa',
       }
       return labels[accommodationType] || accommodationType
     },
-
+    getAccommodationTypeClass(accommodationType) {
+      return `accommodation-${accommodationType}`
+    },
     navigateToTab(tab) {
       switch(tab) {
-        case 'transportRequest':
-            this.$router.push(`/team-manager/transportation-request/${this.matchId}`)
-          break
-        case 'accommodationRequest':
-            this.$router.push(`/team-manager/accommodation-request/${this.matchId}`)
-          break
         case 'transportActive':
           this.$router.push(`/team-manager/transportation-requests-active/${this.matchId}`)
           break
@@ -246,7 +361,7 @@ export default {
 }
 
 .tab {
-  padding: 10px 20px;
+  padding: 10px 50px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.3s;
@@ -255,6 +370,90 @@ export default {
 .tab.active {
   border-bottom-color: #1708c0;
   font-weight: bold;
+}
+
+.tab.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.filter-section {
+  margin-bottom: 25px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.filter-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-group label {
+  font-weight: bold;
+  color: #333;
+}
+
+.filter-group select {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  min-width: 250px;
+  cursor: pointer;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #1708c0;
+}
+
+.refresh-btn {
+  padding: 8px 16px;
+  background: #1708c0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.3s;
+}
+
+.refresh-btn:hover {
+  background: #0f0690;
+}
+
+.match-info {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.match-details h4 {
+  margin: 0 0 10px 0;
+  color: #1708c0;
+  font-size: 16px;
+}
+
+.match-details p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #666;
 }
 
 .main-content {
@@ -328,7 +527,34 @@ export default {
   align-items: flex-end;
   gap: 15px;
 }
+.accommodation-type-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  min-width: 80px;
+}
 
+.accommodation-hotel {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.accommodation-house {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.accommodation-villa {
+  background: #e8f5e8;
+  color: #388e3c;
+}
+
+.accommodation-guesthouse {
+  background: #fce4ec;
+  color: #c2185b;
+}
 .status-badge {
   padding: 8px 16px;
   border-radius: 20px;

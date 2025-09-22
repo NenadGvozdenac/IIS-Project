@@ -233,6 +233,7 @@ CREATE TABLE offer (
     id_request   INTEGER NOT NULL,
     chosen       BOOLEAN DEFAULT FALSE,
     type         VARCHAR(20) CHECK (type IN ('accommodation', 'transportation')),
+    score        NUMERIC(5,2),
     PRIMARY KEY (id_offer, id_agency, id_request)
 );
 

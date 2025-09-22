@@ -4,6 +4,7 @@ using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Trip.CreateTrip;
 using travel_service.src.Travels.Core.Application.Features.Trip.GetTripByMatch;
 
+
 namespace travel_service.src.Travels.API.Controllers;
 
 [ApiController]
