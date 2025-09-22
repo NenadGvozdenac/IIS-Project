@@ -205,9 +205,9 @@
                   <span class="player-number">#{{ player.number }}</span>
                 </div>
                 <div class="card-body">
-                  <div class="time-stat">
-                    <span class="label">in game:</span>
-                    <span class="value">{{ player.timeInGame }}</span>
+                  <div class="points-stat">
+                    <span class="label">points:</span>
+                    <span class="value">{{ player.points || 0 }}</span>
                   </div>
                   <div class="fouls-stat">
                     <span class="label">fouls:</span>
@@ -272,9 +272,9 @@
                   <span class="player-number">#{{ player.number }}</span>
                 </div>
                 <div class="card-body">
-                  <div class="time-stat">
-                    <span class="label">in game:</span>
-                    <span class="value">{{ player.timeInGame }}</span>
+                  <div class="points-stat">
+                    <span class="label">points:</span>
+                    <span class="value">{{ player.points || 0 }}</span>
                   </div>
                   <div class="fouls-stat">
                     <span class="label">fouls:</span>
@@ -649,6 +649,8 @@ const currentTime = ref('10:00')
 const gameStatus = ref('Unknown game status')
 const timerRunning = ref(false)
 const ourTeamId = 1
+const ourTeamFouls = ref([])
+const ourTeamTimeouts = ref([])
 
 // Selected player for actions
 const selectedPlayer = ref(null)
@@ -749,63 +751,34 @@ const periodDisplayName = computed(() => {
   }
 })
 
-// Automatic recommendations (hardcoded for now)
-const automaticRecommendations = ref([
-  {
-    id: 1,
-    priority: 'urgent',
-    title: 'Focus on defense 3-point!',
-    description: 'Opponent shoots 47% for 3-point - too many open shots',
-    icon: '🔴',
-    timestamp: new Date().toLocaleTimeString()
-  },
-  {
-    id: 2,
-    priority: 'medium',
-    title: 'Better usage of offensive rebounds',
-    description: 'We have more rebounds but we don\'t make points off them',
-    icon: '⚠️',
-    timestamp: new Date(Date.now() - 60000).toLocaleTimeString()
-  },
-  {
-    id: 3,
-    priority: 'low',
-    title: 'Continue playing aggressive',
-    description: 'Great efficiency of free throws',
-    icon: '✅',
-    timestamp: new Date(Date.now() - 120000).toLocaleTimeString()
-  },
-  {
-    id: 4,
-    priority: 'medium',
-    title: 'Consider substitution',
-    description: 'Stefan Nikolic has 4 fouls - risk of disqualification',
-    icon: '⚠️',
-    timestamp: new Date(Date.now() - 180000).toLocaleTimeString()
-  }
-])
+// Automatic recommendations (fetched from backend)
+const automaticRecommendations = ref([])
 
 // Functions to manage recommendations
-const acceptRecommendation = (recommendationId) => {
-  const recommendation = automaticRecommendations.value.find(r => r.id === recommendationId)
-  if (recommendation) {
-    console.log('Accepted recommendation:', recommendation.title)
-    // Add to game events
-    // const event = {
-    //   id: gameEvents.value.length + 1,
-    //   time: `${currentTime.value} ${currentPeriod.value}`,
-    //   description: `Accepted: ${recommendation.title}`
-    // }
-    // gameEvents.value.unshift(event)
-    
-    // // Remove from recommendations
-    // automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+const acceptRecommendation = async (recommendationId) => {
+  try {
+    const response = await axios.put(`${MATCHES_URL}/automaticrecommendation/${recommendationId}/accept`)
+    if (response.status === 200) {
+      // Remove from local array after successful accept
+      automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+      console.log('Recommendation accepted:', recommendationId)
+    }
+  } catch (error) {
+    console.error('Error accepting recommendation:', error)
   }
 }
 
-const dismissRecommendation = (recommendationId) => {
-  //automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
-  console.log('Dismissed recommendation:', recommendationId)
+const dismissRecommendation = async (recommendationId) => {
+  try {
+    const response = await axios.put(`${MATCHES_URL}/automaticrecommendation/${recommendationId}/reject`)
+    if (response.status === 200) {
+      // Remove from local array after successful reject
+      automaticRecommendations.value = automaticRecommendations.value.filter(r => r.id !== recommendationId)
+      console.log('Recommendation dismissed:', recommendationId)
+    }
+  } catch (error) {
+    console.error('Error dismissing recommendation:', error)
+  }
 }
 
 // Match tracking API functions
@@ -909,6 +882,28 @@ const callTimeoutAPI = async (teamId) => {
       console.log('Timeout called successfully')
       await fetchMatchTrackingData(matchId)
       await fetchMatchEvents(matchId)
+      
+      // Track our team's timeouts (team events of type 'timeout')
+      ourTeamTimeouts.value = gameEvents.value.filter(e => {
+        const type = (e.type || '').toString().toLowerCase()
+        const teamId = e.teamId || null
+        const isTeamEvent = e.eventType === 'team'
+        return isTeamEvent && type === 'timeout' && Number(teamId) === ourTeamId // ourTeamId = 1
+      })
+      //console.log('Our team timeouts:', ourTeamTimeouts.value)
+      //console.log('Our team timeouts count:', ourTeamTimeouts.value.length)
+
+      // If we've just reached 4 timeouts, create a one-time recommendation (warn 1 timeout left)
+      try {
+        const currentTimeouts = ourTeamTimeouts.value.length
+        console.log('Current timeouts used:', currentTimeouts)
+        if (currentTimeouts === 4) {
+          // Create medium priority recommendation once when reaching 4 timeouts
+          createRecommendation('medium priority', 'team timeout warning', 'Team has used 4 timeouts - only 1 left')
+        }
+      } catch (err) {
+        console.error('Error checking timeouts for recommendations:', err)
+      }
       stopTimer()
     }
   } catch (error) {
@@ -1230,19 +1225,190 @@ const updateLocalPlayerStates = (substitutionData) => {
   }
 }
 
+// Fetch automatic recommendations from backend
+const fetchAutomaticRecommendations = async (matchId) => {
+  try {
+    const response = await axios.get(`${MATCHES_URL}/automaticrecommendation/match/${matchId}`)
+    if (response.data.isSuccess) {
+      automaticRecommendations.value = response.data.value.recommendations.map(rec => ({
+        id: rec.idRecommendation,
+        priority: rec.priority,
+        title: rec.type,
+        description: rec.description,
+        icon: rec.priority === 'urgent' ? '🔴' : rec.priority === 'medium priority' ? '⚠️' : '✅',
+        timestamp: new Date(rec.creationTime).toLocaleTimeString()
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching automatic recommendations:', error)
+  }
+}
+
+// Create automatic recommendation
+const createRecommendation = async (priority, type, description) => {
+  try {
+    console.log('priority: ', priority)
+    console.log('type: ', type)
+    console.log('description: ', description)
+    const matchId = parseInt(route.params.id)
+    console.log('matchId: ', matchId)
+    const response = await axios.post(`${MATCHES_URL}/automaticrecommendation`, {
+      matchId,
+      priority,
+      type,
+      description
+    })
+    if (response.status === 200) {
+      // Refresh recommendations after creating new one
+      await fetchAutomaticRecommendations(matchId)
+    }
+  } catch (error) {
+    console.error('Error creating recommendation:', error)
+  }
+}
+
+// Check specific game conditions based on event type
+const checkRecommendationsForEvent = async (eventType, playerId = null, teamId = null) => {
+  const matchId = parseInt(route.params.id)
+  
+  // Only check relevant conditions based on the event type
+  switch(eventType) {
+    case 'foul':
+      await checkFoulRecommendations(playerId, teamId)
+      break
+    case 'reb of':
+      await checkOffensiveReboundRecommendations()
+      break
+    case '+3p':
+      await checkThreePointerRecommendations(playerId, teamId)
+    case '3p':
+    case '+2p':
+    case '2p':
+      await checkShootingRecommendations(playerId)
+      break
+    case '+ft':
+    case 'ft':
+      await checkFreeThrowRecommendations()
+      break
+    default:
+      // For other events, no specific recommendations needed
+      break
+  }
+}
+
+// Check foul-related recommendations
+const checkFoulRecommendations = async (playerId, teamId) => {
+  // 1. Check if our player reached 4 fouls
+  if (teamId === ourTeamId) {
+    const player = fullOurTeamStats.value.find(p => p.id === playerId)
+    if (player && player.fouls === 4) {
+      createRecommendation('urgent', 'player foul limit', 
+        `Player ${player.name} has 4 fouls - substitution recommended`)
+    }
+    // 3. Check if our team reached 4 fouls in current period using recorded foul events
+    try {
+      // Populate ourTeamFouls with personal 'foul' events that belong to our team
+      ourTeamFouls.value = gameEvents.value.filter(e => {
+        const type = (e.type || '').toString().toLowerCase()
+        // support multiple possible team id field names from backend
+        const teamId = e.teamId
+        const isPersonal = (e.eventType === 'personal')
+        return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
+      })
+
+      const currentPeriodStr = String(matchTrackingState.value.currentPeriod || '').trim()
+      const foulsThisPeriod = (ourTeamFouls.value || []).filter(ev => {
+        const evPeriod = ev.period !== undefined && ev.period !== null ? String(ev.period) : null
+        return evPeriod === currentPeriodStr
+      }).length
+      console.log('FOULS THIS PERIOD: ', foulsThisPeriod)
+
+      if (foulsThisPeriod === 4) {
+        createRecommendation('urgent', 'team foul bonus', 
+          'Team has 4 fouls in quarter - less aggressive play recommended due to bonus')
+      }
+    } catch (err) {
+      console.error('Error checking team fouls in current period:', err)
+    }
+  }
+}
+
+// Check three-pointer recommendations
+const checkThreePointerRecommendations = async (playerId, teamId) => {
+  // 2. Check if opponent player made 3rd three-pointer
+  if (teamId !== ourTeamId) {
+    const player = fullOpponentTeamStats.value.find(p => p.id === playerId)
+    if (player && player.threeP_made === 3) {
+      createRecommendation('urgent', 'opponent hot shooter', 
+        `Opponent player ${player.name} made 3 three-pointers - strengthen defense`)
+    }
+  }
+}
+
+// Check shooting percentage recommendations
+const checkShootingRecommendations = async (playerId) => {
+  // 4. Check if our player has poor shooting percentage
+  const player = fullOurTeamStats.value.find(p => p.id === playerId)
+  if (player) {
+    const totalShots = (player.twoP_attempts || 0) + (player.threeP_attempts || 0)
+    const totalMade = (player.twoP_made || 0) + (player.threeP_made || 0)
+    const percentage = totalShots > 0 ? (totalMade / totalShots) * 100 : 0
+    //console.log('TOTAL/MADE - ', totalShots, '/', totalMade, ' = ', percentage)
+    if (totalShots === 7 && percentage < 30) {
+      createRecommendation('medium priority', 'poor shooting', 
+        `Player ${player.name} has poor shooting percentage (${percentage.toFixed(1)}%) - consider substitution`)
+    }
+  }
+}
+
+// Check free throw recommendations
+const checkFreeThrowRecommendations = async () => {
+  // 6. Check if team reached 10 free throws
+  const ourFreeThrows = fullOurTeamStats.value.reduce((sum, player) => sum + (player.ft_attempts || 0), 0)
+  if (ourFreeThrows === 10) {
+    createRecommendation('not priority', 'free throw advantage', 
+      'Team achieved 10 free throws - continue with aggressive play')
+  }
+}
+
+// Check offensive rebound recommendations
+const checkOffensiveReboundRecommendations = async () => {
+  // 7. Check if team reached 8 offensive rebounds
+  const ourOffensiveRebounds = fullOurTeamStats.value.reduce((sum, player) => sum + (player.rebOff || 0), 0)
+  if (ourOffensiveRebounds === 8) {
+    createRecommendation('not priority', 'offensive rebound dominance', 
+      'Team has 8 offensive rebounds - paint dominance')
+  }
+}
+
 // Fetch match events from backend
 const fetchMatchEvents = async (matchId) => {
   try {
     const response = await axios.get(`${MATCHES_URL}/MatchTracking/${matchId}/events`)
 
     if (response.data?.isSuccess && response.data?.value?.events) {
-      // Map backend response to UI format
-      gameEvents.value = response.data.value.events.map(event => ({
+      // Map backend response to UI format (keep raw event for further checks)
+      const rawEvents = response.data.value.events
+      gameEvents.value = rawEvents.map(event => ({
         id: event.id,
         time: formatEventTime(event),
-        description: formatEventDescription(event)
+        description: formatEventDescription(event),
+        eventType: event.eventType || '',
+        type: event.type || event.Type || '',
+        teamId: event.teamId || null,
+        period: event.period || null,
+        raw: event // original payload for debugging/logic
       }))
-      
+
+      // // Populate ourTeamFouls with personal 'foul' events that belong to our team
+      // ourTeamFouls.value = rawEvents.filter(e => {
+      //   const type = (e.type || e.Type || '').toString().toLowerCase()
+      //   // support multiple possible team id field names from backend
+      //   const teamId = e.teamId
+      //   const isPersonal = (e.eventType === 'personal')
+      //   return isPersonal && type === 'foul' && Number(teamId) === ourTeamId
+      // })
+
       console.log('Events loaded:', gameEvents.value)
     }
   } catch (err) {
@@ -1590,6 +1756,51 @@ const selectPlayer = (player, team) => {
   console.log('Selected player:', selectedPlayer.value)
 }
 
+// Save event to InfluxDB for analytics
+const saveEventToInfluxDB = async (eventData, action, createdEventId) => {
+  try {
+    // Determine event category based on action type
+    let eventCategory = 'personal' // default for player actions
+    if (['timeout', 'substitution'].includes(action)) {
+      eventCategory = 'team'
+    } else if (['period_start', 'period_end', 'match_start', 'match_end'].includes(action)) {
+      eventCategory = 'general'
+    }
+
+    const influxEventData = {
+      matchId: eventData.matchId.toString(),
+      eventCategory: eventCategory,
+      eventType: action,
+      period: matchTrackingState.value.currentPeriod || 'Q1',
+      periodTime: matchTrackingState.value.elapsedPeriodTime || 0,
+      teamId: eventData.teamId?.toString(),
+      playerId: eventData.playerId?.toString(),
+      eventId: createdEventId || Date.now(), // Use created event ID or timestamp
+      notes: eventData.notes,
+      ourPoints: matchTrackingState.value.ourPoints || 0,
+      opponentPoints: matchTrackingState.value.opponentPoints || 0,
+      timestamp: new Date().toISOString()
+    }
+
+    console.log('Saving event to InfluxDB:', influxEventData)
+    
+    const response = await axios.post(`${MATCHES_URL}/ChronologicalEventInflux`, influxEventData)
+    
+    if (response.data.isSuccess) {
+      console.log('Event saved to InfluxDB successfully:', response.data)
+      return true
+    } else {
+      console.warn('Failed to save to InfluxDB:', response.data)
+      return false
+    }
+    
+  } catch (error) {
+    console.error('Error saving event to InfluxDB:', error)
+    // Don't throw error - InfluxDB save is supplementary to main event save
+    return false
+  }
+}
+
 // Record action
 const recordAction = async (action, teamId) => {
   if (!selectedPlayer.value) {
@@ -1635,9 +1846,19 @@ const recordAction = async (action, teamId) => {
     
     if (response.data.isSuccess) {
       console.log('Event recorded successfully:', response.data)
-      
-      // Refresh scores only if period is active (to avoid resetting timer)
-      // Otherwise refresh full tracking data
+
+      // Save event to InfluxDB for analytics (in parallel with other operations)
+      const createdEventId = response.data.value?.eventId || response.data.value?.id
+      saveEventToInfluxDB(eventData, action, createdEventId)
+        .then(success => {
+          if (success) {
+            console.log('Event also saved to InfluxDB for analytics')
+          }
+        })
+        .catch(error => {
+          console.warn('InfluxDB save failed but continuing with main flow:', error)
+        })
+
       if (matchTrackingState.value.periodStatus === 'active') {
         await refreshScoresOnly(matchId)
       } else {
@@ -1649,6 +1870,11 @@ const recordAction = async (action, teamId) => {
       
       // Refresh player statistics
       await calculatePlayerStatistics(matchId)
+
+      // Check for automatic recommendations based on the specific event type
+      await checkRecommendationsForEvent(action, selectedPlayer.value.id, teamId)
+      
+      console.log(`Recorded ${action} for player ${selectedPlayer.value.name}`)
     }
     
   } catch (error) {
@@ -1806,6 +2032,11 @@ const formatMatchTime = () => {
 
 onMounted(() => {
   fetchMatchDetails()
+  // Fetch recommendations for this match
+  const matchId = parseInt(route.params.id)
+  if (matchId) {
+    fetchAutomaticRecommendations(matchId)
+  }
 })
 
 onUnmounted(() => {
@@ -2263,7 +2494,7 @@ onUnmounted(() => {
 .active-players-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -2279,14 +2510,14 @@ onUnmounted(() => {
 /* Modern Card Style */
 .player-card.modern-card {
   border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 8px;
+  border-radius: 6px;
+  padding: 12px;
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-family: system-ui, -apple-system, sans-serif;
-  font-size: 12px;
-  line-height: 1.2;
-  min-height: 80px;
+  font-size: 13px;
+  line-height: 1.25;
+  min-height: 100px;
 }
 
 .player-card.modern-card:hover {
@@ -2326,32 +2557,36 @@ onUnmounted(() => {
 .modern-card .card-body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
 }
 
 .modern-card .time-stat,
+.modern-card .points-stat,
 .modern-card .fouls-stat,
 .modern-card .eff-stat {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 0px;
+  vertical-align: middle;
 }
 
 .modern-card .label {
-  font-size: 15px;
+  font-size: 18px;
   color: #666;
-  font-weight: normal;
+  font-weight: 500;
+  min-width: 64px; /* keep labels aligned and values close */
 }
 
 .modern-card .value {
-  font-size: 15px;
+  font-size: 20px;
   color: #333;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .modern-card .foul-dots {
   display: flex;
-  gap: 1px;
+  gap: 4px;
 }
 
 .modern-card .foul-dot {
@@ -2886,9 +3121,18 @@ onUnmounted(() => {
 
 /* Main Content Layout */
 .main-content-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
+}
+
+/* Align with the game-interface grid layout above */
+.game-interface {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1rem;
 }
 
 .players-table-section {

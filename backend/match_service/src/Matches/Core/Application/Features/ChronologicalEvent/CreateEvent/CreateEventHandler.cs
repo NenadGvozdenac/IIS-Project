@@ -136,27 +136,30 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                 }
 
                 // Handle score updates for scoring events (transactionally)
-                if (request.Category.ToLower() == "personal" && IsScoreEvent(request.Type))
-                {
-                    var pointsToAdd = GetPointsForEventType(request.Type);
-                    if (pointsToAdd > 0 && request.TeamId.HasValue)
-                    {
-                        // Update match score
-                        if (request.TeamId.Value == 1) // Our team (Partizan)
-                        {
-                            matchTracking!.OurPoints = (matchTracking.OurPoints ?? 0) + pointsToAdd;
-                        }
-                        else // Opponent team
-                        {
-                            matchTracking!.OpponentPoints = (matchTracking.OpponentPoints ?? 0) + pointsToAdd;
-                        }
+                // if (request.Category.ToLower() == "personal" && IsScoreEvent(request.Type))
+                // {
+                //     var pointsToAdd = GetPointsForEventType(request.Type);
+                //     if (pointsToAdd > 0 && request.TeamId.HasValue)
+                //     {
+                //         // Update match score
+                //         if (request.TeamId.Value == 1) // Our team (Partizan)
+                //         {
+                //             matchTracking!.OurPoints = (matchTracking.OurPoints ?? 0) + pointsToAdd;
+                //         }
+                //         else // Opponent team
+                //         {
+                //             matchTracking!.OpponentPoints = (matchTracking.OpponentPoints ?? 0) + pointsToAdd;
+                //         }
 
-                        matchTracking!.LastUpdateTime = DateTime.UtcNow;
-                        _matchTrackingRepository.Update(matchTracking!);
+                //         matchTracking!.LastUpdateTime = DateTime.UtcNow;
+                //         _matchTrackingRepository.Update(matchTracking!);
                         
-                        message += $" Score updated: +{pointsToAdd} points for team {request.TeamId.Value}";
-                    }
-                }
+                //         message += $" Score updated: +{pointsToAdd} points for team {request.TeamId.Value}";
+                //     }
+                // }
+
+                // Note: Score updates for scoring events (+2p, +3p, +ft) are now handled automatically 
+                // by database triggers on personal_event table insert
 
                 // Save all changes within transaction
                 _context.SaveChanges();
@@ -192,22 +195,21 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
             }
         }
 
-        private bool IsScoreEvent(string eventType)
-        {
-            return eventType == "+2p" || eventType == "+3p" || eventType == "+ft";
-        }
+        // private bool IsScoreEvent(string eventType)
+        // {
+        //     return eventType == "+2p" || eventType == "+3p" || eventType == "+ft";
+        // }
 
-        private int GetPointsForEventType(string eventType)
-        {
-            return eventType switch
-            {
-                "+2p" => 2,
-                "+3p" => 3,
-                "+ft" => 1,
-                _ => 0
-            };
-        }
-
+        // private int GetPointsForEventType(string eventType)
+        // {
+        //     return eventType switch
+        //     {
+        //         "+2p" => 2,
+        //         "+3p" => 3,
+        //         "+ft" => 1,
+        //         _ => 0
+        //     };
+        // }
         private bool IsValidCategory(string category)
         {
             var validCategories = new[] { "personal", "team", "general" };

@@ -25,6 +25,12 @@ services:
       - "5001:5001" # Web UI
     depends_on:
       - postgres_db
+      - influxdb
+    environment:
+      - InfluxDB__Url=http://influxdb:8086
+      - InfluxDB__Token=basketball-events-token-2024
+      - InfluxDB__Org=basketball_org
+      - InfluxDB__Bucket=events_bucket
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -74,6 +80,20 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb_storage:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=basketballclub
+      - DOCKER_INFLUXDB_INIT_PASSWORD=basketballclub123
+      - DOCKER_INFLUXDB_INIT_ORG=basketball_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=events_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=basketball-events-token-2024
+
   neo4j:
     image: neo4j:5.23
     container_name: neo4j
@@ -110,3 +130,4 @@ volumes:
   neo4j_logs:
   neo4j_import:
   neo4j_plugins:
+  influxdb_storage:
