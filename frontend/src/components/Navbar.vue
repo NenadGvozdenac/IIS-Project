@@ -21,11 +21,6 @@
             class="nav-link analyst-link">
             Matches
           </router-link>
-          <!-- Scout Navigation -->
-          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout"
-            class="nav-link scout-link">
-            Dashboard
-          </router-link>
           <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/create-player"
             class="nav-link scout-link">
             Create Player
