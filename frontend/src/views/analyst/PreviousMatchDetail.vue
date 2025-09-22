@@ -342,6 +342,7 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
 import matchReportService from '../../services/matchReportService'
+import advancedMatchReportService from '../../services/advancedMatchReportService'
 
 const route = useRoute()
 const router = useRouter()
@@ -947,13 +948,14 @@ const downloadMatchReport = () => {
   }
   
   try {
-    matchReportService.generateMatchReport(
-      match.value,
-      ourTeamPlayers.value,
-      opponentTeamPlayers.value,
-      ourTeamStats.value,
-      opponentTeamStats.value
-    )
+    // matchReportService.generateMatchReport(
+    //   match.value,
+    //   ourTeamPlayers.value,
+    //   opponentTeamPlayers.value,
+    //   ourTeamStats.value,
+    //   opponentTeamStats.value
+    // )
+    advancedMatchReportService.generateAdvancedMatchReport(match.value.idMatch)
   } catch (error) {
     console.error('Error generating match report:', error)
     //alert('Error generating match report. Please try again.')

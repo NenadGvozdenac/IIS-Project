@@ -5,6 +5,7 @@ using match_service.src.Matches.Core.Application.Features.Match.GetAllMatches;
 using match_service.src.Matches.Core.Application.Features.Match.GetFinishedMatchesByTeam;
 using match_service.src.Matches.Core.Application.Features.Match.GetMatchById;
 using match_service.src.Matches.Core.Application.Features.Match.GetMatchPlayerStatistics;
+using match_service.src.Matches.Core.Application.Features.Match.GetCompleteMatchReport;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.GetMatchTrackingByMatchId;
 using match_service.src.Matches.Core.Application.Features.MatchTracking.PrepareMatchTracking;
 using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.GetTeamMembersByMatch;
@@ -80,6 +81,14 @@ public class MatchController : BaseController
     public async Task<ActionResult> GetMatchPlayerStatistics(int matchId)
     {
         var query = new GetMatchPlayerStatisticsQuery(matchId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("{matchId}/complete-report")]
+    public async Task<ActionResult> GetCompleteMatchReport(int matchId)
+    {
+        var query = new GetCompleteMatchReportQuery(matchId);
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
