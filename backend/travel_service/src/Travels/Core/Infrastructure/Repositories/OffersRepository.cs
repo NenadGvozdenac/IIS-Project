@@ -43,7 +43,6 @@ public class OffersRepository : IOffersRepository
         {
             var offers = new List<Offer>();
 
-            // Koristimo Entity Framework konekciju bez eksplicitnog zatvaranja
             var connection = _travelDbContext.Database.GetDbConnection();
             if (connection.State != System.Data.ConnectionState.Open)
             {
@@ -76,30 +75,28 @@ public class OffersRepository : IOffersRepository
                 var offer = new Offer
                 {
                     IdOffer = reader.GetInt32(0), // id_offer
-                    Price = reader.IsDBNull(1) ? null : reader.GetInt32(1), // price
-                    UserIdUser = reader.IsDBNull(2) ? null : reader.GetInt32(2), // user_id_user
-                    IdMatch = reader.GetInt32(3), // id_match
-                    IdAgency = reader.GetInt32(4), // id_agency
-                    IdRequest = reader.GetInt32(5), // id_request
-                    Chosen = reader.IsDBNull(6) ? null : reader.GetBoolean(6), // chosen
-                    Type = reader.IsDBNull(7) ? null : reader.GetString(7), // type
-                    Score = reader.IsDBNull(8) ? 0m : reader.GetDecimal(8) // score
+                    Price = reader.IsDBNull(1) ? null : reader.GetInt32(1),
+                    UserIdUser = reader.IsDBNull(2) ? null : reader.GetInt32(2), 
+                    IdMatch = reader.GetInt32(3), 
+                    IdAgency = reader.GetInt32(4), 
+                    IdRequest = reader.GetInt32(5),
+                    Chosen = reader.IsDBNull(6) ? null : reader.GetBoolean(6), 
+                    Type = reader.IsDBNull(7) ? null : reader.GetString(7), 
+                    Score = reader.IsDBNull(8) ? 0m : reader.GetDecimal(8) 
                 };
                 
                 offers.Add(offer);
             }
             
-            reader.Close(); // Zatvaramo reader pre EF poziva
+            reader.Close(); 
 
-            // Učitaj sve related objekte odjednom da izbegnemo N+1 problem i očuvamo redosled
+          
             if (offers.Any())
             {
-                // Izdvojimo jednostavne liste ID-jeva
                 var offerIds = offers.Select(o => o.IdOffer).Distinct().ToList();
                 var agencyIds = offers.Select(o => o.IdAgency).Distinct().ToList();
                 var requestIds = offers.Select(o => o.IdRequest).Distinct().ToList();
                 
-                // Učitaj sve potrebne ponude sa jednostavnijim upitom
                 var fullOffers = _travelDbContext.Offers
                     .Include(o => o.AccommodationOffer)
                     .Include(o => o.TransportationOffer)
@@ -112,7 +109,6 @@ public class OffersRepository : IOffersRepository
                                o.Type == type && o.IdMatch == idMatch)
                     .ToList();
 
-                // Mapiramo related objekte zadržavajući originalni redosled iz SQL-a
                 for (int i = 0; i < offers.Count; i++)
                 {
                     var offer = offers[i];
@@ -133,8 +129,7 @@ public class OffersRepository : IOffersRepository
 
             Console.WriteLine($"Fetched {offers.Count} offers of type '{type}' for match ID {idMatch} sorted by score (preserved order).");
             
-            // Debug: ispišemo score-ove da potvrdimo sortiranje
-            foreach (var offer in offers.Take(3))
+            foreach (var offer in offers)
             {
                 Console.WriteLine($"Offer ID: {offer.IdOffer}, Agency: {offer.IdAgency}, Score: {offer.Score}");
             }
@@ -144,7 +139,6 @@ public class OffersRepository : IOffersRepository
         catch (Exception ex)
         {
             Console.WriteLine($"Error in GetOffersByTypeAndMatch: {ex.Message}");
-            // Fallback to original method if SQL fails
             return _travelDbContext.Offers
                 .Include(o => o.AccommodationOffer)
                 .Include(o => o.TransportationOffer)

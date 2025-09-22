@@ -483,22 +483,17 @@ CREATE INDEX IF NOT EXISTS idx_request_match_type ON request (id_match, type);
 
 -- KRAJ SEKCIJE SA INDEKSIMA SANJA RADIC
 
--- SANJA RADIC - FUNKCIJA ZA AUTOMATSKO BIRANJE NAJBOLJE PONUDE
-CREATE OR REPLACE FUNCTION auto_select_best_offer(
-    p_match_id INTEGER,
-    p_offer_type VARCHAR(20), -- 'transportation' ili 'accommodation'
-    p_weight_price NUMERIC DEFAULT 0.4,      -- 40% uticaj cene
-    p_weight_capacity NUMERIC DEFAULT 0.3,   -- 30% uticaj kapaciteta  
-    p_weight_benefits NUMERIC DEFAULT 0.2,   -- 20% uticaj benefita
-    p_weight_agency NUMERIC DEFAULT 0.1      -- 10% uticaj agencije
-) RETURNS TABLE(
-    selected_offer_id INTEGER,
-    selected_agency_name VARCHAR(255),
-    selection_score NUMERIC,
-    selection_reason TEXT,
-    total_offers_analyzed INTEGER
-) AS $$
+-- SANJA RADIC - TRIGGER ZA AUTOMATSKO BIRANJE NAJBOLJE PONUDE
+CREATE OR REPLACE FUNCTION auto_select_best_offer()
+RETURNS TRIGGER AS $$
 DECLARE
+    p_match_id INTEGER;
+    p_offer_type VARCHAR(20);
+    p_weight_price NUMERIC := 0.4;
+    p_weight_capacity NUMERIC := 0.3;
+    p_weight_benefits NUMERIC := 0.2;
+    p_weight_agency NUMERIC := 0.1;
+
     v_offer_record RECORD;
     v_best_offer_id INTEGER;
     v_best_agency_id INTEGER;
@@ -521,82 +516,59 @@ DECLARE
     v_player_count INTEGER;
     v_capacity_adequacy_score NUMERIC;
 BEGIN
-    -- Proverava da li je vec neka ponuda izabrana rucno 
-    IF EXISTS (
-        SELECT 1 FROM offer 
-        WHERE id_match = p_match_id 
-        AND type = p_offer_type 
-        AND chosen = true
-    ) THEN
-        RETURN QUERY
-        SELECT 
-            o.id_offer,
-            a.name,
-            999.99::NUMERIC,
-            'Offer already selected manually'::TEXT,
-            0::INTEGER
-        FROM offer o
-        JOIN sent_request sr ON o.id_request = sr.id_request AND o.id_agency = sr.id_agency
-        JOIN agency a ON sr.id_agency = a.id_agency
-        WHERE o.id_match = p_match_id 
-        AND o.type = p_offer_type 
-        AND o.chosen = true
-        LIMIT 1;
-        RETURN;
+    IF current_setting('auto_select.in_progress', true) = '1' THEN
+        RETURN NEW;
+    END IF;
+    PERFORM set_config('auto_select.in_progress', '1', true);
+
+    IF (TG_TABLE_NAME = 'offer') THEN
+        p_match_id := NEW.id_match;
+        p_offer_type := NEW.type;
+    ELSE
+        SELECT id_match, type INTO p_match_id, p_offer_type
+        FROM offer 
+        WHERE id_offer = NEW.id_offer AND id_agency = NEW.id_agency AND id_request = NEW.id_request;
     END IF;
 
-    -- Ukupan broj ponuda koje se analiziraju
     SELECT COUNT(*) INTO v_total_offers
     FROM offer 
     WHERE id_match = p_match_id AND type = p_offer_type;
     
-    -- Ako nema ponuda, vrati prazan rezultat
     IF v_total_offers = 0 THEN
-        RETURN QUERY
-        SELECT 
-            NULL::INTEGER,
-            'No offers found'::VARCHAR(255),
-            0.0::NUMERIC,
-            'No offers available for analysis'::TEXT,
-            0::INTEGER;
-        RETURN;
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RETURN NEW;
     END IF;
 
-    -- Ako ima samo jednu ponudu, automatski ce biti izabrana
     IF v_total_offers = 1 THEN
         SELECT o.id_offer, o.id_agency, o.id_request, a.name
         INTO v_best_offer_id, v_best_agency_id, v_best_request_id, v_best_agency_name
         FROM offer o
         JOIN sent_request sr ON o.id_request = sr.id_request AND o.id_agency = sr.id_agency
         JOIN agency a ON sr.id_agency = a.id_agency
-        WHERE o.id_match = p_match_id AND o.type = p_offer_type;
+        WHERE o.id_match = p_match_id AND o.type = p_offer_type
+        LIMIT 1;
         
-        -- chosen=true
-        UPDATE offer 
-        SET chosen = true 
-        WHERE id_offer = v_best_offer_id 
-        AND id_agency = v_best_agency_id 
-        AND id_request = v_best_request_id;
-        
-        RETURN QUERY
-        SELECT 
-            v_best_offer_id,
-            v_best_agency_name,
-            100.0::NUMERIC,
-            'Only one offer available - automatically selected'::TEXT,
-            1::INTEGER;
-        RETURN;
+        IF v_best_offer_id IS NOT NULL THEN
+            UPDATE offer 
+            SET chosen = true 
+            WHERE id_offer = v_best_offer_id 
+            AND id_agency = v_best_agency_id 
+            AND id_request = v_best_request_id;
+            
+            INSERT INTO offer_selection_log (id_match, offer_type, selected_offer_id, selection_score, selection_reason, total_offers_analyzed, selected_by)
+            VALUES (p_match_id, p_offer_type, v_best_offer_id, 100.0, 'Only one offer available - automatically selected', v_total_offers, 'AUTO');
+        END IF;
+
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RETURN NEW;
     END IF;
 
-    -- Ako nema igraca koji idu na to putovanje, uzima se 25 kao okvirna vrednost
     v_player_count := 25;
 
-    -- Min i max cena da se izdvoje zbog normalizacije kasnije
     SELECT MIN(price), MAX(price) INTO v_min_price, v_max_price
     FROM offer 
     WHERE id_match = p_match_id AND type = p_offer_type;
 
-    -- Isto za kapacitete
     IF p_offer_type = 'transportation' THEN
         SELECT MIN(capacity), MAX(capacity) INTO v_min_capacity, v_max_capacity
         FROM offer o
@@ -611,7 +583,7 @@ BEGIN
         WHERE o.id_match = p_match_id AND o.type = p_offer_type;
     END IF;
 
-    -- Glavna petlja 
+    RAISE NOTICE 'DEBUG auto_select: Starting main loop with % total offers for match=% type=%', v_total_offers, p_match_id, p_offer_type;
     FOR v_offer_record IN 
         SELECT 
             o.id_offer,
@@ -632,347 +604,88 @@ BEGIN
         JOIN agency a ON sr.id_agency = a.id_agency
         WHERE o.id_match = p_match_id AND o.type = p_offer_type
     LOOP
-        -- 1. CENA SCORE (niza cena => veci score)
-        IF v_max_price > v_min_price THEN
-            v_price_score := 1 - ((v_offer_record.price - v_min_price) / (v_max_price - v_min_price));
-        ELSE
-            v_price_score := 1.0;
-        END IF;
+        SELECT calculate_advanced_offer_score(v_offer_record.id_offer, v_offer_record.id_agency, v_offer_record.id_request)
+        INTO v_current_score;
+        RAISE NOTICE 'DEBUG auto_select: Offer % (agency %) - price=%, capacity=%, score=%', 
+            v_offer_record.id_offer, v_offer_record.id_agency, v_offer_record.price, v_offer_record.capacity, 
+            v_current_score;
 
-        -- 2. KAPACITET SCORE - kombinuje relativni kapacitet i adequacy za tim
-        IF v_max_capacity > v_min_capacity THEN
-            -- Relativni score u odnosu na druge ponude
-            v_capacity_score := (v_offer_record.capacity - v_min_capacity)::NUMERIC / (v_max_capacity - v_min_capacity);
-        ELSE
-            v_capacity_score := 1.0;
-        END IF;
-        
-        -- Adequacy score - da li je kapacitet dovoljno velik za tim
-        IF v_offer_record.capacity >= v_player_count * 1.2 THEN -- 20% buffer
-            v_capacity_adequacy_score := 1.0;
-        ELSIF v_offer_record.capacity >= v_player_count THEN
-            v_capacity_adequacy_score := 0.8;
-        ELSIF v_offer_record.capacity >= v_player_count * 0.8 THEN
-            v_capacity_adequacy_score := 0.4;
-        ELSE
-            v_capacity_adequacy_score := 0.1; -- Previše mali kapacitet
-        END IF;
-        
-        -- Kombinuje relativni i adequacy score
-        v_capacity_score := (v_capacity_score + v_capacity_adequacy_score) / 2;
-
-        -- 3. BENEFITI SCORE
-        v_benefits_count := 0;
-        
-        IF p_offer_type = 'transportation' THEN
-            SELECT 
-                (CASE WHEN air_conditioning THEN 1 ELSE 0 END) +
-                (CASE WHEN tv THEN 1 ELSE 0 END) +
-                (CASE WHEN wifi THEN 1 ELSE 0 END) +
-                (CASE WHEN restroom THEN 1 ELSE 0 END) +
-                (CASE WHEN equipment_space THEN 1 ELSE 0 END)
-            INTO v_benefits_count
-            FROM transportation_offer
-            WHERE id_offer = v_offer_record.id_offer 
-              AND id_agency = v_offer_record.id_agency 
-              AND id_request = v_offer_record.id_request;
-            
-            v_benefits_score := v_benefits_count::NUMERIC / 5.0; -- Max 5 benefita
-        ELSE
-            SELECT 
-                (CASE WHEN breakfast THEN 1 ELSE 0 END) +
-                (CASE WHEN fitness_center THEN 1 ELSE 0 END) +
-                (CASE WHEN pool THEN 1 ELSE 0 END) +
-                (CASE WHEN wifi THEN 1 ELSE 0 END) +
-                (CASE WHEN spa THEN 1 ELSE 0 END)
-            INTO v_benefits_count
-            FROM accommodation_offer
-            WHERE id_offer = v_offer_record.id_offer 
-              AND id_agency = v_offer_record.id_agency 
-              AND id_request = v_offer_record.id_request;
-            
-            v_benefits_score := v_benefits_count::NUMERIC / 5.0; -- Max 5 benefita
-        END IF;
-
-        -- 4. AGENCIJA SCORE - na osnovu istorije biranih ponuda
-        SELECT 
-            CASE 
-                WHEN COUNT(*) = 0 THEN 0.5 -- Nema istorije, neutralan score
-                ELSE AVG(CASE WHEN o.chosen THEN 1.0 ELSE 0.2 END)
-            END
-        INTO v_agency_success_rate
-        FROM offer o
-        JOIN sent_request sr ON o.id_request = sr.id_request AND o.id_agency = sr.id_agency
-        WHERE sr.id_agency = v_offer_record.id_agency 
-        AND o.id_match != p_match_id; -- Izuzma se trenutni mec
-        
-        v_agency_score := COALESCE(v_agency_success_rate, 0.5);
-
-        -- Ukupan score (weighted average)
-        v_current_score := 
-            (v_price_score * p_weight_price) + 
-            (v_capacity_score * p_weight_capacity) + 
-            (v_benefits_score * p_weight_benefits) + 
-            (v_agency_score * p_weight_agency);
-
-        -- Provera da li je ovo najbolji score
         IF v_current_score > v_best_score THEN
             v_best_score := v_current_score;
             v_best_offer_id := v_offer_record.id_offer;
             v_best_agency_id := v_offer_record.id_agency;
             v_best_request_id := v_offer_record.id_request;
             v_best_agency_name := v_offer_record.agency_name;
-            v_best_reason := 
-                'Price: ' || v_offer_record.price || ' EUR (score: ' || ROUND(v_price_score * 100, 1) || '%) | ' ||
-                'Capacity: ' || v_offer_record.capacity || ' (score: ' || ROUND(v_capacity_score * 100, 1) || '%) | ' ||
-                'Benefits: ' || v_benefits_count || '/5 (score: ' || ROUND(v_benefits_score * 100, 1) || '%) | ' ||
-                'Agency reliability: ' || ROUND(v_agency_score * 100, 1) || '%';
+            v_best_reason := 'AUTO selection - calculated by calculate_advanced_offer_score';
+            
+            RAISE NOTICE 'DEBUG auto_select: NEW BEST OFFER found: % with score %', v_best_offer_id, v_best_score;
         END IF;
     END LOOP;
 
-    -- Za najbolju ponudu chosen=true
     IF v_best_offer_id IS NOT NULL THEN
-        -- Sve ostale ponude moraju na false
         UPDATE offer 
         SET chosen = false 
         WHERE id_match = p_match_id AND type = p_offer_type;
         
-        -- Postavljanje najbolje na true koristeci composite key
         UPDATE offer 
         SET chosen = true 
         WHERE id_offer = v_best_offer_id 
         AND id_agency = v_best_agency_id 
         AND id_request = v_best_request_id;
         
-        -- Logiranje izbora
         INSERT INTO offer_selection_log (id_match, offer_type, selected_offer_id, selection_score, selection_reason, total_offers_analyzed, selected_by)
         VALUES (p_match_id, p_offer_type, v_best_offer_id, v_best_score, v_best_reason, v_total_offers, 'AUTO');
-        
-        -- Rezultat
-        RETURN QUERY
-        SELECT 
-            v_best_offer_id,
-            v_best_agency_name,
-            v_best_score,
-            v_best_reason,
-            v_total_offers;
     END IF;
+
+    PERFORM set_config('auto_select.in_progress', '0', true);
+    RETURN NEW;
 
 EXCEPTION
     WHEN OTHERS THEN
-        RETURN QUERY
-        SELECT 
-            -1,
-            'ERROR'::VARCHAR(255),
-            -1.0::NUMERIC,
-            ('Auto-selection failed: ' || SQLERRM)::TEXT,
-            0::INTEGER;
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RAISE;
 END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE TRIGGER trigger_auto_select_after_offer_insert
+    AFTER INSERT ON offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
+CREATE TRIGGER trigger_auto_select_after_transportation_child
+    AFTER INSERT OR UPDATE ON transportation_offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
 
--- KRAJ SEKCIJE SA FUNKCIJOM SANJA RADIC
+CREATE TRIGGER trigger_auto_select_after_accommodation_child
+    AFTER INSERT OR UPDATE ON accommodation_offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
+-- KRAJ TRIGGERA SANJA RADIC
 
--- SANJA RADIC - TRIGGER ZA VALIDACIJU ISA HIJERARHIJE
-
--- KRAJ SEKCIJE SA TRIGGEROM SANJA RADIC
-
--- SANJA RADIC - TRIGGER ZA VALIDACIJU KAPACITETA PONUDE
--- CREATE OR REPLACE FUNCTION validate_transportationoffer_capacity()
--- RETURNS TRIGGER AS $$
--- DECLARE
---     v_team_members_count INTEGER := 0;
---     v_management_members_count INTEGER := 0;
---     v_total_travelers INTEGER := 0;
---     v_offer_capacity INTEGER;
---     v_capacity_difference INTEGER;
---     v_warning_message TEXT;
--- BEGIN
---     -- Dohvata kapacitet iz accommodation_offer ili transportation_offer
---     IF NEW.type = 'transportation' THEN
---         SELECT capacity INTO v_offer_capacity 
---         FROM transportation_offer 
---         WHERE id_offer = NEW.id_offer 
---           AND id_agency = NEW.id_agency 
---           AND id_request = NEW.id_request;
---     END IF;
-    
---     -- Ako nema kapaciteta u child tabeli, preskoči validaciju
---     IF v_offer_capacity IS NULL THEN
---         RETURN NEW;
---     END IF;
-    
---     -- Broji igrače koji su označeni za putovanje (iz team_member_request)
---     SELECT COUNT(*) INTO v_team_members_count
---     FROM team_member_request tmr
---     WHERE tmr.id_request = NEW.id_request;
-    
---     -- Broji menadžment koji je označen za putovanje (iz management_member_request)
---     SELECT COUNT(*) INTO v_management_members_count
---     FROM management_member_request mmr
---     WHERE mmr.id_request = NEW.id_request;
-    
---     -- Ukupan broj putnika
---     v_total_travelers := v_team_members_count + v_management_members_count;
-    
---     -- Validacija kapaciteta
---     IF v_offer_capacity < v_total_travelers THEN
---         v_capacity_difference := v_total_travelers - v_offer_capacity;
-        
---         v_warning_message := sprintf(
---             'CAPACITY WARNING: Offer capacity (%s) is insufficient for travelers. ' ||
---             'Total travelers: %s (Team members: %s + Management: %s). ' ||
---             'Missing capacity: %s. Match ID: %s, Offer Type: %s',
---             v_offer_capacity,
---             v_total_travelers,
---             v_team_members_count,
---             v_management_members_count,
---             v_capacity_difference,
---             NEW.id_match,
---             NEW.type
---         );
-        
---         -- Izda upozorenje ali ne prekida operaciju
---         RAISE WARNING '%', v_warning_message;
-        
---         -- Log poruku kroz NOTICE koja će biti vidljiva na frontend-u
---         RAISE NOTICE 'CAPACITY_WARNING|%|%|%|%|%', 
---             NEW.type, 
---             v_offer_capacity, 
---             v_total_travelers, 
---             v_capacity_difference,
---             NEW.id_match;
-            
---     ELSE
---         -- Poruka o uspešnoj validaciji
---         RAISE NOTICE 'CAPACITY_OK|%|%|%|%', 
---             NEW.type, 
---             v_offer_capacity, 
---             v_total_travelers,
---             NEW.id_match;
---     END IF;
-    
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- -- Trigger se poziva kada se kreira nova ponuda (INSERT na offer tabelu)
--- CREATE TRIGGER validate_transportationoffer_capacity_trigger
---     AFTER INSERT ON transportation_offer
---     FOR EACH ROW
---     EXECUTE FUNCTION validate_transportationoffer_capacity();
-
--- CREATE OR REPLACE FUNCTION validate_accommodationoffer_capacity()
--- RETURNS TRIGGER AS $$
--- DECLARE
---     v_team_members_count INTEGER := 0;
---     v_management_members_count INTEGER := 0;
---     v_total_travelers INTEGER := 0;
---     v_offer_capacity INTEGER;
---     v_capacity_difference INTEGER;
---     v_warning_message TEXT;
--- BEGIN
---     IF NEW.type = 'accommodation' THEN
---         SELECT capacity INTO v_offer_capacity 
---         FROM accommodation_offer 
---         WHERE id_offer = NEW.id_offer 
---           AND id_agency = NEW.id_agency 
---           AND id_request = NEW.id_request;
---     END IF;
-    
---     IF v_offer_capacity IS NULL THEN
---         RETURN NEW;
---     END IF;
-    
---     SELECT COUNT(*) INTO v_team_members_count
---     FROM team_member_request tmr
---     WHERE tmr.id_request = NEW.id_request;
-    
---     SELECT COUNT(*) INTO v_management_members_count
---     FROM management_member_request mmr
---     WHERE mmr.id_request = NEW.id_request;
-    
---     v_total_travelers := v_team_members_count + v_management_members_count;
-    
---     IF v_offer_capacity < v_total_travelers THEN
---         v_capacity_difference := v_total_travelers - v_offer_capacity;
-        
---         v_warning_message := sprintf(
---             'CAPACITY WARNING: Offer capacity (%s) is insufficient for travelers. ' ||
---             'Total travelers: %s (Team members: %s + Management: %s). ' ||
---             'Missing capacity: %s. Match ID: %s, Offer Type: %s',
---             v_offer_capacity,
---             v_total_travelers,
---             v_team_members_count,
---             v_management_members_count,
---             v_capacity_difference,
---             NEW.id_match,
---             NEW.type
---         );
-        
---         RAISE WARNING '%', v_warning_message;
-        
---         RAISE NOTICE 'CAPACITY_WARNING|%|%|%|%|%', 
---             NEW.type, 
---             v_offer_capacity, 
---             v_total_travelers, 
---             v_capacity_difference,
---             NEW.id_match;
-            
---     ELSE
---         RAISE NOTICE 'CAPACITY_OK|%|%|%|%', 
---             NEW.type, 
---             v_offer_capacity, 
---             v_total_travelers,
---             NEW.id_match;
---     END IF;
-    
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE TRIGGER validate_accommodationoffer_capacity_trigger
---     AFTER INSERT ON accommodation_offer
---     FOR EACH ROW
---     EXECUTE FUNCTION validate_accommodationoffer_capacity();
--- KRAJ SEKCIJE SA TRIGGEROM ZA VALIDACIJU KAPACITETA SANJA RADIC
-
---------------------------------------------------------------------------
--- SANJA RADIC - FUNKCIJA ZA IZRAČUNAVANJE UKUPNOG BROJA PUTNIKA
-
-CREATE OR REPLACE FUNCTION calculate_total_travelers(
-    p_request_id INTEGER
-) RETURNS INTEGER AS $$
+-- SANJA RADIC - NAPREDNA FUNKCIJA ZA SCORING PONUDA
+-- Ova funkcija je potrebna samo zbog racunanja score-a
+CREATE OR REPLACE FUNCTION calculate_total_travelers(p_request_id INTEGER)
+RETURNS INTEGER AS $$
 DECLARE
     v_team_members INTEGER := 0;
     v_management_members INTEGER := 0;
-    v_total INTEGER := 0;
 BEGIN
-    -- Broji članove tima
-    SELECT COUNT(*) INTO v_team_members
-    FROM team_member_request tmr
-    WHERE tmr.id_request = p_request_id;
-    
-    -- Broji članove menadžmenta
-    SELECT COUNT(*) INTO v_management_members
-    FROM management_member_request mmr
-    WHERE mmr.id_request = p_request_id;
-    
-    v_total := v_team_members + v_management_members;
-    
-    RETURN v_total;
-    
-EXCEPTION
-    WHEN OTHERS THEN
-        RETURN 0;
+    BEGIN
+        SELECT COUNT(*) INTO v_team_members FROM team_member_request WHERE id_request = p_request_id;
+    EXCEPTION WHEN OTHERS THEN
+        v_team_members := 0;
+    END;
+
+    BEGIN
+        SELECT COUNT(*) INTO v_management_members FROM management_member_request WHERE id_request = p_request_id;
+    EXCEPTION WHEN OTHERS THEN
+        v_management_members := 0;
+    END;
+
+    RETURN COALESCE(v_team_members, 0) + COALESCE(v_management_members, 0);
 END;
 $$ LANGUAGE plpgsql;
-
--- KRAJ FUNKCIJE ZA IZRAČUNAVANJE UKUPNOG BROJA PUTNIKA
-
---------------------------------------------------------------------------
--- SANJA RADIC - NAPREDNA FUNKCIJA ZA SCORING PONUDA
 
 CREATE OR REPLACE FUNCTION calculate_advanced_offer_score(
     p_offer_id INTEGER,
@@ -999,7 +712,6 @@ DECLARE
     v_max_amenities INTEGER;
     v_match_id INTEGER;
 BEGIN
-    -- Get basic offer data
     SELECT o.type, o.price, o.id_match 
     INTO v_offer_type, v_offer_price, v_match_id
     FROM offer o 
@@ -1011,7 +723,6 @@ BEGIN
         RETURN 0;
     END IF;
     
-    -- 1. PRICE SCORE (lower price = higher score)
     SELECT MIN(price), MAX(price) 
     INTO v_min_price, v_max_price
     FROM offer 
@@ -1025,7 +736,6 @@ BEGIN
         v_price_score := 50;
     END IF;
     
-    -- 2. CAPACITY SCORE
     SELECT calculate_total_travelers(p_request_id) INTO v_required_capacity;
     
     IF v_offer_type = 'accommodation' THEN
@@ -1048,7 +758,6 @@ BEGIN
         v_capacity_score := 50;
     END IF;
     
-    -- 3. AMENITIES SCORE
     IF v_offer_type = 'accommodation' THEN
         SELECT 
             (CASE WHEN breakfast THEN 1 ELSE 0 END) +
@@ -1085,10 +794,8 @@ BEGIN
         v_amenities_score := 0;
     END IF;
     
-    -- 4. AGENCY RATING SCORE - simplified for now
-    v_agency_rating_score := 50; -- Default neutral score
+    v_agency_rating_score := 50; 
     
-    -- FINAL WEIGHTED SCORE
     v_final_score := 
         (v_price_score * p_weight_price) +
         (v_capacity_score * p_weight_capacity) +
@@ -1103,4 +810,4 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- KRAJ NAPREDNE FUNKCIJE ZA SCORING PONUDA
+-- KRAJ NAPREDNE FUNKCIJE ZA SCORING PONUDA SANJA RADIC
