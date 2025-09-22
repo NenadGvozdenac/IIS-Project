@@ -406,6 +406,42 @@ VALUES (400, 40, 1200, 3600, 3, 3, 3);
 INSERT INTO ticket_price_parameter (price_factor, time_factor, minimum_seat_price, maximum_seat_price, id_user, id_zone, id_match)
 VALUES (400, 40, 600, 1800, 3, 4, 3);
 
+-- Agencije za smestaj i za prevoz (10 smestajnih i 10 transportnih)
+INSERT INTO agency (name, email, type) VALUES
+('Blue Horizon Hotels', 'contact@bluehorizon.example', 'accommodation'),
+('Comfort Stay Group', 'info@comfortstay.example', 'accommodation'),
+('CityCenter Lodgings', 'reservations@citycenter.example', 'accommodation'),
+('Seaside Suites', 'hello@seasidesuites.example', 'accommodation'),
+('Mountain View Inns', 'booking@mountainview.example', 'accommodation'),
+('Heritage Boutique Hotels', 'contact@heritageboutique.example', 'accommodation'),
+('BudgetHotels Network', 'support@budgethotels.example', 'accommodation'),
+('Grand Plaza Accommodations', 'info@grandplaza.example', 'accommodation'),
+('Airport Transit Hotels', 'bookings@airporttransit.example', 'accommodation'),
+('Riverside Retreats', 'contact@riversideretreats.example', 'accommodation'),
+('Express Transport Co', 'ops@expresstransport.example', 'transportation'),
+('BlueLine Coaches', 'info@bluelinecoaches.example', 'transportation'),
+('SkyWays Airlines', 'sales@skyways.example', 'transportation'),
+('RailLink Services', 'support@raillink.example', 'transportation'),
+('CityShuttle Vans', 'contact@cityshuttle.example', 'transportation'),
+('Elite Charter Buses', 'charter@elitebuses.example', 'transportation'),
+('RapidTransit Logistics', 'logistics@rapidtransit.example', 'transportation'),
+('Continental Flights', 'bookings@continentalflights.example', 'transportation'),
+('GreenRoute Coaches', 'info@greenroute.example', 'transportation'),
+('InterCity Transporters', 'contact@intercity.example', 'transportation');
+
+-- Clanovi strucnog staba (10 unosa)
+INSERT INTO management (member_name, member_surname, member_role) VALUES
+('Marko', 'Petrović', 'coach'),
+('Ivan', 'Jovanović', 'assistant coach'),
+('Nemanja', 'Ilić', 'doctor'),
+('Milan', 'Stojanov', 'therapist'),
+('Nikola', 'Kovačević', 'other'),
+('Aleksandar', 'Milinković', 'assistant coach'),
+('Stefan', 'Đorđević', 'therapist'),
+('Bogdan', 'Radonjić', 'doctor'),
+('Uroš', 'Lukić', 'coach'),
+('Lazar', 'Mihajlović', 'other');
+
 -- =====================================================
 -- PRIMER KORIŠĆENJA DINAMIČKIH CENA:
 -- =====================================================

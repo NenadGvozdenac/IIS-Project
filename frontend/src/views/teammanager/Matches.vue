@@ -7,7 +7,15 @@
           <nav class="nav-menu" v-if="isTeamManager">
             <router-link to="/team-manager/matches" class="nav-link active">Matches</router-link>
             <router-link to="/team-manager/players" class="nav-link">Players</router-link>
-            <router-link to="/team-manager/travel" class="nav-link">Travel Organization</router-link>
+            <div class="nav-dropdown">
+                <span class="nav-link dropdown-toggle">Requests</span>
+                <div class="dropdown-menu">
+                    <router-link to="/team-manager/transportation-requests-active" class="dropdown-item">Transportation - Active</router-link>
+                    <router-link to="/team-manager/transportation-requests-archive" class="dropdown-item">Transportation - Archive</router-link>
+                    <router-link to="/team-manager/accommodation-requests-active" class="dropdown-item">Accommodation - Active</router-link>
+                    <router-link to="/team-manager/accommodation-requests-archive" class="dropdown-item">Accommodation - Archive</router-link>
+                </div>
+            </div>
           </nav>
         </div>
       </div>
@@ -127,9 +135,9 @@
       <!-- Details - uvek dostupan -->
       <div class="menu-item" @click="viewMatchDetails">Details</div>
       
-      <!-- Edit i Delete - samo za buduće mečeve i ako je ostalo više od 24h -->
+      <!-- Edit - samo za buduće mečeve i ako je ostalo više od 24h -->
       <div class="menu-item" @click="editMatch" v-if="canEditMatch(selectedMatch)">Edit</div>
-      <div class="menu-item danger" @click="deleteMatch" v-if="canDeleteMatch(selectedMatch)">Delete</div>
+      
       
       <!-- Report - samo za odigrane mečeve -->
       <div class="menu-item" @click="generateReport" v-if="isMatchPlayed(selectedMatch)">Report (ctrl+r)</div>
@@ -138,14 +146,12 @@
       <template v-if="showTransportOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="transportRequest">Transport request</div>
-        <div class="menu-item" @click="transportOffers">Transport offers</div>
       </template>
       
       <!-- Accommodation opcije - samo ako je potreban smeštaj i meč nije odigran -->
       <template v-if="showAccommodationOptions(selectedMatch)">
         <hr>
         <div class="menu-item" @click="accommodationRequest">Accommodation request</div>
-        <div class="menu-item" @click="accommodationOffers">Accommodation offers</div>
       </template>
     </div>
 
@@ -273,21 +279,6 @@
       </div>
     </div>
 
-    <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-      <div class="modal" @click.stop>
-        <div class="modal-header">
-          <h3>Delete Match</h3>
-          <button @click="closeDeleteModal" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete this match?</p>
-          <div class="modal-actions">
-            <button type="button" @click="closeDeleteModal" class="btn btn-secondary">Cancel</button>
-            <button type="button" @click="confirmDeleteMatch" class="btn btn-danger">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -333,6 +324,10 @@ const showCreateModal = ref(false)
 const isTeamManager = ref(true) 
 const userName = ref('Team Manager') 
 const loading = ref(false)
+const createdTRequest = ref(false)
+const createdARequest = ref(false)
+const requestsT = ref([]);
+const requestsA = ref([]);
 
 const competitions = ref([])
 const seasons = ref([])
@@ -427,12 +422,54 @@ const canEditMatch = (match) => {
          isTeamManager.value
 }
 
-const canDeleteMatch = (match) => {
-  const status = getMatchStatus(match)
-  return (status === 'future' || status === 'next') && 
-         isMoreThan24HoursAway(match) && 
-         isTeamManager.value
-}
+const fetchTRequests = async () => {
+
+  try {
+    const response = await axios.get(`https://localhost:5007/api/requests/transportation/0`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.data.isSuccess) {
+      requestsT.value = Array.isArray(response.data.value.requests)
+      ? response.data.value.requests
+      : []
+    } else {
+      requestsT.value = [];
+    }
+  } catch (error) {
+    console.error("API error:", error);
+  }
+};
+
+const fetchARequests = async () => {
+
+  try {
+    const response = await axios.get(`https://localhost:5007/api/requests/accommodation/0`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.data.isSuccess) {
+      requestsA.value = Array.isArray(response.data.value.requests)
+      ? response.data.value.requests
+      : []
+    } else {
+      requestsA.value = [];
+    }
+  } catch (error) {
+    console.error("API error:", error);
+  }
+};
+const fetchTRequest = (match) => {
+  const existingTRequest = requestsT.value.find(req => req.idMatch === match.idMatch);
+  return existingTRequest ? 1 : 0;
+};
+
+const fetchARequest = (match) => {
+  const existingARequest = requestsA.value.find(req => req.idMatch == match.idMatch);
+  return existingARequest ? 2 : 0;
+};
 
 const isMatchPlayed = (match) => {
   const status = getMatchStatus(match)
@@ -440,11 +477,14 @@ const isMatchPlayed = (match) => {
 }
 
 const showTransportOptions = (match) => {
-  return match.transportationRequired && !isMatchPlayed(match)
+  const a = fetchTRequest(match);
+  console.log('Fetch requests result for transport:', a);
+  return match.transportationRequired && !isMatchPlayed(match) && a != 1;
 }
 
 const showAccommodationOptions = (match) => {
-  return match.accommodationRequired && !isMatchPlayed(match)
+  const a = fetchARequest(match);
+  return match.accommodationRequired && !isMatchPlayed(match) && a != 2;
 }
 
 const fetchMatches = async () => {
@@ -563,9 +603,6 @@ const createMatch = async () => {
   }
 }
 
-const deleteMatch = () => {
-  showDeleteModal.value = true;
-}
 
 const previousMonth = () => {
   currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
@@ -578,7 +615,6 @@ const nextMonth = () => {
 const showMatchMenu = (match, event) => {
   event.preventDefault()
   event.stopPropagation()
-  
   selectedMatch.value = match
   
   // Get the match element's position
@@ -610,8 +646,7 @@ const showMatchMenu = (match, event) => {
   console.log('Match menu opened for:', match.name, {
     status: getMatchStatus(match),
     canEdit: canEditMatch(match),
-    canDelete: canDeleteMatch(match),
-    isPlayed: isMatchPlayed(match),
+    isPlayed: isMatchPlayed(match), 
     position: { x, y },
     elementRect: rect
   })
@@ -669,7 +704,6 @@ const viewMatchDetails = () => {
 }
 
 const showEditModal = ref(false)
-const showDeleteModal = ref(false)
 const editMatchData = ref({
   name: '',
   scheduledAt: '',
@@ -691,9 +725,6 @@ const closeMatchModal = () => {
   showEditModal.value = false
 }
 
-const closeDeleteModal = () => {
-  showDeleteModal.value = false
-}
 
 const editMatch = async () => {
   await Promise.all([
@@ -753,28 +784,7 @@ const updateMatch = async () => {
 }
 
 
-const confirmDeleteMatch = async () => {
-    console.log('Confirm delete for match:', selectedMatch.value)
-  if (!selectedMatch.value) return
-  const userId = getUserId()
-  if (!userId) {
-    alert('User not authenticated')
-    return
-  }
-  try {
-    await axios.delete(`https://localhost:5007/api/matches/${selectedMatch.value.idMatch}/${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    closeDeleteModal()
-    await fetchMatches()
-  } catch (error) {
-    console.error('Error deleting match:', error)
-    alert(error.response?.data?.error || 'Failed to delete match')
-  }
-  hideMenu()
-}
+
 
 const generateReport = () => {
   console.log('Generate report for match:', selectedMatch.value)
@@ -782,22 +792,19 @@ const generateReport = () => {
 }
 
 const transportRequest = () => {
-  console.log('Transport request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const transportOffers = () => {
-  console.log('Transport offers for match:', selectedMatch.value)
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push({
+      name: 'TransportationRequest',
+      params: { matchId: selectedMatch.value.idMatch }
+    })
+  }
   hideMenu()
 }
 
 const accommodationRequest = () => {
-  console.log('Accommodation request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const accommodationOffers = () => {
-  console.log('Accommodation offers for match:', selectedMatch.value)
+  if (selectedMatch.value && selectedMatch.value.idMatch) {
+    router.push(`/team-manager/accommodation-request/${selectedMatch.value.idMatch}`)
+  }
   hideMenu()
 }
 
@@ -879,6 +886,8 @@ onMounted(() => {
   fetchCompetitions()
   fetchSeasons() 
   fetchTeams()
+  fetchTRequests()
+  fetchARequests()
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -923,6 +932,61 @@ onUnmounted(() => {
 .nav-link.active {
   color: var(--color-primary);
   background-color: #f3f4f6;
+}
+
+/* Dropdown styles */
+.nav-dropdown {
+  position: relative;
+  padding: 0.5rem;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-toggle::after {
+  content: ' ▼';
+  font-size: 12px;
+}
+
+.nav-dropdown:hover .dropdown-toggle::after {
+  content: ' ▲';
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.3s;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
 }
 
 .user-actions {

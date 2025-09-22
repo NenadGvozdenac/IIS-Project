@@ -32,6 +32,8 @@ public partial class TravelDbContext : DbContext
 
     public virtual DbSet<Offer> Offers { get; set; }
 
+    public virtual DbSet<OfferSelectionLog> OfferSelectionLogs { get; set; }
+
     public virtual DbSet<Player> Players { get; set; }
 
     public virtual DbSet<Position> Positions { get; set; }
@@ -76,6 +78,9 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
+            entity.Property(e => e.AccommodationType)
+                .HasMaxLength(20)
+                .HasColumnName("accommodation_type");
             entity.Property(e => e.Breakfast).HasColumnName("breakfast");
             entity.Property(e => e.Capacity).HasColumnName("capacity");
             entity.Property(e => e.DoubleRoom).HasColumnName("double_room");
@@ -87,9 +92,6 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.QuadrupleRoom).HasColumnName("quadruple_room");
             entity.Property(e => e.Spa).HasColumnName("spa");
             entity.Property(e => e.TripleRoom).HasColumnName("triple_room");
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .HasColumnName("type");
             entity.Property(e => e.Wifi).HasColumnName("wifi");
 
             entity.HasOne(d => d.Id).WithOne(p => p.AccommodationOffer)
@@ -107,13 +109,13 @@ public partial class TravelDbContext : DbContext
             entity.Property(e => e.IdRequest)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_request");
+            entity.Property(e => e.AccommodationType)
+                .HasMaxLength(20)
+                .HasColumnName("accommodation_type");
             entity.Property(e => e.CheckInDate).HasColumnName("check_in_date");
             entity.Property(e => e.CheckOutDate).HasColumnName("check_out_date");
             entity.Property(e => e.NumberOfGuests).HasColumnName("number_of_guests");
             entity.Property(e => e.NumberOfRooms).HasColumnName("number_of_rooms");
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .HasColumnName("type");
 
             entity.HasOne(d => d.IdRequestNavigation).WithOne(p => p.AccommodationRequest)
                 .HasForeignKey<AccommodationRequest>(d => d.IdRequest)
@@ -178,6 +180,8 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("match");
 
+            entity.HasIndex(e => e.ScheduledAt, "idx_match_scheduled_at");
+
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");
             entity.Property(e => e.City)
@@ -210,7 +214,6 @@ public partial class TravelDbContext : DbContext
 
             entity.HasOne(d => d.IdSeasonNavigation).WithMany(p => p.Matches)
                 .HasForeignKey(d => d.IdSeason)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_season");
 
             entity.HasOne(d => d.IdTeamNavigation).WithMany(p => p.Matches)
@@ -237,11 +240,23 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("offer");
 
+            entity.HasIndex(e => e.Type, "idx_offer_type");
+
+            entity.HasIndex(e => new { e.Type, e.IdMatch }, "idx_offer_type_match");
+
+            entity.HasIndex(e => new { e.Type, e.IdMatch, e.Chosen }, "idx_offer_type_match_chosen");
+
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
+            entity.Property(e => e.Chosen)
+                .HasDefaultValueSql("false")
+                .HasColumnName("chosen");
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.Price).HasColumnName("price");
+            entity.Property(e => e.Score)
+                .HasPrecision(5, 2)
+                .HasColumnName("score");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .HasColumnName("type");
@@ -260,6 +275,33 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => new { d.IdAgency, d.IdRequest })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_offer_sent_request");
+        });
+
+        modelBuilder.Entity<OfferSelectionLog>(entity =>
+        {
+            entity.HasKey(e => e.IdSelection).HasName("offer_selection_log_pkey");
+
+            entity.ToTable("offer_selection_log");
+
+            entity.Property(e => e.IdSelection).HasColumnName("id_selection");
+            entity.Property(e => e.IdMatch).HasColumnName("id_match");
+            entity.Property(e => e.OfferType)
+                .HasMaxLength(20)
+                .HasColumnName("offer_type");
+            entity.Property(e => e.SelectedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("selected_at");
+            entity.Property(e => e.SelectedBy)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'AUTO'::character varying")
+                .HasColumnName("selected_by");
+            entity.Property(e => e.SelectedOfferId).HasColumnName("selected_offer_id");
+            entity.Property(e => e.SelectionReason).HasColumnName("selection_reason");
+            entity.Property(e => e.SelectionScore)
+                .HasPrecision(5, 2)
+                .HasColumnName("selection_score");
+            entity.Property(e => e.TotalOffersAnalyzed).HasColumnName("total_offers_analyzed");
         });
 
         modelBuilder.Entity<Player>(entity =>
@@ -310,6 +352,8 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("request");
 
+            entity.HasIndex(e => new { e.IdMatch, e.Type }, "idx_request_match_type");
+
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
             entity.Property(e => e.Budget).HasColumnName("budget");
             entity.Property(e => e.City)
@@ -330,6 +374,25 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdMatch)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_request_match");
+
+            entity.HasMany(d => d.IdManagementMembers).WithMany(p => p.IdRequests)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ManagementMemberRequest",
+                    r => r.HasOne<Management>().WithMany()
+                        .HasForeignKey("IdManagementMember")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_mgmt_mem_req_management"),
+                    l => l.HasOne<Request>().WithMany()
+                        .HasForeignKey("IdRequest")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_mgmt_mem_req_request"),
+                    j =>
+                    {
+                        j.HasKey("IdRequest", "IdManagementMember").HasName("management_member_request_pkey");
+                        j.ToTable("management_member_request");
+                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
+                        j.IndexerProperty<int>("IdManagementMember").HasColumnName("id_management_member");
+                    });
         });
 
         modelBuilder.Entity<Season>(entity =>
@@ -344,6 +407,8 @@ public partial class TravelDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.StartedAt).HasColumnName("started_at");
+            entity.Property(e => e.TicketsForSale).HasColumnName("tickets_for_sale");
+            entity.Property(e => e.TicketsWentOnSale).HasColumnName("tickets_went_on_sale");
         });
 
         modelBuilder.Entity<SentRequest>(entity =>
@@ -422,6 +487,26 @@ public partial class TravelDbContext : DbContext
                 .HasForeignKey(d => d.IdTeam)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_team_member_team");
+
+            entity.HasMany(d => d.IdRequests).WithMany(p => p.Ids)
+                .UsingEntity<Dictionary<string, object>>(
+                    "TeamMemberRequest",
+                    r => r.HasOne<Request>().WithMany()
+                        .HasForeignKey("IdRequest")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_team_mem_req_request"),
+                    l => l.HasOne<TeamMember>().WithMany()
+                        .HasForeignKey("IdTeam", "IdPlayer")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("fk_team_mem_req_team_member"),
+                    j =>
+                    {
+                        j.HasKey("IdTeam", "IdPlayer", "IdRequest").HasName("team_member_request_pkey");
+                        j.ToTable("team_member_request");
+                        j.IndexerProperty<int>("IdTeam").HasColumnName("id_team");
+                        j.IndexerProperty<int>("IdPlayer").HasColumnName("id_player");
+                        j.IndexerProperty<int>("IdRequest").HasColumnName("id_request");
+                    });
         });
 
         modelBuilder.Entity<TransportationOffer>(entity =>

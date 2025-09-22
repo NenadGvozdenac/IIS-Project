@@ -8,10 +8,19 @@
                 <nav class="nav-menu">
                     <router-link to="/team-manager/matches" class="nav-link active">Matches</router-link>
                     <router-link to="/team-manager/players" class="nav-link">Players</router-link>
-                    <router-link to="/team-manager/travel" class="nav-link">Travel Organization</router-link>
+                    <div class="nav-dropdown">
+                        <span class="nav-link dropdown-toggle">Requests</span>
+                        <div class="dropdown-menu">
+                            <router-link to="/team-manager/transportation-requests-active" class="dropdown-item">Transportation - Active</router-link>
+                            <router-link to="/team-manager/transportation-requests-archive" class="dropdown-item">Transportation - Archive</router-link>
+                            <router-link to="/team-manager/accommodation-requests-active" class="dropdown-item">Accommodation - Active</router-link>
+                            <router-link to="/team-manager/accommodation-requests-archive" class="dropdown-item">Accommodation - Archive</router-link>
+                        </div>
+                    </div>
                 </nav>
             </div>
             <div class="header-right">
+                <!-- Team manager ne kreira putovanja, to radi club manager -->
             </div>
         </header>
 
@@ -71,15 +80,55 @@
                     <div class="section-body">
                         <div v-if="!match.transportationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no transportation is required
+                            Transportation is not required for this trip, please go to the transportation reservation page
                         </div>
                         <div v-else-if="!transportationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Transportation is required for this match.
+                            Transportation is required for this trip, please go to the transportation reservation page
                         </div>
-                        <div v-else class="info-box selected-offer">
-                            <span class="icon">&#10003;</span>
-                            Selected transportation offer: {{ transportationOffer.name }}
+                        <div v-else class="offer-card-display">
+                            <div class="offer-header">
+                                <h3>{{ transportationOffer.agencyName || 'N/A' }}</h3>
+                                <span class="status-badge chosen">{{ trip ? 'Final Selection' : 'Chosen' }}</span>
+                            </div>
+                            
+                            <div class="offer-price">
+                                {{ transportationOffer.price || 0 }} EUR
+                            </div>
+                            
+                            <div class="offer-details">
+                                <div class="detail-row">
+                                    <span class="detail-label">Company:</span>
+                                    <span>{{ transportationOffer.companyName || 'N/A' }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Vehicle:</span>
+                                    <span>{{ transportationOffer.vehicleType || 'Bus' }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Capacity:</span>
+                                    <span>{{ transportationOffer.capacity || 'N/A' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="offer-benefits">
+                                <h4>Additional benefits:</h4>
+                                <div class="benefits-tags">
+                                    <span class="benefit-tag">
+                                        {{
+                                            [
+                                                transportationOffer.airConditioning ? 'Air Conditioning' : null,
+                                                transportationOffer.tv ? 'TV' : null,
+                                                transportationOffer.wifiTransport ? 'WIFI' : null,
+                                                transportationOffer.restroom ? 'WC' : null
+                                            ].filter(Boolean).join(', ') || 'N/A'
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="match.transportationRequired && !transportationOffer" class="offer-actions">
+                            <button @click="goToTransportOffers" class="btn-outline">View offers</button>
                         </div>
                     </div>
                 </div>
@@ -94,26 +143,80 @@
                     <div class="section-body">
                         <div v-if="!match.accommodationRequired" class="info-box">
                             <span class="icon">&#9432;</span>
-                            For a match that is played on the home field within the team's hall, no accommodation is required
+                            Accommodation is required for this trip, please go to the transport booking page
                         </div>
                         <div v-else-if="!accommodationOffer" class="info-box warning">
                             <span class="icon">&#9888;</span>
-                            Accommodation is required for this match. 
+                            Accommodation is required for this trip, please go to the transport booking page
                         </div>
-                        <div v-else class="info-box selected-offer">
-                            <span class="icon">&#10003;</span>
-                            Selected accommodation offer: {{ accommodationOffer.name }}
+                        <div v-else class="offer-card-display">
+                            <div class="offer-header">
+                                <h3>{{ accommodationOffer.agencyName || 'N/A' }}</h3>
+                                <span class="status-badge chosen">{{ trip ? 'Final Selection' : 'Chosen' }}</span>
+                            </div>
+                            
+                            <div class="offer-price">
+                                {{ accommodationOffer.price || 0 }} EUR
+                            </div>
+                            
+                            <div class="offer-details">
+                                <div class="detail-row">
+                                    <span class="detail-label">Name:</span>
+                                    <span>{{ accommodationOffer.name || 'N/A' }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Type:</span>
+                                    <span>{{ accommodationOffer.accommodationType || 'Hotel' }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Capacity:</span>
+                                    <span>{{ accommodationOffer.capacity || 'N/A' }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Room types:</span>
+                                    <span>{{
+                                        [
+                                            accommodationOffer.doubleRoom ? '1/2' : null,
+                                            accommodationOffer.tripleRoom ? '1/3' : null,
+                                            accommodationOffer.quadrupleRoom ? '1/4' : null
+                                        ].filter(Boolean).join(', ') || 'N/A'
+                                    }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="offer-benefits">
+                                <h4>Additional benefits:</h4>
+                                <div class="benefits-tags">
+                                    <span class="benefit-tag">
+                                        {{
+                                            [
+                                                accommodationOffer.breakfast ? 'Breakfast' : null,
+                                                accommodationOffer.fitnessCenter ? 'Fitness Center' : null,
+                                                accommodationOffer.pool ? 'Pool' : null,
+                                                accommodationOffer.wifi ? 'WIFI' : null,
+                                                accommodationOffer.spa ? 'SPA' : null
+                                            ].filter(Boolean).join(', ') || 'N/A'
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="match.accommodationRequired && !accommodationOffer" class="offer-actions">
+                            <button @click="goToAccommodationOffers" class="btn-outline">View offers</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { AuthService } from '../../services/auth_service.js'
 import axios from 'axios'
 
 const route = useRoute()
@@ -125,6 +228,7 @@ const team = ref(null)
 const competition = ref(null)
 const transportationOffer = ref(null)
 const accommodationOffer = ref(null)
+const trip = ref(null)
 
 const formatDate = (dt) => {
 	if (!dt) return ''
@@ -154,6 +258,65 @@ const matchStatus = computed(() => {
 
 const goBack = () => {
 	router.push('/team-manager/matches')
+}
+
+const getUserId = () => {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+  
+  const userData = AuthService.decode(token)
+  return userData?.userID || null
+}
+//const isTeamManager = computed(() => getUserId() == 6)
+const isTeamManager = computed(() => true) // Temporarily always true for demo
+
+// Navigation methods
+const goToTransportOffers = () => {
+  router.push(`/offers/transportation/${match.value.idMatch}`)
+}
+
+const goToAccommodationOffers = () => {
+  router.push(`/offers/accommodation/${match.value.idMatch}`)
+}
+
+const fetchChosenOffers = async () => {
+  if (!match.value) return
+
+  try {
+    // Fetch chosen transportation offer
+    const transportResponse = await axios.get(`https://localhost:5007/api/offers/chosen/transportation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+	console.log('Transport response:', transportResponse.data)
+    if (transportResponse.data.isSuccess) {
+		if(transportResponse.data.value.hasChosenOffer == false){
+			console.log('No chosen transportation offer')	
+		}
+		else{
+      	transportationOffer.value = transportResponse.data.value.chosenOffer
+		}
+    }
+
+    // Fetch chosen accommodation offer
+    const accommodationResponse = await axios.get(`https://localhost:5007/api/offers/chosen/accommodation/${match.value.idMatch}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+	console.log('Accommodation response:', accommodationResponse.data)
+    if (accommodationResponse.data.isSuccess) {
+		if(accommodationResponse.data.value.hasChosenOffer == false){
+			console.log('No chosen accommodation offer')	
+		}
+		else{
+      	accommodationOffer.value = accommodationResponse.data.value.chosenOffer
+		}
+    }
+  } catch (error) {
+    console.error('Error fetching chosen offers:', error)
+  }
 }
 
 const fetchMatchDetails = async () => {
@@ -204,9 +367,36 @@ const fetchMatchDetails = async () => {
             competition.value = response3.data.value
 			console.log('Fetched competition:', competition.value)
 		}
-		// TODO: Fetch transportation/accommodation offers if needed
+		
+		// Fetch chosen offers
+		await fetchChosenOffers()
+		
+		// Fetch trip if exists
+		await fetchTrip()
 	} catch (error) {
 		console.error('Error fetching match details:', error)
+	}
+}
+
+const fetchTrip = async () => {
+	if (!match.value) return
+	
+	try {
+		const response = await axios.get(`https://localhost:5007/api/Trip/match/${match.value.idMatch}`, {
+			headers: {
+				'Authorization': `Bearer ${localStorage.getItem('token')}`
+			}
+		})
+		
+		if (response.data.isSuccess && response.data.value.hasTrip) {
+			trip.value = response.data.value.trip
+			console.log('Fetched trip:', trip.value)
+		} else {
+			trip.value = null
+		}
+	} catch (error) {
+		console.error('Error fetching trip:', error)
+		trip.value = null
 	}
 }
 
@@ -288,6 +478,7 @@ onMounted(() => {
 .nav-menu {
 	display: flex;
 	gap: 2rem;
+	align-items: center;
 }
 .nav-link {
 	text-decoration: none;
@@ -296,10 +487,78 @@ onMounted(() => {
 	padding: 0.5rem 1rem;
 	border-radius: 0.375rem;
 	transition: all 0.2s;
+	cursor: pointer;
 }
 .nav-link.active {
 	color: var(--color-primary);
 	background-color: #f3f4f6;
+}
+.nav-link:hover {
+	color: var(--color-primary);
+	background-color: #f9fafb;
+}
+
+/* Dropdown styles */
+.nav-dropdown {
+	position: relative;
+}
+
+.dropdown-toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.dropdown-toggle::after {
+	content: '▼';
+	font-size: 0.75rem;
+	transition: transform 0.2s;
+}
+
+.nav-dropdown:hover .dropdown-toggle::after {
+	transform: rotate(180deg);
+}
+
+.dropdown-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: white;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-10px);
+	transition: all 0.2s;
+	min-width: 200px;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+}
+
+.dropdown-item {
+	display: block;
+	padding: 0.75rem 1rem;
+	color: #374151;
+	text-decoration: none;
+	font-size: 0.875rem;
+	transition: background 0.2s;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-item:last-child {
+	border-bottom: none;
+}
+
+.dropdown-item:hover {
+	background: #f9fafb;
+	color: var(--color-primary);
 }
 .details-container {
 	max-width: 900px;
@@ -355,10 +614,10 @@ onMounted(() => {
 	right: 2rem;
 	background: #059669;
 	color: #fff;
-	padding: 0.5rem 1.5rem;
-	border-radius: 1rem;
+	padding: 0.25rem 0.75rem;  
+	border-radius: 2rem;    
 	font-weight: 500;
-	font-size: 1rem;
+	font-size: 0.875rem; 
 }
 .details-sections {
 	display: flex;
@@ -426,5 +685,162 @@ onMounted(() => {
 .icon {
 	font-size: 1.2rem;
 	margin-right: 0.5rem;
+}
+.offer-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+.btn-outline {
+  background: white;
+  color: #2563eb;
+  border: 1px solid #2563eb;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-outline:hover {
+  background: #2563eb;
+  color: white;
+}
+
+/* Offer card display styles */
+.offer-card-display {
+	background: white;
+	border: 2px solid #10b981;
+	border-radius: 1rem;
+	padding: 1.5rem;
+	margin: 1rem 0;
+	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.offer-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1rem;
+}
+
+.offer-header h3 {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: bold;
+	color: #065f46;
+}
+
+.status-badge {
+	padding: 0.25rem 0.75rem;
+	border-radius: 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	background: #e5e7eb;
+	color: #374151;
+}
+
+.status-badge.chosen {
+	background: #10b981;
+	color: white;
+}
+
+.offer-price {
+	font-size: 2rem;
+	font-weight: bold;
+	text-align: center;
+	margin: 1rem 0;
+	padding: 1rem;
+	background: #f0fdf4;
+	border-radius: 0.5rem;
+	color: #065f46;
+}
+
+.detail-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-row:last-child {
+	border-bottom: none;
+}
+
+.detail-label {
+	font-weight: 600;
+	color: #6b7280;
+}
+
+.offer-benefits {
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid #f3f4f6;
+}
+
+.offer-benefits h4 {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.benefits-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.benefit-tag {
+	background: #e0f2fe;
+	color: #0369a1;
+	padding: 0.25rem 0.75rem;
+	border-radius: 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+/* Travel Status Styles */
+.travel-status-card {
+	background: white;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	margin-top: 24px;
+}
+
+.travel-status-title {
+	margin: 0 0 16px 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.travel-status-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.travel-info p {
+	margin: 0 0 8px 0;
+	color: #374151;
+}
+
+.status-badge {
+	padding: 4px 12px;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.status-confirmed {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.no-travel-message {
+	color: #6b7280;
+	font-style: italic;
 }
 </style>

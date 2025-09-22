@@ -31,11 +31,19 @@ public static class ApplicationStartup
         services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
         services.AddScoped<INationalityRepository, NationalityRepository>();
+        services.AddScoped<IAgenciesRepository, AgenciesRepository>();
+        services.AddScoped<IRequestsRepository, RequestsRepository>();
+        services.AddScoped<IOffersRepository, OffersRepository>();
+        services.AddScoped<ITripRepository, TripRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)
     {
         services.AddMediatR(Assembly.GetExecutingAssembly());
+        
+        // Registruj current assembly
+        var currentAssembly = typeof(ApplicationStartup).Assembly;
+        services.AddMediatR(currentAssembly);
     }
     
     private static void SetupDatabases(IServiceCollection services, IConfiguration configuration)

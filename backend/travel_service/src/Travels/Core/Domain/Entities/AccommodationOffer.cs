@@ -11,7 +11,7 @@ public partial class AccommodationOffer
 
     public int? Capacity { get; set; }
 
-    public string? Type { get; set; }
+    public string? AccommodationType { get; set; }
 
     public int IdAgency { get; set; }
 

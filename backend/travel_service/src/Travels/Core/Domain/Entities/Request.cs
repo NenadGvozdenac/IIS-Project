@@ -26,4 +26,8 @@ public partial class Request
     public virtual ICollection<SentRequest> SentRequests { get; set; } = new List<SentRequest>();
 
     public virtual TransportationRequest? TransportationRequest { get; set; }
+
+    public virtual ICollection<Management> IdManagementMembers { get; set; } = new List<Management>();
+
+    public virtual ICollection<TeamMember> Ids { get; set; } = new List<TeamMember>();
 }

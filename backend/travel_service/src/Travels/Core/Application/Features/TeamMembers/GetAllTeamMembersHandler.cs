@@ -19,7 +19,7 @@ public class GetAllTeamMembersHandler : IRequestHandler<GetAllTeamMembersQuery, 
     {
         try
         {
-            var teamMembers = _teamMemberRepository.GetAll();
+            var teamMembers = _teamMemberRepository.GetByTeamId(1); 
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
             var response = teamMembers.Select(tm => new GetAllTeamMembersResponse

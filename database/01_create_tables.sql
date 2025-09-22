@@ -51,7 +51,7 @@ CREATE TABLE accommodation_offer (
     id_offer       INTEGER NOT NULL,
     name           VARCHAR(255),
     capacity       INTEGER,
-    type           VARCHAR(20) CHECK (type IN ('hotel', 'house', 'villa')),
+    accommodation_type VARCHAR(20) CHECK (accommodation_type IN ('hotel', 'house', 'villa')),
     id_agency      INTEGER NOT NULL,
     id_request     INTEGER NOT NULL,
     double_room    BOOLEAN NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE accommodation_request (
     number_of_rooms  INTEGER,
     check_in_date    DATE,
     check_out_date   DATE,
-    type             VARCHAR(20) CHECK (type IN ('hotel', 'house', 'villa')),
+    accommodation_type VARCHAR(20) CHECK (accommodation_type IN ('hotel', 'house', 'villa')),
     PRIMARY KEY (id_request)
 );
 
@@ -236,7 +236,9 @@ CREATE TABLE offer (
     id_match     INTEGER NOT NULL,
     id_agency    INTEGER NOT NULL,
     id_request   INTEGER NOT NULL,
+    chosen       BOOLEAN DEFAULT FALSE,
     type         VARCHAR(20) CHECK (type IN ('accommodation', 'transportation')),
+    score        NUMERIC(5,2),
     PRIMARY KEY (id_offer, id_agency, id_request)
 );
 
@@ -535,6 +537,19 @@ CREATE TABLE match_zone_sales_summary (
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_summary),
     UNIQUE (id_match, id_zone)
+);
+
+-- Tabela za logovanje automatskih izbora
+CREATE TABLE IF NOT EXISTS offer_selection_log (
+    id_selection SERIAL PRIMARY KEY,
+    id_match INTEGER NOT NULL,
+    offer_type VARCHAR(20) NOT NULL,
+    selected_offer_id INTEGER,
+    selection_score NUMERIC(5,2),
+    selection_reason TEXT,
+    total_offers_analyzed INTEGER,
+    selected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    selected_by VARCHAR(20) DEFAULT 'AUTO'
 );
 
 -- FOREIGN KEY CONSTRAINTS
