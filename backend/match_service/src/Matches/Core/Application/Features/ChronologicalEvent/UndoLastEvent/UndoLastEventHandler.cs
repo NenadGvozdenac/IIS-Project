@@ -25,7 +25,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
         {
             try
             {
-                // Use transaction to ensure atomicity of event deletion and score rollback
+                // Use transaction to ensure atomicity of event deletion
                 using var transaction = _context.Database.BeginTransaction();
                 
                 try
@@ -38,38 +38,16 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                         return Task.FromResult(Result<UndoLastEventResponse>.Failure($"No personal events found for team {request.TeamId} in match {request.MatchId}"));
                     }
 
-                    // Get match tracking for score rollback
+                    // Get match tracking
                     var matchTracking = _matchTrackingRepository.GetByMatchId(request.MatchId);
                     if (matchTracking == null)
                     {
                         return Task.FromResult(Result<UndoLastEventResponse>.Failure($"Match with id {request.MatchId} not found"));
                     }
+                    // Remember points for response (trigger will handle score rollback automatically)
+                    int pointsRolledBack = IsScoreEvent(lastEvent.Type) ? GetPointsForEventType(lastEvent.Type) : 0;
 
-                    int pointsRolledBack = 0;
-                    
-                    // Handle score rollback for scoring events
-                    if (IsScoreEvent(lastEvent.Type))
-                    {
-                        pointsRolledBack = GetPointsForEventType(lastEvent.Type);
-                        
-                        if (pointsRolledBack > 0)
-                        {
-                            // Rollback match score
-                            if (request.TeamId == 1) // Our team (Partizan)
-                            {
-                                matchTracking.OurPoints = Math.Max(0, (matchTracking.OurPoints ?? 0) - pointsRolledBack);
-                            }
-                            else // Opponent team
-                            {
-                                matchTracking.OpponentPoints = Math.Max(0, (matchTracking.OpponentPoints ?? 0) - pointsRolledBack);
-                            }
-
-                            matchTracking.LastUpdateTime = DateTime.UtcNow;
-                            _matchTrackingRepository.Update(matchTracking);
-                        }
-                    }
-
-                    // Delete the event
+                    // Delete the event - trigger will automatically update match_tracking scores
                     var eventDeleted = _personalEventRepository.Delete(lastEvent.IdEvent);
                     
                     if (!eventDeleted)
@@ -77,7 +55,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                         return Task.FromResult(Result<UndoLastEventResponse>.Failure($"Failed to delete event with id {lastEvent.IdEvent}"));
                     }
 
-                    // Save all changes within transaction
+                    // Save changes within transaction - trigger will execute and update scores
                     _context.SaveChanges();
                     transaction.Commit();
 

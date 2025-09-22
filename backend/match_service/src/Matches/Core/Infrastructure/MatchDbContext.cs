@@ -59,23 +59,32 @@ public partial class MatchDbContext : DbContext
     {
         modelBuilder.Entity<AutomaticRecommendation>(entity =>
         {
-            entity.HasKey(e => e.IdMatch).HasName("automatic_recommendations_pkey");
+            entity.HasKey(e => e.IdRecommendation).HasName("automatic_recommendation_pkey");
 
-            entity.ToTable("automatic_recommendations");
+            entity.ToTable("automatic_recommendation");
 
-            entity.Property(e => e.IdMatch)
-                .ValueGeneratedNever()
-                .HasColumnName("id_match");
+            entity.Property(e => e.IdRecommendation).HasColumnName("id_recommendation");
             entity.Property(e => e.CreationTime).HasColumnName("creation_time");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+            entity.Property(e => e.IdMatch).HasColumnName("id_match");
+            entity.Property(e => e.Period)
+                .HasMaxLength(20)
+                .HasColumnName("period");
+            entity.Property(e => e.PeriodTime).HasColumnName("period_time");
             entity.Property(e => e.Priority)
                 .HasMaxLength(20)
                 .HasColumnName("priority");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasColumnName("status");
+            entity.Property(e => e.Type)
+                .HasMaxLength(255)
+                .HasColumnName("type");
 
-            entity.HasOne(d => d.IdMatchNavigation).WithOne(p => p.AutomaticRecommendation)
-                .HasForeignKey<AutomaticRecommendation>(d => d.IdMatch)
+            entity.HasOne(d => d.IdMatchNavigation).WithMany(p => p.AutomaticRecommendations)
+                .HasForeignKey(d => d.IdMatch)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_auto_rec_match_tracking");
         });
@@ -128,6 +137,8 @@ public partial class MatchDbContext : DbContext
             entity.HasKey(e => e.IdMatch).HasName("match_pkey");
 
             entity.ToTable("match");
+
+            entity.HasIndex(e => e.ScheduledAt, "idx_match_scheduled_at");
 
             entity.Property(e => e.IdMatch).HasColumnName("id_match");
             entity.Property(e => e.AccommodationRequired).HasColumnName("accommodation_required");

@@ -62,10 +62,12 @@ public static class ApplicationStartup
         services.AddScoped<ICreditCardEncryptionService, CreditCardEncryptionService>();
         services.AddScoped<ITicketPriceCalculationService, TicketPriceCalculationService>();
         services.AddScoped<INeo4jSeedingService, Neo4jSeedingService>();
+        services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
     }
 
     private static void SetupBackgroundServices(IServiceCollection services)
     {
+        services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<MatchFinishedService>();
         services.AddHostedService<Neo4jSeedingHostedService>();
     }
@@ -80,7 +82,17 @@ public static class ApplicationStartup
         var connectionString = configuration.GetConnectionString("DefaultConnection") ??
             "Host=postgres_db;Database=sportsdb;Username=postgres;Password=postgres;Port=5432";
 
-        services.AddDbContext<TicketDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddDbContext<TicketDbContext>(options => 
+        {
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+            {
+                // Enable connection resilience with automatic retries
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 10,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorCodesToAdd: null);
+            });
+        });
         services.AddScoped<IGraphDatabaseContext, Neo4jDatabaseContext>();
     }
 }

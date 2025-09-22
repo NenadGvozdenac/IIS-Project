@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS accommodation_offer CASCADE;
 DROP TABLE IF EXISTS accommodation_request CASCADE;
 DROP TABLE IF EXISTS agency CASCADE;
-DROP TABLE IF EXISTS automatic_recommendations CASCADE;
+DROP TABLE IF EXISTS automatic_recommendation CASCADE;
 DROP TABLE IF EXISTS cart CASCADE;
 DROP TABLE IF EXISTS cart_item CASCADE;
 DROP TABLE IF EXISTS competition CASCADE;
@@ -83,12 +83,17 @@ CREATE TABLE agency (
     PRIMARY KEY (id_agency)
 );
 
-CREATE TABLE automatic_recommendations (
+CREATE TABLE automatic_recommendation (
+    id_recommendation SERIAL NOT NULL,
     priority      VARCHAR(20) CHECK (priority IN ('medium priority', 'not priority', 'urgent')),
-    status        VARCHAR(20) CHECK (status IN ('accepted', 'rejected')),
+    status        VARCHAR(20) CHECK (status IN ('accepted', 'rejected', 'pending')),
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    period        VARCHAR(20) CHECK (period IN ('1', '2', '3', '4')),
+    period_time   INTEGER,
+    type          VARCHAR(255),
+    description   VARCHAR(255),
     id_match      INTEGER NOT NULL,
-    PRIMARY KEY (id_match)
+    PRIMARY KEY (id_recommendation)
 );
 
 CREATE TABLE cart (
@@ -558,7 +563,7 @@ ALTER TABLE accommodation_request
         FOREIGN KEY (id_request)
         REFERENCES request (id_request);
 
-ALTER TABLE automatic_recommendations
+ALTER TABLE automatic_recommendation
     ADD CONSTRAINT fk_auto_rec_match_tracking 
         FOREIGN KEY (id_match)
         REFERENCES match_tracking (id_match);

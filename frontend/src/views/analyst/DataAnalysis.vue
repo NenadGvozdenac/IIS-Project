@@ -14,7 +14,7 @@
             />
             <span class="search-icon">🔍</span>
           </div>
-          <button class="btn-secondary" @click="checkMyTeam">
+          <button class="btn-secondary" @click="viewDetailedProfile(1)">
             Check my team
           </button>
           <button class="btn-primary" @click="addOpponent">
