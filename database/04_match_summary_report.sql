@@ -21,6 +21,8 @@ CREATE TYPE match_summary_row AS (
     regular_zone_revenue DECIMAL(12,2),
     average_ticket_price DECIMAL(10,2),
     stadium_fill_percentage DECIMAL(5,2),
+    vip_zone_fill_percentage DECIMAL(5,2),
+    regular_zone_fill_percentage DECIMAL(5,2),
     highest_selling_zone VARCHAR(255),
     lowest_selling_zone VARCHAR(255),
     tracking_status VARCHAR(20),
@@ -84,26 +86,33 @@ DECLARE
             -- Poseban CTE za rangiranje zona po prodaji
             SELECT 
                 mzss.id_match,
-                -- Zona sa najviše prodanih karata
+                -- Zona sa najviše prodanih karata (samo ako ima prodaje)
                 (SELECT z2.name 
                  FROM match_zone_sales_summary mzss2 
                  JOIN zone z2 ON mzss2.id_zone = z2.id_zone
                  WHERE mzss2.id_match = mzss.id_match 
+                   AND mzss2.total_tickets_sold > 0
                  ORDER BY mzss2.total_tickets_sold DESC 
                  LIMIT 1) as highest_selling_zone,
-                -- Zona sa najmanje prodanih karata (ali veće od 0)
+                -- Zona sa najmanje prodanih karata (samo ako ima više od jedne zone sa prodajom)
                 (SELECT z3.name 
                  FROM match_zone_sales_summary mzss3 
                  JOIN zone z3 ON mzss3.id_zone = z3.id_zone
                  WHERE mzss3.id_match = mzss.id_match 
                    AND mzss3.total_tickets_sold > 0
+                   AND (SELECT COUNT(*) FROM match_zone_sales_summary mzss4 
+                        WHERE mzss4.id_match = mzss.id_match 
+                          AND mzss4.total_tickets_sold > 0) > 1
                  ORDER BY mzss3.total_tickets_sold ASC 
                  LIMIT 1) as lowest_selling_zone
             FROM match_zone_sales_summary mzss
             GROUP BY mzss.id_match
         ),
         stadium_capacity AS (
-            SELECT SUM(z.maximum_capacity) as total_capacity
+            SELECT 
+                SUM(z.maximum_capacity) as total_capacity,
+                SUM(CASE WHEN z.rank = 100 THEN z.maximum_capacity ELSE 0 END) as vip_capacity,
+                SUM(CASE WHEN z.rank > 100 THEN z.maximum_capacity ELSE 0 END) as regular_capacity
             FROM zone z 
             WHERE z.status = 'enabled'
         )
@@ -129,6 +138,16 @@ DECLARE
                 THEN (COALESCE(ss.total_tickets_sold, 0)::DECIMAL / sc.total_capacity::DECIMAL) * 100
                 ELSE 0 
             END as stadium_fill_percentage,
+            CASE 
+                WHEN sc.vip_capacity > 0 
+                THEN (COALESCE(zd.vip_tickets, 0)::DECIMAL / sc.vip_capacity::DECIMAL) * 100
+                ELSE 0 
+            END as vip_zone_fill_percentage,
+            CASE 
+                WHEN sc.regular_capacity > 0 
+                THEN (COALESCE(zd.regular_tickets, 0)::DECIMAL / sc.regular_capacity::DECIMAL) * 100
+                ELSE 0 
+            END as regular_zone_fill_percentage,
             COALESCE(zr.highest_selling_zone, 'N/A') as highest_selling_zone,
             COALESCE(zr.lowest_selling_zone, 'N/A') as lowest_selling_zone,
             COALESCE(mbd.tracking_status, 'unknown') as tracking_status,
@@ -167,6 +186,8 @@ BEGIN
         summary_row.regular_zone_revenue := match_record.regular_revenue;
         summary_row.average_ticket_price := match_record.average_ticket_price;
         summary_row.stadium_fill_percentage := match_record.stadium_fill_percentage;
+        summary_row.vip_zone_fill_percentage := match_record.vip_zone_fill_percentage;
+        summary_row.regular_zone_fill_percentage := match_record.regular_zone_fill_percentage;
         summary_row.highest_selling_zone := match_record.highest_selling_zone;
         summary_row.lowest_selling_zone := match_record.lowest_selling_zone;
         summary_row.tracking_status := match_record.tracking_status;

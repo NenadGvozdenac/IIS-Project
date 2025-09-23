@@ -39,6 +39,10 @@ public partial class MatchSummaryReportView
 
     public decimal? StadiumFillPercentage { get; set; }
 
+    public decimal? VipZoneFillPercentage { get; set; }
+
+    public decimal? RegularZoneFillPercentage { get; set; }
+
     public string? HighestSellingZone { get; set; }
 
     public string? LowestSellingZone { get; set; }

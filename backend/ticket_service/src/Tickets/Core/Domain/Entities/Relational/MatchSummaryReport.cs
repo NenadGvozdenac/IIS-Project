@@ -19,6 +19,8 @@ public class MatchSummaryReport
     public decimal RegularZoneRevenue { get; set; }
     public decimal AverageTicketPrice { get; set; }
     public decimal StadiumFillPercentage { get; set; }
+    public decimal VipZoneFillPercentage { get; set; }
+    public decimal RegularZoneFillPercentage { get; set; }
     public string HighestSellingZone { get; set; } = string.Empty;
     public string LowestSellingZone { get; set; } = string.Empty;
     public string TrackingStatus { get; set; } = string.Empty;

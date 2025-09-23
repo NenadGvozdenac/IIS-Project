@@ -55,7 +55,7 @@ public partial class TicketDbContext : DbContext
             optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
         }
     }
-
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
@@ -267,6 +267,9 @@ public partial class TicketDbContext : DbContext
                 .HasColumnName("match_type");
             entity.Property(e => e.OpponentPoints).HasColumnName("opponent_points");
             entity.Property(e => e.OurPoints).HasColumnName("our_points");
+            entity.Property(e => e.RegularZoneFillPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("regular_zone_fill_percentage");
             entity.Property(e => e.RegularZoneRevenue)
                 .HasPrecision(12, 2)
                 .HasColumnName("regular_zone_revenue");
@@ -287,6 +290,9 @@ public partial class TicketDbContext : DbContext
             entity.Property(e => e.TrackingStatus)
                 .HasMaxLength(20)
                 .HasColumnName("tracking_status");
+            entity.Property(e => e.VipZoneFillPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("vip_zone_fill_percentage");
             entity.Property(e => e.VipZoneRevenue)
                 .HasPrecision(12, 2)
                 .HasColumnName("vip_zone_revenue");

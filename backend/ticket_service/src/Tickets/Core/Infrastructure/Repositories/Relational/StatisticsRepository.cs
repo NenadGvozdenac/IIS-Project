@@ -107,6 +107,8 @@ public class StatisticsRepository : IStatisticsRepository
             RegularZoneRevenue = view.RegularZoneRevenue ?? 0m,
             AverageTicketPrice = view.AverageTicketPrice ?? 0m,
             StadiumFillPercentage = view.StadiumFillPercentage ?? 0m,
+            VipZoneFillPercentage = view.VipZoneFillPercentage ?? 0m,
+            RegularZoneFillPercentage = view.RegularZoneFillPercentage ?? 0m,
             HighestSellingZone = view.HighestSellingZone ?? string.Empty,
             LowestSellingZone = view.LowestSellingZone ?? string.Empty,
             TrackingStatus = view.TrackingStatus ?? string.Empty,
