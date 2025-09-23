@@ -138,10 +138,6 @@
       <!-- Edit - samo za buduće mečeve i ako je ostalo više od 24h -->
       <div class="menu-item" @click="editMatch" v-if="canEditMatch(selectedMatch)">Edit</div>
       
-      
-      <!-- Report - samo za odigrane mečeve -->
-      <div class="menu-item" @click="generateReport" v-if="isMatchPlayed(selectedMatch)">Report (ctrl+r)</div>
-      
       <!-- Transport opcije - samo ako je potreban transport i meč nije odigran -->
       <template v-if="showTransportOptions(selectedMatch)">
         <hr>

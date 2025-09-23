@@ -1024,6 +1024,362 @@ $$ LANGUAGE plpgsql;
 
 -- KRAJ NAPREDNE FUNKCIJE ZA SCORING PONUDA SANJA RADIC
 
+-- IZVESTAJ O TROSKOVIMA PUTOVANJA SANJA RADIC
+
+-- Slozeni tipovi za izvestaj o troskovima putovanja
+CREATE TYPE travel_cost_detail AS (
+    match_id INTEGER,
+    match_name VARCHAR(255),
+    match_date TIMESTAMP WITH TIME ZONE,
+    opponent_team VARCHAR(255),
+    city VARCHAR(255),
+    hall VARCHAR(255),
+    transportation_cost INTEGER,
+    transportation_agency VARCHAR(255),
+    transportation_type VARCHAR(20),
+    transportation_company VARCHAR(255),
+    accommodation_cost INTEGER,
+    accommodation_agency VARCHAR(255),
+    accommodation_name VARCHAR(255),
+    accommodation_type VARCHAR(20),
+    total_match_cost INTEGER,
+    team_members_count INTEGER,
+    management_members_count INTEGER,
+    total_travelers INTEGER
+);
+
+CREATE TYPE travel_cost_summary AS (
+    total_matches INTEGER,
+    total_transportation_cost INTEGER,
+    total_accommodation_cost INTEGER,
+    total_travel_cost INTEGER,
+    average_cost_per_match NUMERIC(10,2),
+    matches_with_accommodation INTEGER,
+    matches_with_transportation INTEGER
+);
+
+CREATE TYPE complete_travel_report AS (
+    report_date TIMESTAMP WITH TIME ZONE,
+    season_info VARCHAR(255),
+    match_details travel_cost_detail[],
+    cost_summary travel_cost_summary,
+    team_members_by_match TEXT[],
+    management_members_by_match TEXT[]
+);
+
+-- Glavna funkcija za generiranje izvestaja o troskovima putovanja
+CREATE OR REPLACE FUNCTION generate_travel_cost_report(
+    p_season_id INTEGER DEFAULT NULL,
+    p_start_date DATE DEFAULT NULL,
+    p_end_date DATE DEFAULT NULL
+) RETURNS complete_travel_report AS $$
+DECLARE
+    report_result complete_travel_report;
+    match_detail travel_cost_detail;
+    cost_summary travel_cost_summary;
+    match_cursor CURSOR FOR
+        WITH away_matches_with_trips AS (
+            SELECT DISTINCT
+                m.id_match,
+                m.name as match_name,
+                m.scheduled_at,
+                m.city,
+                m.hall,
+                t.name as opponent_team,
+                tr.id_transportation_offer,
+                tr.id_transportation_agency,
+                tr.id_transportation_request,
+                tr.id_accommodation_offer,
+                tr.id_accommodation_agency,
+                tr.id_accommodation_request
+            FROM match m
+            INNER JOIN trip tr ON m.id_match = tr.match_id_match
+            INNER JOIN team t ON m.id_team = t.id_team
+            WHERE m.type = 'away'
+            AND (p_season_id IS NULL OR m.id_season = p_season_id)
+            AND (p_start_date IS NULL OR DATE(m.scheduled_at) >= p_start_date)
+            AND (p_end_date IS NULL OR DATE(m.scheduled_at) <= p_end_date)
+            ORDER BY m.scheduled_at
+        ),
+        match_costs AS (
+            SELECT 
+                awt.id_match,
+                awt.match_name,
+                awt.scheduled_at,
+                awt.opponent_team,
+                awt.city,
+                awt.hall,
+                COALESCE(to_offer.price, 0) as transport_cost,
+                ta.name as transport_agency,
+                tro.type as transport_type,
+                tro.company_name as transport_company,
+                COALESCE(ao_offer.price, 0) as accommodation_cost,
+                aa.name as accommodation_agency,
+                aco.name as accommodation_name,
+                aco.accommodation_type
+            FROM away_matches_with_trips awt
+            LEFT JOIN offer to_offer ON (
+                awt.id_transportation_offer = to_offer.id_offer 
+                AND awt.id_transportation_agency = to_offer.id_agency 
+                AND awt.id_transportation_request = to_offer.id_request
+            )
+            LEFT JOIN agency ta ON awt.id_transportation_agency = ta.id_agency
+            LEFT JOIN transportation_offer tro ON (
+                awt.id_transportation_offer = tro.id_offer 
+                AND awt.id_transportation_agency = tro.id_agency 
+                AND awt.id_transportation_request = tro.id_request
+            )
+            LEFT JOIN offer ao_offer ON (
+                awt.id_accommodation_offer = ao_offer.id_offer 
+                AND awt.id_accommodation_agency = ao_offer.id_agency 
+                AND awt.id_accommodation_request = ao_offer.id_request
+            )
+            LEFT JOIN agency aa ON awt.id_accommodation_agency = aa.id_agency
+            LEFT JOIN accommodation_offer aco ON (
+                awt.id_accommodation_offer = aco.id_offer 
+                AND awt.id_accommodation_agency = aco.id_agency 
+                AND awt.id_accommodation_request = aco.id_request
+            )
+        )
+        SELECT 
+            mc.id_match,
+            mc.match_name,
+            mc.scheduled_at,
+            mc.opponent_team,
+            mc.city,
+            mc.hall,
+            mc.transport_cost,
+            mc.transport_agency,
+            mc.transport_type,
+            mc.transport_company,
+            mc.accommodation_cost,
+            mc.accommodation_agency,
+            mc.accommodation_name,
+            mc.accommodation_type
+        FROM match_costs mc;
+        
+    match_details_array travel_cost_detail[] := '{}';
+    team_members_array TEXT[] := '{}';
+    management_members_array TEXT[] := '{}';
+    
+    v_team_members_count INTEGER;
+    v_management_members_count INTEGER;
+    v_team_members_list TEXT;
+    v_management_members_list TEXT;
+    
+    v_total_matches INTEGER := 0;
+    v_total_transport_cost INTEGER := 0;
+    v_total_accommodation_cost INTEGER := 0;
+    v_matches_with_accommodation INTEGER := 0;
+    v_matches_with_transportation INTEGER := 0;
+    
+BEGIN
+    report_result.report_date := NOW();
+    
+    IF p_season_id IS NOT NULL THEN
+        SELECT 'Season: ' || name INTO report_result.season_info 
+        FROM season WHERE id_season = p_season_id;
+    ELSE
+        report_result.season_info := 'All Seasons';
+    END IF;
+    
+    FOR match_rec IN match_cursor LOOP
+        SELECT COUNT(DISTINCT tmr.id_player)
+        INTO v_team_members_count
+        FROM team_member_request tmr
+        INNER JOIN request r ON tmr.id_request = r.id_request
+        WHERE r.id_match = match_rec.id_match;
+        
+        SELECT COUNT(DISTINCT mmr.id_management_member)
+        INTO v_management_members_count
+        FROM management_member_request mmr
+        INNER JOIN request r ON mmr.id_request = r.id_request
+        WHERE r.id_match = match_rec.id_match;
+        
+        SELECT STRING_AGG(p.name || ' ' || p.surname, ', ')
+        INTO v_team_members_list
+        FROM team_member_request tmr
+        INNER JOIN request r ON tmr.id_request = r.id_request
+        INNER JOIN player p ON tmr.id_player = p.id_player
+        WHERE r.id_match = match_rec.id_match;
+        
+        SELECT STRING_AGG(m.member_name || ' ' || m.member_surname || ' (' || m.member_role || ')', ', ')
+        INTO v_management_members_list
+        FROM management_member_request mmr
+        INNER JOIN request r ON mmr.id_request = r.id_request
+        INNER JOIN management m ON mmr.id_management_member = m.member_id
+        WHERE r.id_match = match_rec.id_match;
+        
+        match_detail.match_id := match_rec.id_match;
+        match_detail.match_name := match_rec.match_name;
+        match_detail.match_date := match_rec.scheduled_at;
+        match_detail.opponent_team := match_rec.opponent_team;
+        match_detail.city := match_rec.city;
+        match_detail.hall := match_rec.hall;
+        match_detail.transportation_cost := COALESCE(match_rec.transport_cost, 0);
+        match_detail.transportation_agency := match_rec.transport_agency;
+        match_detail.transportation_type := match_rec.transport_type;
+        match_detail.transportation_company := match_rec.transport_company;
+        match_detail.accommodation_cost := COALESCE(match_rec.accommodation_cost, 0);
+        match_detail.accommodation_agency := match_rec.accommodation_agency;
+        match_detail.accommodation_name := match_rec.accommodation_name;
+        match_detail.accommodation_type := match_rec.accommodation_type;
+        match_detail.total_match_cost := COALESCE(match_rec.transport_cost, 0) + COALESCE(match_rec.accommodation_cost, 0);
+        match_detail.team_members_count := v_team_members_count;
+        match_detail.management_members_count := v_management_members_count;
+        match_detail.total_travelers := v_team_members_count + v_management_members_count;
+        
+        match_details_array := array_append(match_details_array, match_detail);
+        team_members_array := array_append(team_members_array, 
+            'Match ' || match_rec.id_match || ' (' || match_rec.match_name || '): ' || COALESCE(v_team_members_list, 'No team members'));
+        management_members_array := array_append(management_members_array, 
+            'Match ' || match_rec.id_match || ' (' || match_rec.match_name || '): ' || COALESCE(v_management_members_list, 'No management members'));
+        
+        v_total_matches := v_total_matches + 1;
+        v_total_transport_cost := v_total_transport_cost + COALESCE(match_rec.transport_cost, 0);
+        v_total_accommodation_cost := v_total_accommodation_cost + COALESCE(match_rec.accommodation_cost, 0);
+        
+        IF match_rec.accommodation_cost IS NOT NULL AND match_rec.accommodation_cost > 0 THEN
+            v_matches_with_accommodation := v_matches_with_accommodation + 1;
+        END IF;
+        
+        IF match_rec.transport_cost IS NOT NULL AND match_rec.transport_cost > 0 THEN
+            v_matches_with_transportation := v_matches_with_transportation + 1;
+        END IF;
+    END LOOP;
+    
+    WITH cost_aggregation AS (
+        SELECT 
+            COUNT(*) as total_count,
+            SUM(CASE WHEN transportation_cost > 0 THEN transportation_cost ELSE 0 END) as total_transport,
+            SUM(CASE WHEN accommodation_cost > 0 THEN accommodation_cost ELSE 0 END) as total_accommodation,
+            COUNT(CASE WHEN transportation_cost > 0 THEN 1 END) as transport_matches,
+            COUNT(CASE WHEN accommodation_cost > 0 THEN 1 END) as accommodation_matches
+        FROM unnest(match_details_array) as match_data
+        GROUP BY ()
+        HAVING COUNT(*) > 0
+    )
+    SELECT 
+        total_count,
+        total_transport,
+        total_accommodation,
+        total_transport + total_accommodation,
+        CASE WHEN total_count > 0 THEN (total_transport + total_accommodation)::NUMERIC / total_count ELSE 0 END,
+        accommodation_matches,
+        transport_matches
+    INTO 
+        cost_summary.total_matches,
+        cost_summary.total_transportation_cost,
+        cost_summary.total_accommodation_cost,
+        cost_summary.total_travel_cost,
+        cost_summary.average_cost_per_match,
+        cost_summary.matches_with_accommodation,
+        cost_summary.matches_with_transportation
+    FROM cost_aggregation;
+    
+    IF cost_summary.total_matches IS NULL THEN
+        cost_summary.total_matches := 0;
+        cost_summary.total_transportation_cost := 0;
+        cost_summary.total_accommodation_cost := 0;
+        cost_summary.total_travel_cost := 0;
+        cost_summary.average_cost_per_match := 0;
+        cost_summary.matches_with_accommodation := 0;
+        cost_summary.matches_with_transportation := 0;
+    END IF;
+    
+    report_result.match_details := match_details_array;
+    report_result.cost_summary := cost_summary;
+    report_result.team_members_by_match := team_members_array;
+    report_result.management_members_by_match := management_members_array;
+    
+    RETURN report_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        report_result.report_date := NOW();
+        report_result.season_info := 'Error generating report: ' || SQLERRM;
+        report_result.match_details := '{}';
+        report_result.team_members_by_match := '{}';
+        report_result.management_members_by_match := '{}';
+        
+        cost_summary.total_matches := 0;
+        cost_summary.total_transportation_cost := 0;
+        cost_summary.total_accommodation_cost := 0;
+        cost_summary.total_travel_cost := 0;
+        cost_summary.average_cost_per_match := 0;
+        cost_summary.matches_with_accommodation := 0;
+        cost_summary.matches_with_transportation := 0;
+        report_result.cost_summary := cost_summary;
+        
+        RETURN report_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Pomocna funkcija za brzo dobijanje samo sumarnih troskova
+CREATE OR REPLACE FUNCTION get_travel_cost_summary(
+    p_season_id INTEGER DEFAULT NULL
+) RETURNS travel_cost_summary AS $$
+DECLARE
+    summary_result travel_cost_summary;
+BEGIN
+    WITH away_matches_summary AS (
+        SELECT 
+            COUNT(DISTINCT m.id_match) as total_matches,
+            SUM(COALESCE(to_offer.price, 0)) as total_transport_cost,
+            SUM(COALESCE(ao_offer.price, 0)) as total_accommodation_cost,
+            COUNT(CASE WHEN ao_offer.price > 0 THEN 1 END) as matches_with_accommodation,
+            COUNT(CASE WHEN to_offer.price > 0 THEN 1 END) as matches_with_transportation
+        FROM match m
+        INNER JOIN trip tr ON m.id_match = tr.match_id_match
+        LEFT JOIN offer to_offer ON (
+            tr.id_transportation_offer = to_offer.id_offer 
+            AND tr.id_transportation_agency = to_offer.id_agency 
+            AND tr.id_transportation_request = to_offer.id_request
+        )
+        LEFT JOIN offer ao_offer ON (
+            tr.id_accommodation_offer = ao_offer.id_offer 
+            AND tr.id_accommodation_agency = ao_offer.id_agency 
+            AND tr.id_accommodation_request = ao_offer.id_request
+        )
+        WHERE m.type = 'away'
+        AND (p_season_id IS NULL OR m.id_season = p_season_id)
+        GROUP BY ()
+        HAVING COUNT(DISTINCT m.id_match) > 0
+    )
+    SELECT 
+        total_matches,
+        total_transport_cost,
+        total_accommodation_cost,
+        total_transport_cost + total_accommodation_cost,
+        CASE WHEN total_matches > 0 THEN (total_transport_cost + total_accommodation_cost)::NUMERIC / total_matches ELSE 0 END,
+        matches_with_accommodation,
+        matches_with_transportation
+    INTO 
+        summary_result.total_matches,
+        summary_result.total_transportation_cost,
+        summary_result.total_accommodation_cost,
+        summary_result.total_travel_cost,
+        summary_result.average_cost_per_match,
+        summary_result.matches_with_accommodation,
+        summary_result.matches_with_transportation
+    FROM away_matches_summary;
+    
+    IF summary_result.total_matches IS NULL THEN
+        summary_result.total_matches := 0;
+        summary_result.total_transportation_cost := 0;
+        summary_result.total_accommodation_cost := 0;
+        summary_result.total_travel_cost := 0;
+        summary_result.average_cost_per_match := 0;
+        summary_result.matches_with_accommodation := 0;
+        summary_result.matches_with_transportation := 0;
+    END IF;
+    
+    RETURN summary_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ IZVESTAJA O TROSKOVIMA PUTOVANJA SANJA RADIC
+
 --------------------------------------------------------------------------
 -- SRDJAN ILIC - TRIGGER ZA AUTOMATSKO AŽURIRANJE REZULTATA U MATCH_TRACKING
 -- Kada se upiše personal event sa tipom +2p, +3p ili +ft, automatski se ažurira rezultat

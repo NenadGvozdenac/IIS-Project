@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using travel_service.src.Travels.BuildingBlocks.Core.Domain;
 using travel_service.src.Travels.Core.Application.Features.Trip.CreateTrip;
 using travel_service.src.Travels.Core.Application.Features.Trip.GetTripByMatch;
+using travel_service.src.Travels.Core.Application.Features.Trip.GetTravelCostReport;
 
 
 namespace travel_service.src.Travels.API.Controllers;
@@ -29,6 +30,14 @@ public class TripController : BaseController
     public async Task<ActionResult> GetTripByMatch(int matchId)
     {
         var query = new GetTripByMatchQuery(matchId);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("cost-report")]
+    public async Task<ActionResult> GetTravelCostReport()
+    {
+        var query = new GetTravelCostReportQuery();
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

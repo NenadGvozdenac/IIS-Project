@@ -1,4 +1,5 @@
 using travel_service.src.Travels.Core.Domain.Entities;
+using travel_service.src.Travels.Core.Application.Features.Trip.GetTravelCostReport;
 
 namespace travel_service.src.Travels.Core.Application.Interfaces;
 
@@ -12,4 +13,5 @@ public interface ITripRepository
     bool DoesAccommodationOfferExist(int idOffer, int idAgency, int idRequest);
     bool IsTransportationOfferChosen(int idOffer, int idAgency, int idRequest);
     bool IsAccommodationOfferChosen(int idOffer, int idAgency, int idRequest);
+    
 }
