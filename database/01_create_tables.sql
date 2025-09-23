@@ -218,7 +218,7 @@ CREATE TABLE metrics (
     name           VARCHAR(255),
     is_permanent   INTEGER,
     metric_weight  INTEGER,
-    id_user        INTEGER NOT NULL UNIQUE,
+    id_user        INTEGER NOT NULL,
     id_metric_type INTEGER NOT NULL,
     PRIMARY KEY (id_metrics)
 );

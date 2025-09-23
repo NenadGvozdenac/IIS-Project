@@ -1,9 +1,15 @@
 using Microsoft.AspNetCore.Rewrite;
 using scouting_service.src.Scoutings.API.Startup;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 builder.Services.ConfigureSwagger(builder.Configuration);
 
 const string corsPolicy = "_corsPolicy";

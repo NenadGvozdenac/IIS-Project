@@ -132,6 +132,10 @@ onMounted(() => {
     router.replace('/analyst');
     return;
   }
+  else if(userInfo && userInfo.userRole === 'scouting manager') {
+    router.replace('/scout');
+    return;
+  }
 });
 </script>
 
