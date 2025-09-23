@@ -1,0 +1,132 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "surname": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "birthday": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "weight": {
+        "type": "float"
+      },
+      "height": {
+        "type": "float"
+      },
+      "position": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "nationality": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "physical_metrics": {
+        "type": "nested",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "vertical_jump": {
+            "type": "float"
+          },
+          "fat_percentage": {
+            "type": "float"
+          },
+          "bench_press_weight": {
+            "type": "float"
+          },
+          "squat_weight": {
+            "type": "float"
+          },
+          "sprint_speed": {
+            "type": "float"
+          },
+          "weight": {
+            "type": "float"
+          },
+          "height": {
+            "type": "float"
+          },
+          "wingspan": {
+            "type": "float"
+          },
+          "date_of_measurement": {
+            "type": "date",
+            "format": "yyyy-MM-dd"
+          }
+        }
+      },
+      "bio": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "notes": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  },
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "standard": {
+          "type": "standard"
+        }
+      }
+    }
+  }
+}

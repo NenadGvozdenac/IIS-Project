@@ -1,0 +1,150 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "start_time": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss||yyyy-MM-dd HH:mm:ss"
+      },
+      "end_time": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss||yyyy-MM-dd HH:mm:ss"
+      },
+      "duration_minutes": {
+        "type": "integer"
+      },
+      "session_status": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "session_type": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "user": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "surname": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "email": {
+            "type": "keyword"
+          }
+        }
+      },
+      "participants": {
+        "type": "nested",
+        "properties": {
+          "player_id": {
+            "type": "integer"
+          },
+          "player_name": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "player_surname": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "position": {
+            "type": "text",
+            "analyzer": "standard",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "location": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  },
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "standard": {
+          "type": "standard"
+        }
+      }
+    }
+  }
+}
