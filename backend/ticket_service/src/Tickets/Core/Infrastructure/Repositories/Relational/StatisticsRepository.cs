@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ticket_service.src.Tickets.Core.Application.Features.Relational.Statistics.GetMatchStatistics;
 using ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
+using ticket_service.src.Tickets.Core.Domain.Entities.Relational;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure.Repositories.Relational;
 
@@ -80,6 +81,43 @@ public class StatisticsRepository : IStatisticsRepository
             TeamName = match.IdTeamNavigation?.Name ?? "",
             Zones = zones,
             TotalRevenue = totalRevenue
+        };
+    }
+
+    public async Task<MatchSummaryReportResponse> GetMatchSummaryReportAsync()
+    {
+        var viewResults = await _ticketDbContext.MatchSummaryReportViews.ToListAsync();
+
+        var results = viewResults.Select(view => new MatchSummaryReport
+        {
+            MatchId = view.MatchId ?? 0,
+            MatchName = view.MatchName ?? string.Empty,
+            MatchDate = view.MatchDate ?? DateTime.MinValue,
+            MatchType = view.MatchType ?? string.Empty,
+            City = view.City ?? string.Empty,
+            Hall = view.Hall ?? string.Empty,
+            SeasonName = view.SeasonName ?? string.Empty,
+            CompetitionName = view.CompetitionName,
+            TeamName = view.TeamName ?? string.Empty,
+            TotalTicketsSold = view.TotalTicketsSold ?? 0,
+            TotalRevenue = view.TotalRevenue ?? 0m,
+            VipZoneTickets = view.VipZoneTickets ?? 0,
+            VipZoneRevenue = view.VipZoneRevenue ?? 0m,
+            RegularZoneTickets = view.RegularZoneTickets ?? 0,
+            RegularZoneRevenue = view.RegularZoneRevenue ?? 0m,
+            AverageTicketPrice = view.AverageTicketPrice ?? 0m,
+            StadiumFillPercentage = view.StadiumFillPercentage ?? 0m,
+            HighestSellingZone = view.HighestSellingZone ?? string.Empty,
+            LowestSellingZone = view.LowestSellingZone ?? string.Empty,
+            TrackingStatus = view.TrackingStatus ?? string.Empty,
+            OurPoints = view.OurPoints ?? 0,
+            OpponentPoints = view.OpponentPoints ?? 0
+        }).ToList();
+
+        return new MatchSummaryReportResponse
+        {
+            Matches = results,
+            GeneratedAt = DateTime.UtcNow
         };
     }
 }
