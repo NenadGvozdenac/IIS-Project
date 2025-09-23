@@ -18,4 +18,11 @@ public class TeamMemberRepository : ITeamMemberRepository
     {
         return _travelDbContext.TeamMembers.ToList();
     }
+
+    public IEnumerable<TeamMember> GetByTeamId(int teamId)
+    {
+        return _travelDbContext.TeamMembers
+            .Where(tm => tm.IdTeam == teamId)
+            .ToList();
+    }
 }

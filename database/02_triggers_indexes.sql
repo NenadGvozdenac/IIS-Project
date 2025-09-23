@@ -424,6 +424,12 @@ BEGIN
     ) THEN
         EXECUTE 'CREATE INDEX idx_personal_event_id_player ON personal_event (id_player)';
     END IF;
+    --TESTIRANJE INDEKSA
+    --BEZ INDEKSA
+        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2; SET enable_indexscan = on; SET enable_bitmapscan = on;"
+
+    --SA INDEKSOM
+        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2;"
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_team'
@@ -464,3 +470,1069 @@ CREATE INDEX IF NOT EXISTS idx_zone_status ON zone (status);
 CREATE INDEX IF NOT EXISTS idx_cart_item_cart_offer ON cart_item (id_cart, id_purchase_offer);
 
 -- KRAJ INDEXA NENAD GVOZDENAC
+
+-- SANJA RADIC - INDEXI 
+-- Dobavljanje podataka o zahtevima i ponudama stalno iziskuju pretragu po type i id_match
+CREATE INDEX IF NOT EXISTS idx_offer_type_match ON offer (type, id_match);
+
+-- Na 2 stranice za prikaz detalja meca moram ukupno 4 puta da pristupam 
+-- bazi za pretragu bas te izabrane ponude za taj mec i odvojeno za prevoz i za smestaj
+-- Uvek su samo 2 polja za chosen TRUE, a ostale FALSE
+CREATE INDEX IF NOT EXISTS idx_offer_type_match_chosen ON offer (type, id_match, chosen);
+
+-- Ovo je samo rezervni indeks jer se cesto pretrazuje ponuda po tipu
+CREATE INDEX IF NOT EXISTS idx_offer_type ON offer (type);
+
+-- Svaki put kad se kreira nova ponuda, mora da se prodje kroz sve agencije
+-- i da se uzmu samo one koje su bile cekirane u tom request-u
+CREATE INDEX IF NOT EXISTS idx_request_match_type ON request (id_match, type);
+
+
+-- KRAJ SEKCIJE SA INDEKSIMA SANJA RADIC
+
+-- SANJA RADIC - TRIGGER ZA AUTOMATSKO BIRANJE NAJBOLJE PONUDE
+CREATE OR REPLACE FUNCTION auto_select_best_offer()
+RETURNS TRIGGER AS $$
+DECLARE
+    p_match_id INTEGER;
+    p_offer_type VARCHAR(20);
+    p_weight_price NUMERIC := 0.4;
+    p_weight_capacity NUMERIC := 0.3;
+    p_weight_benefits NUMERIC := 0.2;
+    p_weight_agency NUMERIC := 0.1;
+
+    v_offer_record RECORD;
+    v_best_offer_id INTEGER;
+    v_best_agency_id INTEGER;
+    v_best_request_id INTEGER;
+    v_best_score NUMERIC := -1;
+    v_best_agency_name VARCHAR(255);
+    v_best_reason TEXT;
+    v_min_price NUMERIC;
+    v_max_price NUMERIC;
+    v_min_capacity INTEGER;
+    v_max_capacity INTEGER;
+    v_current_score NUMERIC;
+    v_price_score NUMERIC;
+    v_capacity_score NUMERIC;
+    v_benefits_score NUMERIC;
+    v_agency_score NUMERIC;
+    v_benefits_count INTEGER;
+    v_agency_success_rate NUMERIC;
+    v_total_offers INTEGER;
+    v_player_count INTEGER;
+    v_capacity_adequacy_score NUMERIC;
+BEGIN
+    IF current_setting('auto_select.in_progress', true) = '1' THEN
+        RETURN NEW;
+    END IF;
+    PERFORM set_config('auto_select.in_progress', '1', true);
+
+    IF (TG_TABLE_NAME = 'offer') THEN
+        p_match_id := NEW.id_match;
+        p_offer_type := NEW.type;
+    ELSE
+        SELECT id_match, type INTO p_match_id, p_offer_type
+        FROM offer 
+        WHERE id_offer = NEW.id_offer AND id_agency = NEW.id_agency AND id_request = NEW.id_request;
+    END IF;
+
+    SELECT COUNT(*) INTO v_total_offers
+    FROM offer 
+    WHERE id_match = p_match_id AND type = p_offer_type;
+    
+    IF v_total_offers = 0 THEN
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RETURN NEW;
+    END IF;
+
+    IF v_total_offers = 1 THEN
+        SELECT o.id_offer, o.id_agency, o.id_request, a.name
+        INTO v_best_offer_id, v_best_agency_id, v_best_request_id, v_best_agency_name
+        FROM offer o
+        JOIN sent_request sr ON o.id_request = sr.id_request AND o.id_agency = sr.id_agency
+        JOIN agency a ON sr.id_agency = a.id_agency
+        WHERE o.id_match = p_match_id AND o.type = p_offer_type
+        LIMIT 1;
+        
+        IF v_best_offer_id IS NOT NULL THEN
+            UPDATE offer 
+            SET chosen = true 
+            WHERE id_offer = v_best_offer_id 
+            AND id_agency = v_best_agency_id 
+            AND id_request = v_best_request_id;
+            
+            INSERT INTO offer_selection_log (id_match, offer_type, selected_offer_id, selection_score, selection_reason, total_offers_analyzed, selected_by)
+            VALUES (p_match_id, p_offer_type, v_best_offer_id, 100.0, 'Only one offer available - automatically selected', v_total_offers, 'AUTO');
+        END IF;
+
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RETURN NEW;
+    END IF;
+
+    v_player_count := 25;
+
+    SELECT MIN(price), MAX(price) INTO v_min_price, v_max_price
+    FROM offer 
+    WHERE id_match = p_match_id AND type = p_offer_type;
+
+    IF p_offer_type = 'transportation' THEN
+        SELECT MIN(capacity), MAX(capacity) INTO v_min_capacity, v_max_capacity
+        FROM offer o
+        JOIN transportation_offer to_obj ON o.id_offer = to_obj.id_offer 
+          AND o.id_agency = to_obj.id_agency AND o.id_request = to_obj.id_request
+        WHERE o.id_match = p_match_id AND o.type = p_offer_type;
+    ELSE
+        SELECT MIN(capacity), MAX(capacity) INTO v_min_capacity, v_max_capacity
+        FROM offer o
+        JOIN accommodation_offer ao ON o.id_offer = ao.id_offer 
+          AND o.id_agency = ao.id_agency AND o.id_request = ao.id_request
+        WHERE o.id_match = p_match_id AND o.type = p_offer_type;
+    END IF;
+
+    RAISE NOTICE 'DEBUG auto_select: Starting main loop with % total offers for match=% type=%', v_total_offers, p_match_id, p_offer_type;
+    FOR v_offer_record IN 
+        SELECT 
+            o.id_offer,
+            o.price,
+            o.id_agency,
+            o.id_request,
+            CASE 
+                WHEN p_offer_type = 'transportation' THEN to_obj.capacity
+                ELSE ao.capacity
+            END as capacity,
+            a.name as agency_name
+        FROM offer o
+        LEFT JOIN transportation_offer to_obj ON o.id_offer = to_obj.id_offer 
+          AND o.id_agency = to_obj.id_agency AND o.id_request = to_obj.id_request
+        LEFT JOIN accommodation_offer ao ON o.id_offer = ao.id_offer 
+          AND o.id_agency = ao.id_agency AND o.id_request = ao.id_request
+        JOIN sent_request sr ON o.id_request = sr.id_request AND o.id_agency = sr.id_agency
+        JOIN agency a ON sr.id_agency = a.id_agency
+        WHERE o.id_match = p_match_id AND o.type = p_offer_type
+    LOOP
+        SELECT calculate_advanced_offer_score(v_offer_record.id_offer, v_offer_record.id_agency, v_offer_record.id_request)
+        INTO v_current_score;
+        RAISE NOTICE 'DEBUG auto_select: Offer % (agency %) - price=%, capacity=%, score=%', 
+            v_offer_record.id_offer, v_offer_record.id_agency, v_offer_record.price, v_offer_record.capacity, 
+            v_current_score;
+
+        IF v_current_score > v_best_score THEN
+            v_best_score := v_current_score;
+            v_best_offer_id := v_offer_record.id_offer;
+            v_best_agency_id := v_offer_record.id_agency;
+            v_best_request_id := v_offer_record.id_request;
+            v_best_agency_name := v_offer_record.agency_name;
+            v_best_reason := 'AUTO selection - calculated by calculate_advanced_offer_score';
+            
+            RAISE NOTICE 'DEBUG auto_select: NEW BEST OFFER found: % with score %', v_best_offer_id, v_best_score;
+        END IF;
+    END LOOP;
+
+    IF v_best_offer_id IS NOT NULL THEN
+        UPDATE offer 
+        SET chosen = false 
+        WHERE id_match = p_match_id AND type = p_offer_type;
+        
+        UPDATE offer 
+        SET chosen = true 
+        WHERE id_offer = v_best_offer_id 
+        AND id_agency = v_best_agency_id 
+        AND id_request = v_best_request_id;
+        
+        INSERT INTO offer_selection_log (id_match, offer_type, selected_offer_id, selection_score, selection_reason, total_offers_analyzed, selected_by)
+        VALUES (p_match_id, p_offer_type, v_best_offer_id, v_best_score, v_best_reason, v_total_offers, 'AUTO');
+    END IF;
+
+    PERFORM set_config('auto_select.in_progress', '0', true);
+    RETURN NEW;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        PERFORM set_config('auto_select.in_progress', '0', true);
+        RAISE;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trigger_auto_select_after_offer_insert
+    AFTER INSERT ON offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
+CREATE TRIGGER trigger_auto_select_after_transportation_child
+    AFTER INSERT OR UPDATE ON transportation_offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
+
+CREATE TRIGGER trigger_auto_select_after_accommodation_child
+    AFTER INSERT OR UPDATE ON accommodation_offer
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_select_best_offer();
+-- KRAJ TRIGGERA SANJA RADIC
+
+-- SANJA RADIC - NAPREDNA FUNKCIJA ZA SCORING PONUDA
+-- Ova funkcija je potrebna samo zbog racunanja score-a
+CREATE OR REPLACE FUNCTION calculate_total_travelers(p_request_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_team_members INTEGER := 0;
+    v_management_members INTEGER := 0;
+BEGIN
+    BEGIN
+        SELECT COUNT(*) INTO v_team_members FROM team_member_request WHERE id_request = p_request_id;
+    EXCEPTION WHEN OTHERS THEN
+        v_team_members := 0;
+    END;
+
+    BEGIN
+        SELECT COUNT(*) INTO v_management_members FROM management_member_request WHERE id_request = p_request_id;
+    EXCEPTION WHEN OTHERS THEN
+        v_management_members := 0;
+    END;
+
+    RETURN COALESCE(v_team_members, 0) + COALESCE(v_management_members, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION calculate_advanced_offer_score(
+    p_offer_id INTEGER,
+    p_agency_id INTEGER, 
+    p_request_id INTEGER,
+    p_weight_price NUMERIC DEFAULT 0.3,
+    p_weight_capacity NUMERIC DEFAULT 0.2,
+    p_weight_amenities NUMERIC DEFAULT 0.25,
+    p_weight_agency_rating NUMERIC DEFAULT 0.25
+) RETURNS NUMERIC AS $$
+DECLARE
+    v_offer_type VARCHAR(20);
+    v_offer_price NUMERIC;
+    v_min_price NUMERIC;
+    v_max_price NUMERIC;
+    v_price_score NUMERIC := 0;
+    v_capacity_score NUMERIC := 0;
+    v_amenities_score NUMERIC := 0;
+    v_agency_rating_score NUMERIC := 0;
+    v_final_score NUMERIC := 0;
+    v_offer_capacity INTEGER;
+    v_required_capacity INTEGER;
+    v_amenities_count INTEGER := 0;
+    v_max_amenities INTEGER;
+    v_match_id INTEGER;
+BEGIN
+    SELECT o.type, o.price, o.id_match 
+    INTO v_offer_type, v_offer_price, v_match_id
+    FROM offer o 
+    WHERE o.id_offer = p_offer_id 
+    AND o.id_agency = p_agency_id 
+    AND o.id_request = p_request_id;
+    
+    IF v_offer_type IS NULL THEN
+        RETURN 0;
+    END IF;
+    
+    SELECT MIN(price), MAX(price) 
+    INTO v_min_price, v_max_price
+    FROM offer 
+    WHERE type = v_offer_type 
+    AND id_match = v_match_id 
+    AND price IS NOT NULL;
+    
+    IF v_offer_price IS NOT NULL AND v_max_price > v_min_price THEN
+        v_price_score := 100 * (1 - ((v_offer_price - v_min_price) / (v_max_price - v_min_price)));
+    ELSE
+        v_price_score := 50;
+    END IF;
+    
+    SELECT calculate_total_travelers(p_request_id) INTO v_required_capacity;
+    
+    IF v_offer_type = 'accommodation' THEN
+        SELECT capacity INTO v_offer_capacity
+        FROM accommodation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+    ELSIF v_offer_type = 'transportation' THEN
+        SELECT capacity INTO v_offer_capacity
+        FROM transportation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+    END IF;
+    
+    IF v_offer_capacity IS NOT NULL AND v_required_capacity > 0 THEN
+        IF v_offer_capacity >= v_required_capacity THEN
+            v_capacity_score := 100 * (1 - EXP(-2.0 * v_offer_capacity::NUMERIC / v_required_capacity::NUMERIC));
+        ELSE
+            v_capacity_score := 0;
+        END IF;
+    ELSE
+        v_capacity_score := 50;
+    END IF;
+    
+    IF v_offer_type = 'accommodation' THEN
+        SELECT 
+            (CASE WHEN breakfast THEN 1 ELSE 0 END) +
+            (CASE WHEN fitness_center THEN 1 ELSE 0 END) +
+            (CASE WHEN pool THEN 1 ELSE 0 END) +
+            (CASE WHEN wifi THEN 1 ELSE 0 END) +
+            (CASE WHEN spa THEN 1 ELSE 0 END) +
+            (CASE WHEN double_room THEN 1 ELSE 0 END) +
+            (CASE WHEN triple_room THEN 1 ELSE 0 END) +
+            (CASE WHEN quadruple_room THEN 1 ELSE 0 END)
+        INTO v_amenities_count
+        FROM accommodation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+        
+        v_max_amenities := 8;
+        
+    ELSIF v_offer_type = 'transportation' THEN
+        SELECT 
+            (CASE WHEN equipment_space THEN 1 ELSE 0 END) +
+            (CASE WHEN air_conditioning THEN 1 ELSE 0 END) +
+            (CASE WHEN tv THEN 1 ELSE 0 END) +
+            (CASE WHEN wifi THEN 1 ELSE 0 END) +
+            (CASE WHEN restroom THEN 1 ELSE 0 END)
+        INTO v_amenities_count
+        FROM transportation_offer 
+        WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
+        
+        v_max_amenities := 5;
+    END IF;
+    
+    IF v_max_amenities > 0 THEN
+        v_amenities_score := 100 * (v_amenities_count::NUMERIC / v_max_amenities::NUMERIC);
+    ELSE
+        v_amenities_score := 0;
+    END IF;
+    
+    v_agency_rating_score := 50; 
+    
+    v_final_score := 
+        (v_price_score * p_weight_price) +
+        (v_capacity_score * p_weight_capacity) +
+        (v_amenities_score * p_weight_amenities) +
+        (v_agency_rating_score * p_weight_agency_rating);
+    
+    RETURN ROUND(v_final_score, 3);
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ NAPREDNE FUNKCIJE ZA SCORING PONUDA SANJA RADIC
+
+--------------------------------------------------------------------------
+-- SRDJAN ILIC - TRIGGER ZA AUTOMATSKO AŽURIRANJE REZULTATA U MATCH_TRACKING
+-- Kada se upiše personal event sa tipom +2p, +3p ili +ft, automatski se ažurira rezultat
+
+CREATE OR REPLACE FUNCTION update_match_score_on_personal_event()
+RETURNS TRIGGER AS $$
+DECLARE
+    points_to_add INTEGER := 0;
+    target_match_id INTEGER;
+    target_team_id INTEGER;
+BEGIN
+    -- Određujemo operaciju i uzimamo odgovarajuće vrednosti
+    IF TG_OP = 'INSERT' THEN
+        target_match_id := NEW.id_match;
+        target_team_id := NEW.id_team;
+        
+        -- Proveravamo da li je event tip koji donosi poene
+        CASE NEW.type
+            WHEN '+2p' THEN points_to_add := 2;
+            WHEN '+3p' THEN points_to_add := 3;
+            WHEN '+ft' THEN points_to_add := 1;
+            ELSE points_to_add := 0;
+        END CASE;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        target_match_id := OLD.id_match;
+        target_team_id := OLD.id_team;
+        
+        -- Pri brisanju, oduzimamo poene (negativni points_to_add)
+        CASE OLD.type
+            WHEN '+2p' THEN points_to_add := -2;
+            WHEN '+3p' THEN points_to_add := -3;
+            WHEN '+ft' THEN points_to_add := -1;
+            ELSE points_to_add := 0;
+        END CASE;
+    END IF;
+    
+    -- Ako event utiče na poene, ažuriramo rezultat u match_tracking
+    IF points_to_add != 0 THEN
+        UPDATE match_tracking 
+        SET 
+            our_points = CASE 
+                WHEN target_team_id = 1 THEN GREATEST(0, COALESCE(our_points, 0) + points_to_add)
+                ELSE COALESCE(our_points, 0)
+            END,
+            opponent_points = CASE 
+                WHEN target_team_id != 1 THEN GREATEST(0, COALESCE(opponent_points, 0) + points_to_add)
+                ELSE COALESCE(opponent_points, 0)
+            END,
+            last_update_time = CURRENT_TIMESTAMP
+        WHERE id_match = target_match_id;
+    END IF;
+    
+    -- Vraćamo odgovarajući red u zavisnosti od operacije
+    IF TG_OP = 'INSERT' THEN
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Kreiranje triggera koji poziva funkciju kada se upisuje ili briše personal event
+CREATE TRIGGER trigger_update_match_score_on_personal_event
+    AFTER INSERT OR DELETE ON personal_event
+    FOR EACH ROW
+    EXECUTE FUNCTION update_match_score_on_personal_event();
+
+-- KRAJ TRIGGERA SRDJAN ILIC
+
+--------------------------------------------------------------------------
+-- SRDJAN ILIC - KOMPLEKSNA FUNKCIJA ZA EFIKASNOST IGRAČA NA UTAKMICI
+-- Računa detaljnu efikasnost igrača na osnovu svih njegovih personal_event zapisa
+
+CREATE TYPE player_efficiency_stats AS (
+    player_id INTEGER,
+    team_id INTEGER,
+    match_id INTEGER,
+    player_name VARCHAR(255),
+    match_name VARCHAR(255),
+    total_points INTEGER,
+    total_assists INTEGER,
+    total_rebounds INTEGER,
+    total_steals INTEGER,
+    total_blocks INTEGER,
+    total_fouls INTEGER,
+    shooting_2p_made INTEGER,
+    shooting_2p_attempted INTEGER,
+    shooting_2p_percentage NUMERIC(5,2),
+    shooting_3p_made INTEGER,
+    shooting_3p_attempted INTEGER,
+    shooting_3p_percentage NUMERIC(5,2),
+    free_throws_made INTEGER,
+    free_throws_attempted INTEGER,
+    free_throw_percentage NUMERIC(5,2),
+    offensive_rebounds INTEGER,
+    defensive_rebounds INTEGER,
+    substitutions_count INTEGER,
+    efficiency_rating NUMERIC(8,2),
+    performance_grade VARCHAR(10),
+    minutes_played INTEGER,
+    plus_minus_rating NUMERIC(6,2)
+);
+
+CREATE OR REPLACE FUNCTION calculate_player_match_efficiency(
+    p_player_id INTEGER,
+    p_team_id INTEGER,
+    p_match_id INTEGER
+) RETURNS player_efficiency_stats AS $$
+DECLARE
+    result player_efficiency_stats;
+    
+    -- Osnovne statistike
+    v_points_2p INTEGER := 0;
+    v_points_3p INTEGER := 0;
+    v_points_ft INTEGER := 0;
+    v_assists INTEGER := 0;
+    v_rebounds_off INTEGER := 0;
+    v_rebounds_def INTEGER := 0;
+    v_steals INTEGER := 0;
+    v_blocks INTEGER := 0;
+    v_fouls INTEGER := 0;
+    
+    -- Šuterske statistike
+    v_2p_made INTEGER := 0;
+    v_2p_attempted INTEGER := 0;
+    v_3p_made INTEGER := 0;
+    v_3p_attempted INTEGER := 0;
+    v_ft_made INTEGER := 0;
+    v_ft_attempted INTEGER := 0;
+    
+    -- Dodatne statistike
+    v_substitutions INTEGER := 0;
+    v_sub_in_time INTEGER := 0;
+    v_sub_out_time INTEGER := 0;
+    v_minutes_played INTEGER := 0;
+    v_is_currently_playing BOOLEAN := FALSE;
+    v_is_starting_lineup BOOLEAN := FALSE;
+    
+    -- Za plus/minus rating
+    v_team_points_when_playing INTEGER := 0;
+    v_opponent_points_when_playing INTEGER := 0;
+    
+    -- Pomoćne varijable
+    v_player_name VARCHAR(255);
+    v_match_name VARCHAR(255);
+    v_efficiency NUMERIC(8,2);
+    v_grade VARCHAR(10);
+    v_team_id INTEGER;
+    
+    -- Cursor za prolaz kroz sve evente igrača u specificnom timu
+    event_cursor CURSOR FOR
+        SELECT pe.type, pe.period_time, pe.period, pe.creation_time
+        FROM personal_event pe
+        WHERE pe.id_player = p_player_id 
+          AND pe.id_team = p_team_id
+          AND pe.id_match = p_match_id
+        ORDER BY pe.creation_time;
+        
+BEGIN
+    -- Dohvatanje osnovnih informacija i provera da li je u startnoj postavi
+    SELECT CONCAT(p.name, ' ', p.surname), m.name, COALESCE(tmm.starting_lineup, FALSE)
+    INTO v_player_name, v_match_name, v_is_starting_lineup
+    FROM player p
+    CROSS JOIN match m
+    LEFT JOIN team_member_match tmm ON tmm.id_player = p.id_player 
+                                    AND tmm.id_team = p_team_id 
+                                    AND tmm.id_match = m.id_match
+    WHERE p.id_player = p_player_id 
+      AND m.id_match = p_match_id
+    LIMIT 1;
+    
+    -- Postavi team_id za rezultat
+    v_team_id := p_team_id;
+    
+    -- Ako nema podataka, vrati prazan rezultat
+    IF v_player_name IS NULL THEN
+        result.player_name := 'Player not found';
+        result.match_name := 'Match not found';
+        RETURN result;
+    END IF;
+    
+    -- Ako je u startnoj postavi, automatski postaviti da igra od početka
+    IF v_is_starting_lineup THEN
+        v_is_currently_playing := TRUE;
+        v_sub_in_time := 0; -- Počinje od početka utakmice
+    END IF;
+    
+    -- Prolaz kroz sve evente i računanje statistika
+    FOR event_rec IN event_cursor LOOP
+        CASE event_rec.type
+            -- Poeni
+            WHEN '+2p' THEN
+                v_points_2p := v_points_2p + 2;
+                v_2p_made := v_2p_made + 1;
+            WHEN '+3p' THEN
+                v_points_3p := v_points_3p + 3;
+                v_3p_made := v_3p_made + 1;
+            WHEN '+ft' THEN
+                v_points_ft := v_points_ft + 1;
+                v_ft_made := v_ft_made + 1;
+                
+            -- Promašaji
+            WHEN '2p' THEN
+                v_2p_attempted := v_2p_attempted + 1;
+            WHEN '3p' THEN
+                v_3p_attempted := v_3p_attempted + 1;
+            WHEN 'ft' THEN
+                v_ft_attempted := v_ft_attempted + 1;
+                
+            -- Ostale statistike
+            WHEN 'assist' THEN
+                v_assists := v_assists + 1;
+            WHEN 'reb of' THEN
+                v_rebounds_off := v_rebounds_off + 1;
+            WHEN 'reb def' THEN
+                v_rebounds_def := v_rebounds_def + 1;
+            WHEN 'steal' THEN
+                v_steals := v_steals + 1;
+            WHEN 'block' THEN
+                v_blocks := v_blocks + 1;
+            WHEN 'foul' THEN
+                v_fouls := v_fouls + 1;
+                
+            -- Izmene
+            WHEN 'substitution in' THEN
+                v_substitutions := v_substitutions + 1;
+                v_sub_in_time := COALESCE(event_rec.period_time, 0);
+                v_is_currently_playing := TRUE;
+            WHEN 'substitution out' THEN
+                v_sub_out_time := COALESCE(event_rec.period_time, 0);
+                v_is_currently_playing := FALSE;
+                -- Dodaj vreme igranja za ovaj segment
+                IF v_sub_in_time >= 0 THEN  -- >=0 jer startni igrači počinju od 0
+                    v_minutes_played := v_minutes_played + (v_sub_out_time - v_sub_in_time);
+                END IF;
+                -- Reset sub_in_time za sledeći ulazak
+                v_sub_in_time := -1;
+        END CASE;
+    END LOOP;
+    
+    -- Ako je igrač još uvek u igri na kraju (nije izašao), dodaj vreme do kraja utakmice
+    -- Pretpostavljamo da je utakmica 4 perioda po 10 minuta = 2400000 milisekundi
+    IF v_is_currently_playing AND v_sub_in_time >= 0 THEN
+        v_minutes_played := v_minutes_played + (2400000 - v_sub_in_time); -- 40 minuta = 2400000ms
+    END IF;
+    
+    -- Dodaj ukupne pokušaje za pogođene šuteve
+    v_2p_attempted := v_2p_attempted + v_2p_made;
+    v_3p_attempted := v_3p_attempted + v_3p_made;
+    v_ft_attempted := v_ft_attempted + v_ft_made;
+    
+    -- Konvertuj milisekunde u minute
+    v_minutes_played := v_minutes_played / 60000;
+    
+    -- Izračunavanje efikasnosti po NBA formuli:
+    -- EFF = (Points + Rebounds + Assists + Steals + Blocks) - (FG Missed + FT Missed + Turnovers)
+    -- Pošto nemamo turnovers, koristićemo faule kao aproksimaciju
+    v_efficiency := (v_points_2p + v_points_3p + v_points_ft) + 
+                   (v_rebounds_off + v_rebounds_def) + 
+                   v_assists + v_steals + v_blocks - 
+                   ((v_2p_attempted - v_2p_made) + (v_3p_attempted - v_3p_made) + 
+                    (v_ft_attempted - v_ft_made) + v_fouls);
+    
+    -- Izračunavanje efikasnosti BEZ normalizacije po vremenu
+    -- Efikasnost je apsolutna vrednost za utakmicu, ne zavisi od vremena igranja
+    
+    -- Određivanje ocene na osnovu efikasnosti
+    IF v_efficiency >= 30 THEN
+        v_grade := 'A+';
+    ELSIF v_efficiency >= 25 THEN
+        v_grade := 'A';
+    ELSIF v_efficiency >= 20 THEN
+        v_grade := 'B+';
+    ELSIF v_efficiency >= 15 THEN
+        v_grade := 'B';
+    ELSIF v_efficiency >= 10 THEN
+        v_grade := 'C+';
+    ELSIF v_efficiency >= 5 THEN
+        v_grade := 'C';
+    ELSE
+        v_grade := 'D';
+    END IF;
+    
+    -- Računanje plus/minus (aproksimacija - razlika poena dok je igrao)
+    -- Ovo je pojednostavljeno jer bi trebalo da pratimo tačno kad je igrao
+    SELECT 
+        COALESCE(mt.our_points, 0) - COALESCE(mt.opponent_points, 0)
+    INTO v_team_points_when_playing
+    FROM match_tracking mt
+    WHERE mt.id_match = p_match_id;
+    
+    -- Popunjavanje rezultata
+    result.player_id := p_player_id;
+    result.team_id := p_team_id;
+    result.match_id := p_match_id;
+    result.player_name := v_player_name;
+    result.match_name := v_match_name;
+    result.total_points := v_points_2p + v_points_3p + v_points_ft;
+    result.total_assists := v_assists;
+    result.total_rebounds := v_rebounds_off + v_rebounds_def;
+    result.total_steals := v_steals;
+    result.total_blocks := v_blocks;
+    result.total_fouls := v_fouls;
+    result.shooting_2p_made := v_2p_made;
+    result.shooting_2p_attempted := v_2p_attempted;
+    result.shooting_2p_percentage := CASE 
+        WHEN v_2p_attempted > 0 THEN ROUND((v_2p_made::NUMERIC / v_2p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.shooting_3p_made := v_3p_made;
+    result.shooting_3p_attempted := v_3p_attempted;
+    result.shooting_3p_percentage := CASE 
+        WHEN v_3p_attempted > 0 THEN ROUND((v_3p_made::NUMERIC / v_3p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.free_throws_made := v_ft_made;
+    result.free_throws_attempted := v_ft_attempted;
+    result.free_throw_percentage := CASE 
+        WHEN v_ft_attempted > 0 THEN ROUND((v_ft_made::NUMERIC / v_ft_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.offensive_rebounds := v_rebounds_off;
+    result.defensive_rebounds := v_rebounds_def;
+    result.substitutions_count := v_substitutions;
+    result.efficiency_rating := ROUND(v_efficiency, 2);
+    result.performance_grade := v_grade;
+    result.minutes_played := v_minutes_played;
+    result.plus_minus_rating := ROUND(v_team_points_when_playing::NUMERIC, 2);
+    
+    RETURN result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške, vrati osnovne informacije
+        result.player_id := p_player_id;
+        result.team_id := p_team_id;
+        result.match_id := p_match_id;
+        result.player_name := COALESCE(v_player_name, 'Unknown Player');
+        result.match_name := COALESCE(v_match_name, 'Unknown Match');
+        result.efficiency_rating := 0;
+        result.performance_grade := 'N/A';
+        RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- FUNKCIJA ZA DOBIJANJE STATISTIKA SVIH IGRAČA NA UTAKMICI
+CREATE OR REPLACE FUNCTION get_match_player_statistics(
+    p_match_id INTEGER
+) RETURNS SETOF player_efficiency_stats AS $$
+DECLARE
+    player_rec RECORD;
+    efficiency_result player_efficiency_stats;
+BEGIN
+    -- Prolazimo kroz sve igrače oba tima na datoj utakmici
+    FOR player_rec IN
+        SELECT DISTINCT 
+            tmm.id_player,
+            tmm.id_team,
+            p.name,
+            p.surname
+        FROM team_member_match tmm
+        JOIN player p ON p.id_player = tmm.id_player
+        WHERE tmm.id_match = p_match_id
+        ORDER BY tmm.id_team, p.name, p.surname
+    LOOP
+        -- Pozivamo funkciju za računanje efikasnosti svakog igrača
+        SELECT * INTO efficiency_result 
+        FROM calculate_player_match_efficiency(
+            player_rec.id_player,
+            player_rec.id_team,
+            p_match_id
+        );
+        
+        -- Vraćamo rezultat
+        RETURN NEXT efficiency_result;
+    END LOOP;
+    
+    RETURN;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške, vraćamo grešku kao rezultat
+        efficiency_result.player_name := 'Error occurred';
+        efficiency_result.match_name := SQLERRM;
+        efficiency_result.efficiency_rating := 0;
+        efficiency_result.performance_grade := 'ERROR';
+        RETURN NEXT efficiency_result;
+        RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+--------------------------------------------------------------------------
+-- SRDJAN ILIC - KOMPLEKSAN IZVEŠTAJ SA GENERALNIM PODACIMA I TEAM STATISTIKAMA
+-- Koristi složene tipove, kursore, WITH klauzule i agregacione operacije
+
+-- Složeni tip za team statistike
+CREATE TYPE team_match_stats AS (
+    team_id INTEGER,
+    team_name VARCHAR(255),
+    total_points INTEGER,
+    total_field_goals_made INTEGER,
+    total_field_goals_attempted INTEGER,
+    field_goal_percentage NUMERIC(5,2),
+    total_2p_made INTEGER,
+    total_2p_attempted INTEGER,
+    two_point_percentage NUMERIC(5,2),
+    total_3p_made INTEGER,
+    total_3p_attempted INTEGER,
+    three_point_percentage NUMERIC(5,2),
+    total_free_throws_made INTEGER,
+    total_free_throws_attempted INTEGER,
+    free_throw_percentage NUMERIC(5,2),
+    total_rebounds INTEGER,
+    total_offensive_rebounds INTEGER,
+    total_defensive_rebounds INTEGER,
+    total_assists INTEGER,
+    total_steals INTEGER,
+    total_blocks INTEGER,
+    total_fouls INTEGER,
+    team_efficiency_rating NUMERIC(8,2),
+    active_players_count INTEGER,
+    substitutions_count INTEGER,
+    avg_player_efficiency NUMERIC(6,2),
+    best_player_name VARCHAR(255),
+    best_player_efficiency NUMERIC(8,2)
+);
+
+-- Složeni tip za generalne podatke o utakmici
+CREATE TYPE match_general_info AS (
+    match_id INTEGER,
+    match_name VARCHAR(255),
+    scheduled_at TIMESTAMP,
+    hall VARCHAR(255),
+    city VARCHAR(255),
+    state VARCHAR(50),
+    duration_minutes INTEGER,
+    total_events_count INTEGER,
+    highest_individual_score INTEGER,
+    lowest_individual_score INTEGER,
+    total_substitutions INTEGER,
+    total_fouls INTEGER,
+    our_team_id INTEGER,
+    opponent_team_id INTEGER,
+    final_score_our INTEGER,
+    final_score_opponent INTEGER
+);
+
+-- Glavni složeni tip koji objedinjuje sve
+CREATE TYPE complete_match_report AS (
+    general_info match_general_info,
+    our_team_stats team_match_stats,
+    opponent_team_stats team_match_stats,
+    our_players_stats player_efficiency_stats[],
+    opponent_players_stats player_efficiency_stats[]
+);
+
+-- Funkcija za računanje team statistika sa kursorom i agregacije
+CREATE OR REPLACE FUNCTION calculate_team_match_stats(
+    p_team_id INTEGER,
+    p_match_id INTEGER
+) RETURNS team_match_stats AS $$
+DECLARE
+    result team_match_stats;
+    
+    -- Varijable za kursor
+    player_cursor CURSOR FOR
+        SELECT tmm.id_player, p.name, p.surname
+        FROM team_member_match tmm
+        JOIN player p ON p.id_player = tmm.id_player
+        WHERE tmm.id_team = p_team_id AND tmm.id_match = p_match_id;
+    
+    player_rec RECORD;
+    player_stats player_efficiency_stats;
+    
+    -- Agregacione varijable
+    v_total_points INTEGER := 0;
+    v_total_2p_made INTEGER := 0;
+    v_total_2p_attempted INTEGER := 0;
+    v_total_3p_made INTEGER := 0;
+    v_total_3p_attempted INTEGER := 0;
+    v_total_ft_made INTEGER := 0;
+    v_total_ft_attempted INTEGER := 0;
+    v_total_rebounds INTEGER := 0;
+    v_total_off_rebounds INTEGER := 0;
+    v_total_def_rebounds INTEGER := 0;
+    v_total_assists INTEGER := 0;
+    v_total_steals INTEGER := 0;
+    v_total_blocks INTEGER := 0;
+    v_total_fouls INTEGER := 0;
+    v_total_substitutions INTEGER := 0;
+    v_active_players INTEGER := 0;
+    v_team_efficiency NUMERIC(8,2) := 0;
+    v_avg_efficiency NUMERIC(6,2) := 0;
+    v_best_player_name VARCHAR(255) := '';
+    v_best_efficiency NUMERIC(8,2) := 0;
+    v_team_name VARCHAR(255);
+    
+BEGIN
+    -- Dobijanje naziva tima
+    SELECT name INTO v_team_name FROM team WHERE id_team = p_team_id;
+    
+    -- Korišćenje kursora za prolaz kroz sve igrače tima
+    FOR player_rec IN player_cursor LOOP
+        -- Pozivanje funkcije za statistike igrača
+        SELECT * INTO player_stats 
+        FROM calculate_player_match_efficiency(player_rec.id_player, p_team_id, p_match_id);
+        
+        -- Agregiranje statistika
+        v_total_points := v_total_points + COALESCE(player_stats.total_points, 0);
+        v_total_2p_made := v_total_2p_made + COALESCE(player_stats.shooting_2p_made, 0);
+        v_total_2p_attempted := v_total_2p_attempted + COALESCE(player_stats.shooting_2p_attempted, 0);
+        v_total_3p_made := v_total_3p_made + COALESCE(player_stats.shooting_3p_made, 0);
+        v_total_3p_attempted := v_total_3p_attempted + COALESCE(player_stats.shooting_3p_attempted, 0);
+        v_total_ft_made := v_total_ft_made + COALESCE(player_stats.free_throws_made, 0);
+        v_total_ft_attempted := v_total_ft_attempted + COALESCE(player_stats.free_throws_attempted, 0);
+        v_total_rebounds := v_total_rebounds + COALESCE(player_stats.total_rebounds, 0);
+        v_total_off_rebounds := v_total_off_rebounds + COALESCE(player_stats.offensive_rebounds, 0);
+        v_total_def_rebounds := v_total_def_rebounds + COALESCE(player_stats.defensive_rebounds, 0);
+        v_total_assists := v_total_assists + COALESCE(player_stats.total_assists, 0);
+        v_total_steals := v_total_steals + COALESCE(player_stats.total_steals, 0);
+        v_total_blocks := v_total_blocks + COALESCE(player_stats.total_blocks, 0);
+        v_total_fouls := v_total_fouls + COALESCE(player_stats.total_fouls, 0);
+        v_total_substitutions := v_total_substitutions + COALESCE(player_stats.substitutions_count, 0);
+        
+        v_active_players := v_active_players + 1;
+        
+        -- Pronalaženje najboljeg igrača
+        IF COALESCE(player_stats.efficiency_rating, 0) > v_best_efficiency THEN
+            v_best_efficiency := COALESCE(player_stats.efficiency_rating, 0);
+            v_best_player_name := COALESCE(player_stats.player_name, 'Unknown');
+        END IF;
+        
+        v_team_efficiency := v_team_efficiency + COALESCE(player_stats.efficiency_rating, 0);
+    END LOOP;
+    
+    -- Računanje proseka
+    IF v_active_players > 0 THEN
+        v_avg_efficiency := v_team_efficiency / v_active_players;
+    END IF;
+    
+    -- Popunjavanje rezultata
+    result.team_id := p_team_id;
+    result.team_name := COALESCE(v_team_name, 'Unknown Team');
+    result.total_points := v_total_points;
+    result.total_field_goals_made := v_total_2p_made + v_total_3p_made;
+    result.total_field_goals_attempted := v_total_2p_attempted + v_total_3p_attempted;
+    result.field_goal_percentage := CASE 
+        WHEN (v_total_2p_attempted + v_total_3p_attempted) > 0 
+        THEN ROUND(((v_total_2p_made + v_total_3p_made)::NUMERIC / (v_total_2p_attempted + v_total_3p_attempted)) * 100, 2)
+        ELSE 0 
+    END;
+    result.total_2p_made := v_total_2p_made;
+    result.total_2p_attempted := v_total_2p_attempted;
+    result.two_point_percentage := CASE 
+        WHEN v_total_2p_attempted > 0 
+        THEN ROUND((v_total_2p_made::NUMERIC / v_total_2p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.total_3p_made := v_total_3p_made;
+    result.total_3p_attempted := v_total_3p_attempted;
+    result.three_point_percentage := CASE 
+        WHEN v_total_3p_attempted > 0 
+        THEN ROUND((v_total_3p_made::NUMERIC / v_total_3p_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.total_free_throws_made := v_total_ft_made;
+    result.total_free_throws_attempted := v_total_ft_attempted;
+    result.free_throw_percentage := CASE 
+        WHEN v_total_ft_attempted > 0 
+        THEN ROUND((v_total_ft_made::NUMERIC / v_total_ft_attempted) * 100, 2)
+        ELSE 0 
+    END;
+    result.total_rebounds := v_total_rebounds;
+    result.total_offensive_rebounds := v_total_off_rebounds;
+    result.total_defensive_rebounds := v_total_def_rebounds;
+    result.total_assists := v_total_assists;
+    result.total_steals := v_total_steals;
+    result.total_blocks := v_total_blocks;
+    result.total_fouls := v_total_fouls;
+    result.team_efficiency_rating := ROUND(v_team_efficiency, 2);
+    result.active_players_count := v_active_players;
+    result.substitutions_count := v_total_substitutions;
+    result.avg_player_efficiency := ROUND(v_avg_efficiency, 2);
+    result.best_player_name := v_best_player_name;
+    result.best_player_efficiency := ROUND(v_best_efficiency, 2);
+    
+    RETURN result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        result.team_id := p_team_id;
+        result.team_name := 'Error';
+        RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Glavna funkcija za kompletan izveštaj sa WITH klauzulom i složenim upitima
+CREATE OR REPLACE FUNCTION generate_complete_match_report(
+    p_match_id INTEGER
+) RETURNS complete_match_report AS $$
+DECLARE
+    result complete_match_report;
+    v_our_team_id INTEGER;
+    v_opponent_team_id INTEGER;
+    v_match_info match_general_info;
+    v_our_stats team_match_stats;
+    v_opponent_stats team_match_stats;
+    v_our_players player_efficiency_stats[];
+    v_opponent_players player_efficiency_stats[];
+    
+    -- Za iteraciju kroz igrače
+    player_rec player_efficiency_stats;
+    
+BEGIN
+    -- Korišćenje složenih upita za osnovne podatke
+    SELECT 
+        m.id_match,
+        m.name,
+        m.scheduled_at,
+        m.hall,
+        m.city,
+        m.state,
+        COALESCE(mt.period_duration * 4 / 60000, 40), -- Convert from milliseconds to minutes, default 40
+        (SELECT COUNT(*) FROM personal_event pe WHERE pe.id_match = m.id_match),
+        (SELECT COUNT(*) 
+         FROM personal_event pe 
+         WHERE pe.id_match = m.id_match 
+           AND pe.type IN ('substitution in')),
+        (SELECT COUNT(*) 
+         FROM personal_event pe 
+         WHERE pe.id_match = m.id_match 
+           AND pe.type = 'foul'),
+        COALESCE(mt.our_points, 0),
+        COALESCE(mt.opponent_points, 0)
+        
+    INTO v_match_info.match_id, v_match_info.match_name, v_match_info.scheduled_at,
+         v_match_info.hall, v_match_info.city, v_match_info.state,
+         v_match_info.duration_minutes, v_match_info.total_events_count,
+         v_match_info.total_substitutions, v_match_info.total_fouls,
+         v_match_info.final_score_our, v_match_info.final_score_opponent
+    FROM match m
+    LEFT JOIN match_tracking mt ON mt.id_match = m.id_match
+    WHERE m.id_match = p_match_id
+    LIMIT 1;
+    
+    -- Određivanje našeg i protivničkog tima
+    -- Naš tim je uvek tim sa ID = 1 (KK Partizan), ostali su protivnici
+    SELECT 
+        CASE WHEN EXISTS(SELECT 1 FROM team_member_match WHERE id_match = p_match_id AND id_team = 1) 
+             THEN 1 
+             ELSE (SELECT MIN(id_team) FROM team_member_match WHERE id_match = p_match_id) 
+        END as our_team,
+        CASE WHEN EXISTS(SELECT 1 FROM team_member_match WHERE id_match = p_match_id AND id_team = 1) 
+             THEN (SELECT MIN(id_team) FROM team_member_match WHERE id_match = p_match_id AND id_team != 1)
+             ELSE (SELECT MAX(id_team) FROM team_member_match WHERE id_match = p_match_id) 
+        END as opponent_team
+    INTO v_our_team_id, v_opponent_team_id;
+    
+    -- Računanje statistika za oba tima
+    SELECT * INTO v_our_stats FROM calculate_team_match_stats(v_our_team_id, p_match_id);
+    SELECT * INTO v_opponent_stats FROM calculate_team_match_stats(v_opponent_team_id, p_match_id);
+    
+    -- Dodatne informacije za match_general_info
+    v_match_info.our_team_id := v_our_team_id;
+    v_match_info.opponent_team_id := v_opponent_team_id;
+    
+    -- Dobijanje svih statistika igrača i podela po timovima
+    v_our_players := ARRAY[]::player_efficiency_stats[];
+    v_opponent_players := ARRAY[]::player_efficiency_stats[];
+    
+    -- Iteracija kroz sve igrače i podela po timovima
+    FOR player_rec IN 
+        SELECT * FROM get_match_player_statistics(p_match_id)
+    LOOP
+        -- Dodavanje igrača u odgovarajući niz na osnovu team_id
+        IF player_rec.team_id = v_our_team_id THEN
+            v_our_players := array_append(v_our_players, player_rec);
+        ELSE
+            v_opponent_players := array_append(v_opponent_players, player_rec);
+        END IF;
+    END LOOP;
+    
+    -- Određivanje najviše/najniže individualne efikasnosti koristeći WITH klauzulu
+    WITH player_efficiency_summary AS (
+        SELECT 
+            efficiency_rating
+        FROM get_match_player_statistics(p_match_id)
+        WHERE efficiency_rating IS NOT NULL
+    )
+    SELECT 
+        COALESCE(MAX(efficiency_rating), 0),
+        COALESCE(MIN(efficiency_rating), 0)
+    INTO v_match_info.highest_individual_score, v_match_info.lowest_individual_score
+    FROM player_efficiency_summary;
+    
+    -- Popunjavanje finalnog rezultata
+    result.general_info := v_match_info;
+    result.our_team_stats := v_our_stats;
+    result.opponent_team_stats := v_opponent_stats;
+    result.our_players_stats := v_our_players;
+    result.opponent_players_stats := v_opponent_players;
+    
+    RETURN result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- U slučaju greške
+        result.general_info.match_id := p_match_id;
+        result.general_info.match_name := 'Error occurred';
+        RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- KRAJ FUNKCIJA SRDJAN ILIC

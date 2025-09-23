@@ -17,7 +17,11 @@ public partial class Offer
 
     public int IdRequest { get; set; }
 
+    public bool? Chosen { get; set; }
+
     public string? Type { get; set; }
+
+    public decimal? Score { get; set; }
 
     public virtual AccommodationOffer? AccommodationOffer { get; set; }
 

@@ -34,7 +34,7 @@
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score live-score">
                     Score: {{ getMatchScore(match) }}
                   </div>
@@ -60,7 +60,7 @@
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                 </div>
                 <button 
                   class="match-action start-up" 
@@ -85,19 +85,22 @@
               <div 
                 v-for="match in matches.previousMatches" 
                 :key="match.idMatch"
-                class="match-card previous"
+                class="match-card previous clickable"
                 :class="getMatchResultClass(match)"
+                @click="handleMatchAction(match)"
               >
                 <div class="match-info">
                   <div class="result-indicator">{{ getMatchResult(match) }}</div>
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score final-score">
                     Final Score: {{ getMatchScore(match) }}
                   </div>
                 </div>
-                <button class="match-action report">Report</button>
+                <div class="match-action-indicator">
+                  <span class="view-details">View Details →</span>
+                </div>
               </div>
             </div>
           </div>
@@ -303,6 +306,10 @@ const handleMatchAction = (match) => {
     // Navigate to match detail page
     console.log('Navigating to match detail for match:', match)
     router.push(`/analyst/matches/${match.idMatch}`)
+  } else if (match.trackingStatus === 'finished') {
+    // Navigate to previous match detail page for finished matches
+    console.log('Navigating to previous match detail for finished match:', match)
+    router.push(`/analyst/matches/${match.idMatch}/previous`)
   } else {
     // Open startup modal for upcoming matches
     console.log('Opening startup modal for match:', match)
@@ -673,6 +680,7 @@ onMounted(() => {
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  margin-left: 1.5rem;
   color: #2c3e50;
   text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
@@ -685,9 +693,11 @@ onMounted(() => {
 }
 
 .match-score {
+  display: inline-block;
+  text-align: center;
   font-size: 1rem;
   font-weight: 700;
-  margin: 0.4rem 0;
+  margin: auto;
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -700,6 +710,12 @@ onMounted(() => {
 
 .final-score {
   background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+  color: white;
+}
+
+/* When the previous match is a loss, make the final score badge red to indicate loss */
+.match-card.previous.loss .final-score {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e53935 100%); /* softer red -> deeper red */
   color: white;
 }
 
@@ -760,6 +776,28 @@ onMounted(() => {
   background: linear-gradient(135deg, #545b62 0%, #3d4449 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(108, 117, 125, 0.3);
+}
+
+/* Match Action Indicator for Previous Matches */
+.match-action-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+}
+
+.view-details {
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.match-card.clickable:hover .view-details {
+  color: #0056b3;
+  transform: translateX(4px);
 }
 
 /* Modal Styles */

@@ -35,7 +35,7 @@ public partial class MatchTracking
 
     public int IdMatch { get; set; }
 
-    public virtual AutomaticRecommendation? AutomaticRecommendation { get; set; }
+    public virtual ICollection<AutomaticRecommendation> AutomaticRecommendations { get; set; } = new List<AutomaticRecommendation>();
 
     public virtual ICollection<GeneralEvent> GeneralEvents { get; set; } = new List<GeneralEvent>();
 

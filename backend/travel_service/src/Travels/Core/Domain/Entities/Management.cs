@@ -14,4 +14,6 @@ public partial class Management
     public string? MemberRole { get; set; }
 
     public virtual TravelInformation? TravelInformation { get; set; }
+
+    public virtual ICollection<Request> IdRequests { get; set; } = new List<Request>();
 }
