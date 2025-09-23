@@ -27,6 +27,19 @@
               </span>
             </div>
           </button>
+
+          <button @click="generateMatchSummaryReport" class="action-button match-summary-report" :disabled="generatingMatchReport">
+            <div class="action-icon">
+              <span v-if="!generatingMatchReport">🏀</span>
+              <div v-else class="loading-spinner-small"></div>
+            </div>
+            <div class="action-content">
+              <span class="action-title">Match Summary Report</span>
+              <span class="action-subtitle">
+                {{ generatingMatchReport ? 'Generating match summary PDF...' : 'Export detailed match analysis report' }}
+              </span>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -147,12 +160,14 @@ import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { AdminService } from '../../services/ticket_service/admin_service';
 import { ReportsService } from '../../services/ticket_service/reports_service';
 import { PDFReportGenerator } from '../../utils/pdfReportGenerator';
+import { MatchSummaryPdfGenerator } from '../../utils/matchSummaryPdfGenerator';
 import Chart from 'chart.js/auto';
 
 // Reactive data
 const loading = ref(true);
 const error = ref(null);
 const generatingReport = ref(false);
+const generatingMatchReport = ref(false);
 const showSuccessNotification = ref(false);
 const seasonsData = ref([]);
 const matchesData = ref([]);
@@ -266,6 +281,39 @@ const generateReport = async () => {
     error.value = 'Failed to generate report. Please try again.';
   } finally {
     generatingReport.value = false;
+  }
+};
+
+// Generate Match Summary PDF report
+const generateMatchSummaryReport = async () => {
+  try {
+    generatingMatchReport.value = true;
+    
+    // Fetch match summary data from our complex PL/SQL function
+    const matchSummaryData = await ReportsService.getMatchSummaryReport();
+    
+    // Generate PDF
+    const pdfGenerator = new MatchSummaryPdfGenerator();
+    const pdf = pdfGenerator.generateReport(matchSummaryData);
+    
+    // Create filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const filename = `match-summary-report-${timestamp}.pdf`;
+    
+    // Save PDF
+    pdfGenerator.save(filename);
+    
+    // Show success notification
+    showSuccessNotification.value = true;
+    setTimeout(() => {
+      showSuccessNotification.value = false;
+    }, 5000);
+    
+  } catch (err) {
+    console.error('Error generating match summary report:', err);
+    error.value = 'Failed to generate match summary report. Please try again.';
+  } finally {
+    generatingMatchReport.value = false;
   }
 };
 
@@ -541,6 +589,30 @@ onBeforeUnmount(cleanup);
 .action-button.generate-report:disabled:hover {
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
   border-color: #e2e8f0;
+  box-shadow: var(--shadow-sm);
+}
+
+.action-button.match-summary-report {
+  background: linear-gradient(135deg, #fef3c7, #fbbf24);
+  border: 2px solid #f59e0b;
+}
+
+.action-button.match-summary-report:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fef3c7, #fcd34d);
+  border-color: #d97706;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
+}
+
+.action-button.match-summary-report:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-button.match-summary-report:disabled:hover {
+  background: linear-gradient(135deg, #fef3c7, #fbbf24);
+  border-color: #f59e0b;
   box-shadow: var(--shadow-sm);
 }
 

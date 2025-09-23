@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'https://localhost:5005/api/neo4j/Reports';
+const TICKET_SERVICE_URL = 'https://localhost:5005/api/statistics';
 
 export class ReportsService {
     static async getMatchTicketSalesReport() {
@@ -41,6 +42,20 @@ export class ReportsService {
             return response.data;
         } catch (error) {
             console.error('Error fetching sector analysis report:', error);
+            throw error;
+        }
+    }
+
+    static async getMatchSummaryReport() {
+        try {
+            const response = await axios.get(`${TICKET_SERVICE_URL}/match-summary-report`, {
+                headers: {
+                    'accept': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching match summary report:', error);
             throw error;
         }
     }

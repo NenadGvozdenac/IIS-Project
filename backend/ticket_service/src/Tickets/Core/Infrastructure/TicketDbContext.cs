@@ -28,6 +28,8 @@ public partial class TicketDbContext : DbContext
 
     public virtual DbSet<Match> Matches { get; set; }
 
+    public virtual DbSet<MatchSummaryReportView> MatchSummaryReportViews { get; set; }
+
     public virtual DbSet<MatchZoneSalesSummary> MatchZoneSalesSummaries { get; set; }
 
     public virtual DbSet<PurchaseOffer> PurchaseOffers { get; set; }
@@ -53,7 +55,7 @@ public partial class TicketDbContext : DbContext
             optionsBuilder.UseNpgsql("Host=localhost;Database=sportsdb;Username=postgres;Password=postgres;Port=5432");
         }
     }
-
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
@@ -229,6 +231,72 @@ public partial class TicketDbContext : DbContext
                 .HasForeignKey(d => d.IdTeam)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_match_team");
+        });
+
+        modelBuilder.Entity<MatchSummaryReportView>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("match_summary_report_view");
+
+            entity.Property(e => e.AverageTicketPrice)
+                .HasPrecision(10, 2)
+                .HasColumnName("average_ticket_price");
+            entity.Property(e => e.City)
+                .HasMaxLength(255)
+                .HasColumnName("city");
+            entity.Property(e => e.CompetitionName)
+                .HasMaxLength(255)
+                .HasColumnName("competition_name");
+            entity.Property(e => e.Hall)
+                .HasMaxLength(255)
+                .HasColumnName("hall");
+            entity.Property(e => e.HighestSellingZone)
+                .HasMaxLength(255)
+                .HasColumnName("highest_selling_zone");
+            entity.Property(e => e.LowestSellingZone)
+                .HasMaxLength(255)
+                .HasColumnName("lowest_selling_zone");
+            entity.Property(e => e.MatchDate).HasColumnName("match_date");
+            entity.Property(e => e.MatchId).HasColumnName("match_id");
+            entity.Property(e => e.MatchName)
+                .HasMaxLength(255)
+                .HasColumnName("match_name");
+            entity.Property(e => e.MatchType)
+                .HasMaxLength(20)
+                .HasColumnName("match_type");
+            entity.Property(e => e.OpponentPoints).HasColumnName("opponent_points");
+            entity.Property(e => e.OurPoints).HasColumnName("our_points");
+            entity.Property(e => e.RegularZoneFillPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("regular_zone_fill_percentage");
+            entity.Property(e => e.RegularZoneRevenue)
+                .HasPrecision(12, 2)
+                .HasColumnName("regular_zone_revenue");
+            entity.Property(e => e.RegularZoneTickets).HasColumnName("regular_zone_tickets");
+            entity.Property(e => e.SeasonName)
+                .HasMaxLength(255)
+                .HasColumnName("season_name");
+            entity.Property(e => e.StadiumFillPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("stadium_fill_percentage");
+            entity.Property(e => e.TeamName)
+                .HasMaxLength(255)
+                .HasColumnName("team_name");
+            entity.Property(e => e.TotalRevenue)
+                .HasPrecision(12, 2)
+                .HasColumnName("total_revenue");
+            entity.Property(e => e.TotalTicketsSold).HasColumnName("total_tickets_sold");
+            entity.Property(e => e.TrackingStatus)
+                .HasMaxLength(20)
+                .HasColumnName("tracking_status");
+            entity.Property(e => e.VipZoneFillPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("vip_zone_fill_percentage");
+            entity.Property(e => e.VipZoneRevenue)
+                .HasPrecision(12, 2)
+                .HasColumnName("vip_zone_revenue");
+            entity.Property(e => e.VipZoneTickets).HasColumnName("vip_zone_tickets");
         });
 
         modelBuilder.Entity<MatchZoneSalesSummary>(entity =>
