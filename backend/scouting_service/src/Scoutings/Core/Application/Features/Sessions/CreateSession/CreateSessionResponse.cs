@@ -9,5 +9,4 @@ public class CreateSessionResponse
     public int IdSessionType { get; set; }
     public int IdUser { get; set; }
     public int IdPlayer { get; set; }
-    public string? Note { get; set; }
 }

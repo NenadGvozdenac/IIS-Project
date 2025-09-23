@@ -13,5 +13,4 @@ public class GetAllSessionsResponse
     public string? UserName { get; set; }
     public int IdPlayer { get; set; }
     public string? PlayerName { get; set; }
-    public string? Note { get; set; }
 }

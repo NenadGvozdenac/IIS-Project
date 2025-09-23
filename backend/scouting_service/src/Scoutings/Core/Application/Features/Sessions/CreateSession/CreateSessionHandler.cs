@@ -23,8 +23,7 @@ public class CreateSessionHandler : IRequestHandler<CreateSessionCommand, Result
             IdSessionStatus = request.IdSessionStatus,
             IdSessionType = request.IdSessionType,
             IdUser = request.IdUser,
-            IdPlayer = request.IdPlayer,
-            Note = request.Note
+            IdPlayer = request.IdPlayer
         };
 
         var createdSession = _sessionRepository.Create(session);
@@ -42,8 +41,7 @@ public class CreateSessionHandler : IRequestHandler<CreateSessionCommand, Result
             IdSessionStatus = createdSession.IdSessionStatus,
             IdSessionType = createdSession.IdSessionType,
             IdUser = createdSession.IdUser,
-            IdPlayer = createdSession.IdPlayer,
-            Note = createdSession.Note
+            IdPlayer = createdSession.IdPlayer
         };
 
         return Task.FromResult(Result<CreateSessionResponse>.Success(response));

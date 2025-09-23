@@ -31,8 +31,7 @@ public class GetAllSessionsHandler : IRequestHandler<GetAllSessionsQuery, Result
                 IdUser = s.IdUser,
                 UserName = s.IdUserNavigation?.Name,
                 IdPlayer = s.IdPlayer,
-                PlayerName = s.IdPlayerNavigation != null ? $"{s.IdPlayerNavigation.Name} {s.IdPlayerNavigation.Surname}" : null,
-                Note = s.Note
+                PlayerName = s.IdPlayerNavigation != null ? $"{s.IdPlayerNavigation.Name} {s.IdPlayerNavigation.Surname}" : null
             }).ToList();
 
             return Task.FromResult(Result<List<GetAllSessionsResponse>>.Success(response));

@@ -191,9 +191,6 @@ public partial class ScoutingDbContext : DbContext
             entity.Property(e => e.IdSessionStatus).HasColumnName("id_session_status");
             entity.Property(e => e.IdSessionType).HasColumnName("id_session_type");
             entity.Property(e => e.IdUser).HasColumnName("id_user");
-            entity.Property(e => e.Note)
-                .HasMaxLength(255)
-                .HasColumnName("note");
             entity.Property(e => e.StartTime).HasColumnName("start_time");
 
             entity.HasOne(d => d.IdPlayerNavigation).WithMany(p => p.Sessions)

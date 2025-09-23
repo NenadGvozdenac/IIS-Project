@@ -37,8 +37,7 @@ public class GetSessionByIdHandler : IRequestHandler<GetSessionByIdQuery, Result
                 IdUser = session.IdUser,
                 UserName = session.IdUserNavigation?.Name,
                 IdPlayer = session.IdPlayer,
-                PlayerName = session.IdPlayerNavigation != null ? $"{session.IdPlayerNavigation.Name} {session.IdPlayerNavigation.Surname}" : null,
-                Note = session.Note
+                PlayerName = session.IdPlayerNavigation != null ? $"{session.IdPlayerNavigation.Name} {session.IdPlayerNavigation.Surname}" : null
             };
 
             return Task.FromResult(Result<GetSessionByIdResponse>.Success(response));

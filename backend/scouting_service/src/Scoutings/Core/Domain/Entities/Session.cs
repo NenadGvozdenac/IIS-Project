@@ -19,8 +19,6 @@ public partial class Session
 
     public int IdPlayer { get; set; }
 
-    public string Note { get; set; } = null!;
-
     public virtual Player IdPlayerNavigation { get; set; } = null!;
 
     public virtual SessionStatus IdSessionStatusNavigation { get; set; } = null!;
