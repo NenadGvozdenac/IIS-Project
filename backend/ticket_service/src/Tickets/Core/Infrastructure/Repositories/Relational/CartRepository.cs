@@ -18,6 +18,16 @@ public class CartRepository : ICartRepository
         return _ticketDbContext.Carts
             .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.IdPurchaseOfferNavigation)
+                    .ThenInclude(po => po.IdSeatNavigation)
+                        .ThenInclude(s => s!.IdZoneNavigation)
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.IdPurchaseOfferNavigation)
+                    .ThenInclude(po => po.IndividualTicket)
+                        .ThenInclude(it => it!.IdMatchNavigation)
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.IdPurchaseOfferNavigation)
+                    .ThenInclude(po => po.SeasonTicket)
+                        .ThenInclude(st => st!.IdSeasonNavigation)
             .Include(c => c.IdUserNavigation)
             .Include(c => c.IdCreditCardNavigation)
             .FirstOrDefault(c => c.IdCart == id);

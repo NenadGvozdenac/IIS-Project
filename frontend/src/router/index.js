@@ -372,7 +372,7 @@ router.beforeEach((to, _, next) => {
       next('/scout')
       return
     } else if (userData.userRole === 'customer') {
-      next('/customer-dashboard')
+      next('/customer/dashboard')
       return
     } else if (userData.userRole === 'team manager') {
       next('/team-manager/matches')
@@ -413,7 +413,7 @@ router.beforeEach((to, _, next) => {
       if (userData && userData.userRole === 'scouting manager') {
         next('/scout')
       } else if (userData && userData.userRole === 'customer') {
-        next('/customer-dashboard')
+        next('/customer/dashboard')
       } else if (userData && userData.userRole === 'team manager') {
         next('/team-manager/matches')
       } else if (userData && userData.userRole === 'club manager') {
