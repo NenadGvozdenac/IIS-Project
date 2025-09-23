@@ -441,3 +441,332 @@ INSERT INTO management (member_name, member_surname, member_role) VALUES
 ('Bogdan', 'Radonjić', 'doctor'),
 ('Uroš', 'Lukić', 'coach'),
 ('Lazar', 'Mihajlović', 'other');
+
+
+-- ===============================================================
+-- SCOUTING SYSTEM DATA
+-- ===============================================================
+
+-- Insert Metric Types
+INSERT INTO metric_type (type) VALUES 
+('Quantitative'),
+('Descriptive');
+
+-- Insert Session Status types
+INSERT INTO session_status (status) VALUES 
+('Pending'),
+('Ongoing'),
+('Finished'),
+('Canceled');
+
+-- Insert Session Types
+INSERT INTO session_type (type) VALUES 
+('Training'),
+('Game'),
+('Playoff Game');
+
+-- Insert comprehensive metrics for player evaluation
+-- Quantitative metrics (NBA Box Score Stats)
+INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
+('PTS (Points)', 0, 10, 5, 1),
+('FGM (Field Goals Made)', 0, 8, 5, 1),
+('FGA (Field Goals Attempted)', 0, 6, 5, 1),
+('FG% (Field Goal Percentage)', 0, 9, 5, 1),
+('3PM (Three Points Made)', 0, 8, 5, 1),
+('3PA (Three Points Attempted)', 0, 6, 5, 1),
+('3P% (Three Point Percentage)', 0, 8, 5, 1),
+('FTM (Free Throws Made)', 0, 7, 5, 1),
+('FTA (Free Throws Attempted)', 0, 6, 5, 1),
+('FT% (Free Throw Percentage)', 0, 8, 5, 1),
+('OREB (Offensive Rebounds)', 0, 7, 5, 1),
+('DREB (Defensive Rebounds)', 0, 8, 5, 1),
+('REB (Total Rebounds)', 0, 9, 5, 1),
+('AST (Assists)', 0, 9, 5, 1),
+('STL (Steals)', 0, 7, 5, 1),
+('BLK (Blocks)', 0, 7, 5, 1),
+('TOV (Turnovers)', 0, 6, 5, 1),
+('PF (Personal Fouls)', 0, 5, 5, 1),
+('MIN (Minutes Played)', 0, 6, 5, 1),
+('+/- (Plus Minus)', 0, 7, 5, 1);
+
+-- Descriptive metrics (qualitative/observational) - All created by scout
+INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
+('Leadership Qualities', 0, 9, 5, 2),
+('Team Chemistry', 0, 8, 5, 2),
+('Communication Skills', 0, 8, 5, 2),
+('Work Ethic', 0, 9, 5, 2),
+('Basketball IQ', 0, 10, 5, 2),
+('Defensive Intensity', 0, 8, 5, 2),
+('Clutch Performance', 0, 9, 5, 2),
+('Coachability', 0, 9, 5, 2),
+('Mental Toughness', 0, 8, 5, 2),
+('Court Vision', 0, 9, 5, 2),
+('Shooting Form', 0, 7, 5, 2),
+('Ball Handling Skills', 0, 8, 5, 2);
+
+-- ===============================================================
+-- SCOUTING SESSIONS DATA
+-- ===============================================================
+
+-- Insert scouting sessions for Partizan players (players 1-10)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player) VALUES 
+-- Training sessions
+('2025-09-01', '2025-09-01', 3, 1, 5, 1), -- Nikola Jovic - Training - Finished
+('2025-09-02', '2025-09-02', 3, 1, 5, 2), -- Aleksa Avramovic - Training - Finished
+('2025-09-03', '2025-09-03', 3, 1, 5, 3), -- Uros Trifunovic - Training - Finished
+('2025-09-04', '2025-09-04', 3, 1, 5, 4), -- Balsa Koprivica - Training - Finished
+('2025-09-05', '2025-09-05', 3, 1, 5, 5), -- Alen Smailagic - Training - Finished
+
+-- Game analysis sessions
+('2025-09-06', '2025-09-06', 3, 2, 5, 1), -- Nikola Jovic - Game analysis - Finished
+('2025-09-07', '2025-09-07', 3, 2, 5, 2), -- Aleksa Avramovic - Game analysis - Finished
+('2025-09-08', '2025-09-08', 3, 2, 5, 3), -- Uros Trifunovic - Game analysis - Finished
+('2025-09-09', '2025-09-09', 2, 2, 5, 6), -- Danilo Andjusic - Game analysis - Ongoing
+('2025-09-10', '2025-09-10', 3, 2, 5, 7), -- Zach LeDay - Game analysis - Finished
+
+-- Upcoming sessions
+('2025-09-25', '2025-09-25', 1, 1, 5, 8), -- James Nunnally - Training - Pending
+('2025-09-26', '2025-09-26', 1, 2, 5, 9), -- Yam Madar - Game analysis - Pending
+('2025-09-27', '2025-09-27', 1, 3, 5, 10), -- Bruno Caboclo - Playoff Game analysis - Pending
+
+-- Sessions for other team players
+('2025-09-11', '2025-09-11', 3, 1, 5, 11), -- Player 11 - Training - Finished
+('2025-09-12', '2025-09-12', 3, 2, 5, 12), -- Player 12 - Game analysis - Finished
+('2025-09-13', '2025-09-13', 1, 1, 5, 13), -- Player 13 - Training - Pending
+('2025-09-14', '2025-09-14', 4, 2, 5, 14), -- Player 14 - Game analysis - Canceled
+('2025-09-15', '2025-09-15', 1, 3, 5, 15), -- Player 15 - Playoff Game analysis - Pending
+
+-- More training sessions
+('2025-09-16', '2025-09-16', 3, 1, 5, 21), -- Player 21 - Training - Finished
+('2025-09-17', '2025-09-17', 3, 1, 5, 22), -- Player 22 - Training - Finished
+('2025-09-18', '2025-09-18', 2, 1, 5, 23), -- Player 23 - Training - Ongoing
+('2025-09-19', '2025-09-19', 1, 2, 5, 24), -- Player 24 - Game analysis - Pending
+('2025-09-20', '2025-09-20', 1, 1, 5, 25); -- Player 25 - Training - Pending
+
+-- ===============================================================
+-- PHYSICAL METRICS DATA
+-- ===============================================================
+
+-- Insert comprehensive physical metrics for players
+-- Partizan players (1-10) - High performance data
+INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, sprint_speed, weight, height, wingspan, date_of_measurement, id_player) VALUES 
+(85, 8, 120, 180, 18, 98, 208, 215, '2025-09-01', 1),  -- Nikola Jovic
+(78, 7, 105, 160, 20, 88, 192, 198, '2025-09-01', 2),  -- Aleksa Avramovic
+(82, 9, 110, 170, 19, 90, 197, 203, '2025-09-02', 3),  -- Uros Trifunovic
+(92, 12, 140, 220, 16, 110, 213, 220, '2025-09-03', 4), -- Balsa Koprivica
+(88, 10, 125, 190, 17, 102, 208, 216, '2025-09-04', 5), -- Alen Smailagic
+(76, 6, 95, 150, 21, 86, 195, 201, '2025-09-05', 6),   -- Danilo Andjusic
+(86, 8, 130, 200, 17, 103, 202, 210, '2025-09-06', 7),  -- Zach LeDay
+(80, 7, 115, 175, 18, 98, 201, 207, '2025-09-07', 8),   -- James Nunnally
+(75, 5, 90, 145, 22, 81, 190, 196, '2025-09-08', 9),    -- Yam Madar
+(94, 11, 135, 210, 16, 104, 206, 218, '2025-09-09', 10); -- Bruno Caboclo
+
+-- Other team players (11-25) - Competitive data
+INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, sprint_speed, weight, height, wingspan, date_of_measurement, id_player) VALUES 
+(79, 8, 108, 165, 19, 92, 200, 206, '2025-09-10', 11), -- Player 11
+(77, 7, 100, 155, 20, 90, 195, 201, '2025-09-10', 12), -- Player 12
+(74, 9, 102, 158, 19, 98, 197, 203, '2025-09-11', 13), -- Player 13
+(83, 10, 118, 182, 18, 100, 202, 208, '2025-09-11', 14), -- Player 14
+(89, 13, 145, 225, 15, 113, 213, 221, '2025-09-12', 15), -- Player 15
+(72, 6, 88, 140, 22, 85, 190, 195, '2025-09-12', 21), -- Player 21
+(85, 9, 122, 185, 17, 104, 205, 212, '2025-09-13', 22), -- Player 22
+(81, 8, 112, 172, 18, 98, 202, 208, '2025-09-13', 23), -- Player 23
+(76, 7, 96, 148, 21, 87, 191, 197, '2025-09-14', 24), -- Player 24
+(91, 10, 128, 195, 16, 102, 211, 217, '2025-09-14', 25); -- Player 25
+
+-- ===============================================================
+-- SESSION METRICS DATA (Evaluation Scores)
+-- ===============================================================
+
+-- Session metrics for finished sessions with realistic NBA box score stats
+-- For quantitative metrics: actual NBA statistical values
+-- For descriptive metrics: 1-10 scale ratings
+
+-- Nikola Jovic training session (session 1)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('24', 1, 1), 
+('9', 1, 2), 
+('18', 1, 3),
+('50.0', 1, 4),
+('3', 1, 5),
+('8', 1, 6),
+('37.5', 1, 7), 
+('3', 1, 8), 
+('4', 1, 9), 
+('75.0', 1, 10), 
+('2', 1, 11), 
+('6', 1, 12),
+('8', 1, 13),
+('7', 1, 14),
+('2', 1, 15),
+('1', 1, 16),
+('8.5', 1, 21),
+('9.0', 1, 25);
+
+-- Aleksa Avramovic training session (session 2)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('19', 2, 1), 
+('7', 2, 2), 
+('15', 2, 3),
+('46.7', 2, 4),
+('3', 2, 5),
+('7', 2, 6),
+('42.9', 2, 7), 
+('2', 2, 8), 
+('2', 2, 9), 
+('100.0', 2, 10), 
+('1', 2, 11), 
+('4', 2, 12),
+('5', 2, 13),
+('6', 2, 14),
+('3', 2, 15),
+('0', 2, 16),
+('7.8', 2, 21),
+('8.5', 2, 25),
+('9.1', 2, 30);
+
+-- Uros Trifunovic training session (session 3)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('15', 3, 1), 
+('6', 3, 2), 
+('14', 3, 3),
+('42.9', 3, 4),
+('1', 3, 5),
+('4', 3, 6),
+('25.0', 3, 7), 
+('2', 3, 8), 
+('3', 3, 9), 
+('66.7', 3, 10), 
+('2', 3, 11), 
+('5', 3, 12),
+('7', 3, 13),
+('4', 3, 14),
+('1', 3, 15),
+('1', 3, 16),
+('7.2', 3, 21), -- Leadership Qualities
+('8.8', 3, 25), -- Basketball IQ
+('8.0', 3, 32); -- Ball Handling Skills
+
+-- Balsa Koprivica training session (session 4)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('13', 4, 1), 
+('6', 4, 2), 
+('10', 4, 3),
+('60.0', 4, 4),
+('0', 4, 5),
+('1', 4, 6),
+('0.0', 4, 7), 
+('1', 4, 8), 
+('2', 4, 9), 
+('50.0', 4, 10), 
+('4', 4, 11), 
+('8', 4, 12),
+('12', 4, 13),
+('2', 4, 14),
+('0', 4, 15),
+('3', 4, 16),
+('8.8', 4, 21); -- Leadership Qualities
+
+-- Alen Smailagic training session (session 5)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('17', 5, 1), 
+('7', 5, 2), 
+('16', 5, 3),
+('43.8', 5, 4),
+('2', 5, 5),
+('6', 5, 6),
+('33.3', 5, 7), 
+('1', 5, 8), 
+('2', 5, 9), 
+('50.0', 5, 10), 
+('3', 5, 11), 
+('6', 5, 12),
+('9', 5, 13),
+('3', 5, 14),
+('1', 5, 15),
+('2', 5, 16),
+('7.9', 5, 21), -- Leadership Qualities
+('8.3', 5, 25), -- Basketball IQ
+('7.6', 5, 28); -- Coachability
+
+-- Game analysis sessions
+-- Nikola Jovic game analysis (session 6)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('26', 6, 1), 
+('10', 6, 2), 
+('19', 6, 3),
+('52.6', 6, 4),
+('4', 6, 5),
+('9', 6, 6),
+('44.4', 6, 7), 
+('2', 6, 8), 
+('2', 6, 9), 
+('100.0', 6, 10), 
+('1', 6, 11), 
+('7', 6, 12),
+('8', 6, 13),
+('8', 6, 14),
+('2', 6, 15),
+('1', 6, 16),
+('34', 6, 19), -- MIN (Minutes Played)
+('+8', 6, 20), -- +/- (Plus Minus)
+('8.9', 6, 25), -- Basketball IQ
+('9.2', 6, 30); -- Court Vision
+
+-- Aleksa Avramovic game analysis (session 7)
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+('22', 7, 1), 
+('8', 7, 2), 
+('16', 7, 3),
+('50.0', 7, 4),
+('4', 7, 5),
+('8', 7, 6),
+('50.0', 7, 7), 
+('2', 7, 8), 
+('2', 7, 9), 
+('100.0', 7, 10), 
+('0', 7, 11), 
+('4', 7, 12),
+('4', 7, 13),
+('7', 7, 14),
+('3', 7, 15),
+('0', 7, 16),
+('32', 7, 19), -- MIN (Minutes Played)
+('+12', 7, 20), -- +/- (Plus Minus)
+('8.4', 7, 25), -- Basketball IQ
+('8.8', 7, 22); -- Team Chemistry
+
+-- Additional session metrics for other finished sessions
+INSERT INTO session_metrics (value, id_session, id_metrics) VALUES 
+-- Player 11 training (session 14)
+('18', 14, 1), ('7', 14, 2), ('15', 14, 3), ('46.7', 14, 4), ('7.5', 14, 21), ('8.2', 14, 25),
+
+-- Player 12 game analysis (session 15)
+('16', 15, 1), ('6', 15, 2), ('13', 15, 3), ('46.2', 15, 4), ('29', 15, 19), ('8.0', 15, 25),
+
+-- Player 21 training (session 18)
+('14', 18, 1), ('5', 18, 2), ('12', 18, 3), ('41.7', 18, 4), ('7.1', 18, 21), ('7.8', 18, 25),
+
+-- Player 22 training (session 19)
+('12', 19, 1), ('4', 19, 2), ('10', 19, 3), ('40.0', 19, 4), ('7.6', 19, 21), ('8.4', 19, 25);
+
+-- ===============================================================
+-- SEASON METRICS CONNECTIONS
+-- ===============================================================
+
+-- Link key NBA box score metrics to the current season (2025/26) for tracking
+INSERT INTO season_metrics (id_season, id_metrics) VALUES 
+(1, 1), 
+(1, 4),
+(1, 7), 
+(1, 10), 
+(1, 13),
+(1, 14),
+(1, 15),
+(1, 16),
+(1, 21), -- Leadership Qualities
+(1, 22), -- Team Chemistry
+(1, 24), -- Work Ethic
+(1, 25), -- Basketball IQ
+(1, 27), -- Clutch Performance
+(1, 30); -- Court Vision

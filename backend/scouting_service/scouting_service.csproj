@@ -32,7 +32,6 @@
     <Folder Include="src\Scoutings\BuildingBlocks\Infratructure\Database\" />
     <Folder Include="src\Scoutings\Core\Application\Interfaces\" />
     <Folder Include="src\Scoutings\Core\Domain\Entities\" />
-    <Folder Include="src\Scoutings\Core\Infrastructure\Repositories\" />
   </ItemGroup>
 
 </Project>
