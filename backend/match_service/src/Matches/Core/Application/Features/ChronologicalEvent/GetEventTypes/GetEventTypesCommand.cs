@@ -1,0 +1,10 @@
+using MediatR;
+using match_service.src.Matches.BuildingBlocks.Core.Domain;
+
+namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetEventTypes
+{
+    public class GetEventTypesCommand : IRequest<Result<GetEventTypesResponse>>
+    {
+        public string Category { get; set; } = string.Empty;
+    }
+}

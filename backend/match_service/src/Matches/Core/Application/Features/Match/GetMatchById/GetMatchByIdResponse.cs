@@ -24,4 +24,13 @@ public class GetMatchByIdResponse
     public string? CurrentPeriod { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
+    // Additional MatchTracking details
+    public int? PeriodDuration { get; set; }
+    public string? PeriodStatus { get; set; }
+    public DateTime? PeriodStartTime { get; set; }
+    public int? ElapsedPeriodTime { get; set; }
+    public DateTime? LastPauseStartTime { get; set; }
+    public int? TotalPauseTimeInPeriod { get; set; }
+    public DateTime? LastUpdateTime { get; set; }
+    public int? TrackingUserId { get; set; }
 }

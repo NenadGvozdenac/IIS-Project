@@ -14,6 +14,7 @@ public static class ApplicationStartup
         SetupDatabases(services, configuration);
         SetupRepositories(services);
         SetupMediatR(services);
+        services.ConfigureInfluxDB(configuration);
 
         return services;
     }
@@ -28,6 +29,10 @@ public static class ApplicationStartup
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IMatchTrackingRepository, MatchTrackingRepository>();
         services.AddScoped<ITeamMemberMatchRepository, TeamMemberMatchRepository>();
+        services.AddScoped<IPersonalEventRepository, PersonalEventRepository>();
+        services.AddScoped<ITeamEventRepository, TeamEventRepository>();
+        services.AddScoped<IGeneralEventRepository, GeneralEventRepository>();
+        services.AddScoped<IAutomaticRecommendationRepository, AutomaticRecommendationRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

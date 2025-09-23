@@ -45,7 +45,15 @@ public class GetMatchByIdHandler : IRequestHandler<GetMatchByIdQuery, Result<Get
                 OpponentPoints = match.MatchTracking?.OpponentPoints,
                 CurrentPeriod = match.MatchTracking?.CurrentPeriod,
                 StartTime = match.MatchTracking?.StartTime,
-                EndTime = match.MatchTracking?.EndTime
+                EndTime = match.MatchTracking?.EndTime,
+                PeriodDuration = match.MatchTracking?.PeriodDuration,
+                PeriodStatus = match.MatchTracking?.PeriodStatus,
+                PeriodStartTime = match.MatchTracking?.PeriodStartTime,
+                ElapsedPeriodTime = match.MatchTracking?.ElapsedPeriodTime,
+                LastPauseStartTime = match.MatchTracking?.LastPauseStartTime,
+                TotalPauseTimeInPeriod = match.MatchTracking?.TotalPauseTimeInPeriod,
+                LastUpdateTime = match.MatchTracking?.LastUpdateTime,
+                TrackingUserId = match.MatchTracking?.IdUser
             };
 
             return Task.FromResult(Result<GetMatchByIdResponse>.Success(response));

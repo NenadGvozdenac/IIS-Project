@@ -8,12 +8,15 @@ import Profile from '../views/customer/Profile.vue'
 import MyTickets from '../views/customer/MyTickets.vue'
 import Cart from '../views/customer/Cart.vue'
 import SeatSelection from '../views/customer/SeatSelection.vue'
+import SeasonalTickets from '../views/customer/SeasonalTickets.vue'
 import DataAnalysis from '../views/analyst/DataAnalysis.vue'
 import TeamDetail from '../views/analyst/TeamDetail.vue'
 import TeamEdit from '../views/analyst/TeamEdit.vue'
 import TeamAdd from '../views/analyst/TeamAdd.vue'
+import PlayerDetail from '../views/analyst/PlayerDetail.vue'
 import MatchesOverview from '../views/analyst/MatchesOverview.vue'
 import MatchDetail from '../views/analyst/MatchDetail.vue'
+import PreviousMatchDetail from '../views/analyst/PreviousMatchDetail.vue'
 import ZonesSeats from '../views/administrator/ZonesSeats.vue'
 import { getUserData } from '../services/auth_service.js'
 import Matches from '../views/teammanager/Matches.vue'
@@ -22,6 +25,21 @@ import MatchDetails from '../views/teammanager/MatchDetails.vue'
 import MatchDetailsClubManager from '../views/clubmanager/MatchDetailsClubManager.vue'
 import Players from '../views/teammanager/Players.vue'
 import TravelInfos from '../views/clubmanager/TravelInfos.vue'
+import TransportationRequest from '../views/teammanager/TransportationRequest.vue'
+import TransportationRequestsActive from '../views/teammanager/TransportationRequestsActive.vue'
+import TransportationRequestsArchive from '../views/teammanager/TransportationRequestsArchive.vue'
+import AccommodationRequest from '../views/teammanager/AccommodationRequest.vue'
+import AccommodationRequestsActive from '../views/teammanager/AccommodationRequestsActive.vue'
+import AccommodationRequestsArchive from '../views/teammanager/AccommodationRequestsArchive.vue'
+import AdminDashboard from '../views/administrator/Dashboard.vue'
+import ClubOwnerDashboard from '../views/clubowner/Dashboard.vue'
+import ClubOwnerSeasons from '../views/clubowner/Seasons.vue'
+import ClubOwnerCompetitions from '../views/clubowner/Competitions.vue'
+import UpcomingMatches from '../views/clubowner/UpcomingMatches.vue'
+import SeasonTickets from '../views/clubowner/SeasonTickets.vue'
+import PricingStatistics from '../views/clubowner/PricingStatistics.vue'
+import TransportationOffers from '../views/offers/TransportationOffers.vue'
+import AccommodationOffers from '../views/offers/AccommodationOffers.vue'
 import ScoutDashboard from '../views/scout/ScoutDashboard.vue'
 import CreatePlayer from '../views/scout/CreatePlayer.vue'
 import Metrics from '../views/scout/Metrics.vue'
@@ -55,7 +73,49 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/customer-dashboard',
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/club-owner/dashboard',
+    name: 'ClubOwnerDashboard',
+    component: ClubOwnerDashboard,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/seasons',
+    name: 'ClubOwnerSeasons',
+    component: ClubOwnerSeasons,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/competitions',
+    name: 'ClubOwnerCompetitions',
+    component: ClubOwnerCompetitions,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/upcoming-matches',
+    name: 'UpcomingMatches',
+    component: UpcomingMatches,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/season-tickets',
+    name: 'SeasonTickets',
+    component: SeasonTickets,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/club-owner/pricing-statistics',
+    name: 'PricingStatistics',
+    component: PricingStatistics,
+    meta: { requiresAuth: true, requiresRole: 'club owner' }
+  },
+  {
+    path: '/customer/dashboard',
     name: 'CustomerDashboard',
     component: CustomerDashboard,
     meta: { requiresAuth: true, requiresRole: 'customer' }
@@ -85,6 +145,12 @@ const routes = [
     meta: { requiresAuth: true, requiresRole: 'customer' }
   },
   {
+    path: '/seasonal-tickets',
+    name: 'SeasonalTickets',
+    component: SeasonalTickets,
+    meta: { requiresAuth: true, requiresRole: 'customer' }
+  },
+  {
     path: '/analyst',
     name: 'DataAnalysis',
     component: DataAnalysis,
@@ -109,6 +175,12 @@ const routes = [
     meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
+    path: '/analyst/player/:playerId/:teamId',
+    name: 'PlayerDetail',
+    component: PlayerDetail,
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
+  },
+  {
     path: '/analyst/matches',
     name: 'Matches',
     component: MatchesOverview,
@@ -118,6 +190,12 @@ const routes = [
     path: '/analyst/matches/:id',
     name: 'MatchDetail',
     component: MatchDetail,
+    meta: { requiresAuth: true, requiresRole: 'analyst' }
+  },
+  {
+    path: '/analyst/matches/:id/previous',
+    name: 'PreviousMatchDetail',
+    component: PreviousMatchDetail,
     meta: { requiresAuth: true, requiresRole: 'analyst' }
   },
   {
@@ -161,6 +239,54 @@ const routes = [
     name: 'ClubManagerTravel',
     component: TravelInfos,
     meta: { requiresAuth: true, requiresRole: 'club manager' }
+  },
+  {
+    path: '/team-manager/transportation-request/:matchId',
+    name: 'TransportationRequest',
+    component: TransportationRequest,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/team-manager/transportation-requests-active/:matchId?',
+    name: 'TransportationRequestsActive',
+    component: TransportationRequestsActive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/transportation-requests-archive/:matchId?',
+    name: 'TransportationRequestsArchive',
+    component: TransportationRequestsArchive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/accommodation-request/:matchId',
+    name: 'AccommodationRequest',
+    component: AccommodationRequest,
+    meta: { requiresAuth: true, requiresRole: 'team manager' }
+  },
+  {
+    path: '/team-manager/accommodation-requests-active/:matchId?',
+    name: 'AccommodationRequestsActive',
+    component: AccommodationRequestsActive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/team-manager/accommodation-requests-archive/:matchId?',
+    name: 'AccommodationRequestsArchive',
+    component: AccommodationRequestsArchive,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/offers/transportation/:matchId',
+    name: 'TransportationOffers',
+    component: TransportationOffers,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
+  },
+  {
+    path: '/offers/accommodation/:matchId',
+    name: 'AccommodationOffers',
+    component: AccommodationOffers,
+    meta: { requiresAuth: true, requiresRoles: ['team manager', 'club manager'] }
   },
   {
     path: '/scout',
@@ -276,6 +402,12 @@ router.beforeEach((to, _, next) => {
     }
   } 
   else if (to.meta.requiresRole) {
+    const userData = getUserData()
+    if (!userData || userData.userRole !== to.meta.requiresRole) {
+      next('/dashboard')
+    } else {
+      next()
+    }
     if (!userData || userData.userRole !== to.meta.requiresRole) {
       // Redirect to appropriate dashboard based on user role
       if (userData && userData.userRole === 'scouting manager') {
@@ -289,6 +421,14 @@ router.beforeEach((to, _, next) => {
       } else {
         next('/dashboard')
       }
+    } else {
+      next()
+    }
+  }
+  else if (to.meta.requiresRoles) {
+    const userData = getUserData()
+    if (!userData || !to.meta.requiresRoles.includes(userData.userRole)) {
+      next('/dashboard')
     } else {
       next()
     }

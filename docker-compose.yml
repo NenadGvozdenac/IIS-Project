@@ -11,9 +11,10 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=sportsdb
       - DB_PORT=5432
+      - TICKET_SERVICE_URL=https://ticket_service:5005
     depends_on:
       - postgres_db
-      
+
   match_service:
     image: ${DOCKER_REGISTRY-}matchservice
     build:
@@ -24,6 +25,12 @@ services:
       - "5001:5001" # Web UI
     depends_on:
       - postgres_db
+      - influxdb
+    environment:
+      - InfluxDB__Url=http://influxdb:8086
+      - InfluxDB__Token=basketball-events-token-2024
+      - InfluxDB__Org=basketball_org
+      - InfluxDB__Bucket=events_bucket
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -44,8 +51,11 @@ services:
     ports:
       - "5004:5004"
       - "5005:5005" # Web UI
+    volumes:
+      - ./database/graph_database:/database/graph_database:ro
     depends_on:
       - postgres_db
+      - neo4j
 
   travel_service:
     image: ${DOCKER_REGISTRY-}travelservice
@@ -70,6 +80,36 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
 
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb_storage:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=basketballclub
+      - DOCKER_INFLUXDB_INIT_PASSWORD=basketballclub123
+      - DOCKER_INFLUXDB_INIT_ORG=basketball_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=events_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=basketball-events-token-2024
+
+  neo4j:
+    image: neo4j:5.23
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474" # Web UI
+      - "7687:7687" # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+      - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
+
   frontend:
     build:
       context: ./frontend
@@ -86,3 +126,8 @@ services:
 
 volumes:
   pgdata:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
+  influxdb_storage:

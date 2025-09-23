@@ -19,7 +19,12 @@ if (app.Environment.IsDevelopment())
     app.UseRewriter(new RewriteOptions().AddRedirect("^$", "swagger"));
 
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket Service API v1");
+        c.SwaggerEndpoint("/swagger/neo4j/swagger.json", "Ticket Service Neo4j API v1");
+        c.DefaultModelsExpandDepth(-1); // Hide models section
+    });
 }
 
 app.UseRouting();

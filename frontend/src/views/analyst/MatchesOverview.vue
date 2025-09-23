@@ -27,23 +27,18 @@
               <div 
                 v-for="match in matches.liveMatches" 
                 :key="match.idMatch"
-                class="match-card live"
+                class="match-card live clickable"
+                @click="handleMatchAction(match)"
+                :class="{ disabled: match.trackingStatus === 'preparation' }"
               >
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score live-score">
                     Score: {{ getMatchScore(match) }}
                   </div>
                 </div>
-                <button 
-                  class="match-action start-up" 
-                  @click="handleMatchAction(match)"
-                  :class="{ disabled: match.trackingStatus === 'preparation' }"
-                >
-                  {{ match.trackingStatus === 'preparation' ? 'View Match' : 'Start-up' }}
-                </button>
               </div>
             </div>
           </div>
@@ -65,7 +60,7 @@
                 <div class="match-info">
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                 </div>
                 <button 
                   class="match-action start-up" 
@@ -90,19 +85,22 @@
               <div 
                 v-for="match in matches.previousMatches" 
                 :key="match.idMatch"
-                class="match-card previous"
+                class="match-card previous clickable"
                 :class="getMatchResultClass(match)"
+                @click="handleMatchAction(match)"
               >
                 <div class="match-info">
                   <div class="result-indicator">{{ getMatchResult(match) }}</div>
                   <h3>{{ match.name }}</h3>
                   <p class="match-date">Date: {{ formatDate(match.scheduledAt) }}</p>
-                  <p class="match-place">Place: {{ match.isInOurHall ? 'Home' : 'Opponent' }}</p>
+                  <p class="match-place">Place: {{ match.type === 'home' ? 'Home' : 'Away' }}</p>
                   <div v-if="getMatchScore(match)" class="match-score final-score">
                     Final Score: {{ getMatchScore(match) }}
                   </div>
                 </div>
-                <button class="match-action report">Report</button>
+                <div class="match-action-indicator">
+                  <span class="view-details">View Details →</span>
+                </div>
               </div>
             </div>
           </div>
@@ -304,10 +302,14 @@ const handleMatchAction = (match) => {
   console.log('handleMatchAction called with match:', match)
   console.log('match.trackingStatus:', match.trackingStatus)
   
-  if (match.trackingStatus === 'preparation') {
+  if (match.trackingStatus === 'active' || match.trackingStatus === 'preparation') {
     // Navigate to match detail page
     console.log('Navigating to match detail for match:', match)
     router.push(`/analyst/matches/${match.idMatch}`)
+  } else if (match.trackingStatus === 'finished') {
+    // Navigate to previous match detail page for finished matches
+    console.log('Navigating to previous match detail for finished match:', match)
+    router.push(`/analyst/matches/${match.idMatch}/previous`)
   } else {
     // Open startup modal for upcoming matches
     console.log('Opening startup modal for match:', match)
@@ -435,7 +437,8 @@ const acceptMatchStartup = async () => {
   try {
     const prepareMatchRequest = {
       ourTeamPlayerIds: selectedOurPlayers.value.map(p => p.playerId),
-      opponentTeamPlayerIds: selectedOpponentPlayers.value.map(p => p.playerId)
+      opponentTeamPlayerIds: selectedOpponentPlayers.value.map(p => p.playerId),
+      analystId: 4 // Current user ID (analyst) hardcoded to 4 for now
     }
 
     await axios.post(`${MATCHES_URL}/match/${selectedMatch.value.idMatch}/prepare`, prepareMatchRequest)
@@ -545,37 +548,127 @@ onMounted(() => {
 
 /* Match Cards */
 .match-card {
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.match-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+  transition: width 0.3s ease;
 }
 
 .match-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.match-card:hover::before {
+  width: 8px;
 }
 
 .match-card.live {
-  border-left: 4px solid #dc3545;
-  background-color: #fff5f5;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2);
+}
+
+.match-card.live::before {
+  background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
 }
 
 .match-card.upcoming {
-  border-left: 4px solid #007bff;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
+}
+
+.match-card.upcoming::before {
+  background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
 }
 
 .match-card.previous.win {
-  border-left: 4px solid #28a745;
+  background: linear-gradient(135deg, #f0fff4 0%, #e6ffe6 100%);
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.2);
+}
+
+.match-card.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.match-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+
+.match-card.clickable.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.match-card.clickable.disabled:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.match-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.live {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.click-indicator {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #dc3545;
+  transition: transform 0.3s ease;
+}
+
+.match-card.clickable:hover .click-indicator {
+  transform: translateX(4px);
+}
+
+.match-card.previous.win::before {
+  background: linear-gradient(180deg, #28a745 0%, #1e7e34 100%);
 }
 
 .match-card.previous.loss {
-  border-left: 4px solid #dc3545;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2);
+}
+
+.match-card.previous.loss::before {
+  background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
 }
 
 .match-info {
@@ -584,33 +677,45 @@ onMounted(() => {
 }
 
 .match-info h3 {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #333;
+  margin-left: 1.5rem;
+  color: #2c3e50;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .match-date, .match-place {
-  font-size: 0.85rem;
-  color: #666;
-  margin: 0.2rem 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0.3rem 0;
+  font-weight: 500;
 }
 
 .match-score {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin: 0.3rem 0;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  display: inline-block;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: auto;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .live-score {
-  background-color: #dc3545;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
   color: white;
 }
 
 .final-score {
-  background-color: #28a745;
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+  color: white;
+}
+
+/* When the previous match is a loss, make the final score badge red to indicate loss */
+.match-card.previous.loss .final-score {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e53935 100%); /* softer red -> deeper red */
   color: white;
 }
 
@@ -639,31 +744,60 @@ onMounted(() => {
 
 /* Match Action Buttons */
 .match-action {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .match-action.start-up {
-  background-color: #007bff;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   color: white;
 }
 
 .match-action.start-up:hover {
-  background-color: #0056b3;
+  background: linear-gradient(135deg, #0056b3 0%, #004494 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.3);
 }
 
 .match-action.report {
-  background-color: #6c757d;
+  background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
   color: white;
 }
 
 .match-action.report:hover {
-  background-color: #545b62;
+  background: linear-gradient(135deg, #545b62 0%, #3d4449 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(108, 117, 125, 0.3);
+}
+
+/* Match Action Indicator for Previous Matches */
+.match-action-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+}
+
+.view-details {
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.match-card.clickable:hover .view-details {
+  color: #0056b3;
+  transform: translateX(4px);
 }
 
 /* Modal Styles */

@@ -13,6 +13,22 @@
             class="nav-link admin-link">
             Zones & Seats
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/seasons"
+            class="nav-link club-owner-link">
+            Seasons
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/competitions"
+            class="nav-link club-owner-link">
+            Competitions
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/upcoming-matches"
+            class="nav-link club-owner-link">
+            Upcoming Matches
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'club owner'" to="/club-owner/season-tickets"
+            class="nav-link club-owner-link">
+            Season Tickets
+          </router-link>
           <router-link v-if="userInfo && userInfo.userRole === 'analyst'" to="/analyst"
             class="nav-link analyst-link">
             Data analysis
@@ -50,6 +66,7 @@
           </template>
           <template v-else>
             <router-link v-if="isCustomer()" to="/profile" class="btn btn-ghost">Profile</router-link>
+            <router-link v-if="isCustomer()" to="/seasonal-tickets" class="btn btn-ghost">Season Tickets</router-link>
             <router-link v-if="isCustomer()" to="/cart" class="btn btn-ghost">Cart</router-link>
             <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
             <button @click="handleLogout" class="btn btn-secondary">Logout</button>
@@ -188,15 +205,42 @@ const isCustomer = () => {
   color: #78350f;
 }
 
-.analyst-link {
-  background-color: #e0f2fe;
-  color: #0277bd;
+.club-owner-link {
+  background-color: #f3e8ff;
+  color: #7c3aed;
   font-weight: 600;
 }
 
+.club-owner-link:hover {
+  background-color: #e9d5ff;
+  color: #6d28d9;
+}
+
+.analyst-link {
+  /* subtle default: light blue outline */
+  background-color: rgba(2,119,189,0.06);
+  color: #0277bd;
+  font-weight: 600;
+  border: 1px solid rgba(2,119,189,0.12);
+  border-radius: 10px;
+  padding: 6px 14px;
+  transition: all 0.25s ease;
+}
+
 .analyst-link:hover {
-  background-color: #b3e5fc;
-  color: #01579b;
+  background-color: rgba(2,119,189,0.12);
+  color: #014f86;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2,119,189,0.08);
+}
+
+.analyst-link.router-link-exact-active,
+.analyst-link.router-link-exact-active:visited {
+  background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(2,119,189,0.18);
+  transform: translateY(-2px);
 }
 
 .scout-link {

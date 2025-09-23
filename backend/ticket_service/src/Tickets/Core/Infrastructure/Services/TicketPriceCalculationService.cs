@@ -2,7 +2,7 @@ using System;
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using ticket_service.src.Tickets.Core.Application.Interfaces;
+using ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
 using ticket_service.src.Tickets.Core.Infrastructure;
 
 namespace ticket_service.src.Tickets.Core.Infrastructure.Services;

@@ -4,7 +4,7 @@
       <div class="page-header">
         <h1 class="page-title">My Tickets</h1>
         <div class="breadcrumb">
-          <router-link to="/customer-dashboard" class="breadcrumb-link">Dashboard</router-link>
+          <router-link to="/customer/dashboard" class="breadcrumb-link">Dashboard</router-link>
           <span class="breadcrumb-separator">›</span>
           <span class="breadcrumb-current">My Tickets</span>
         </div>
@@ -59,13 +59,31 @@
                     <span class="value">{{ formatDate(purchase.expiresAt) }}</span>
                   </div>
                 </div>
+                
+                <!-- Season Ticket Validity Status -->
+                <div v-if="purchase.type === 'season ticket' && purchase.validFrom" class="validity-section">
+                  <div class="validity-row">
+                    <div class="validity-info">
+                      <span class="validity-label">Valid from:</span>
+                      <span class="validity-date">{{ formatDate(purchase.validFrom) }}</span>
+                    </div>
+                    <div class="validity-badge" :class="getValidityBadgeClass(purchase.validFrom)">
+                      {{ getValidityStatusText(purchase.validFrom) }}
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="ticket-actions">
                 <div class="ticket-price">
                   {{ formatPrice(purchase.price) }} RSD
                 </div>
-                <button @click="printTicket(purchase)" class="btn btn-primary btn-sm">
+                <button 
+                  @click="printTicket(purchase)" 
+                  class="btn btn-primary btn-sm"
+                  :disabled="purchase.type === 'season ticket' && purchase.validFrom && !isTicketActive(purchase.validFrom)"
+                  :title="purchase.type === 'season ticket' && purchase.validFrom && !isTicketActive(purchase.validFrom) ? 'Season ticket not yet active' : 'Print ticket'"
+                >
                   Print Ticket
                 </button>
               </div>
@@ -78,7 +96,7 @@
           <div class="empty-icon">🎫</div>
           <h3>No Tickets Found</h3>
           <p>You haven't purchased any tickets yet.</p>
-          <router-link to="/customer-dashboard" class="btn btn-primary">
+          <router-link to="/customer/dashboard" class="btn btn-primary">
             Browse Matches
           </router-link>
         </div>
@@ -89,8 +107,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { MatchService } from '../../services/match_service.js';
-import { TicketPrintService } from '../../services/ticket_print_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
+import { TicketPrintService } from '../../services/ticket_service/ticket_print_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 // Reactive data
@@ -140,8 +158,37 @@ const getTicketTypeClass = (type) => {
   }
 };
 
+const isTicketActive = (validFromDate) => {
+  if (!validFromDate) return true; // If no validFrom date, assume it's active
+  const today = new Date();
+  const validFrom = new Date(validFromDate);
+  return today >= validFrom;
+};
+
+const getValidityClass = (validFromDate) => {
+  return isTicketActive(validFromDate) ? 'validity-active' : 'validity-pending';
+};
+
+const getValidityBadgeClass = (validFromDate) => {
+  return isTicketActive(validFromDate) ? 'validity-badge-active' : 'validity-badge-pending';
+};
+
+const getValidityIconClass = (validFromDate) => {
+  return isTicketActive(validFromDate) ? 'icon-check' : 'icon-clock';
+};
+
+const getValidityStatusText = (validFromDate) => {
+  return isTicketActive(validFromDate) ? 'Active' : 'Pending';
+};
+
 const printTicket = async (ticket) => {
   try {
+    // Check if season ticket is active before allowing print
+    if (ticket.type === 'season ticket' && ticket.validFrom && !isTicketActive(ticket.validFrom)) {
+      alert('This season ticket is not yet active. You can print it starting from ' + formatDate(ticket.validFrom));
+      return;
+    }
+    
     // Get user data for the ticket
     const userData = getUserData();
     
@@ -462,6 +509,126 @@ onMounted(() => {
   display: inline-block;
 }
 
+/* Validity Section Styles */
+.validity-section {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-primary);
+}
+
+.validity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.validity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.validity-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.validity-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.validity-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.validity-badge-active {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.validity-badge-pending {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.validity-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
+
+.icon-check::before {
+  content: "✓";
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.icon-clock::before {
+  content: "⏰";
+  font-size: 14px;
+}
+
+/* Legacy validity status styles for backward compatibility */
+.validity-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  margin-left: 0.5rem;
+}
+
+.validity-status:not(.active) {
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid #f59e0b;
+}
+
+.validity-status.active {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid #10b981;
+}
+
+.validity-active {
+  color: var(--color-success);
+}
+
+.validity-pending {
+  color: #d97706;
+}
+
+/* Button disabled state for inactive season tickets */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #6b7280;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #6b7280;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-title {
@@ -472,6 +639,18 @@ onMounted(() => {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-md);
+  }
+  
+  .validity-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .validity-badge {
+    align-self: flex-start;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
   }
   
   .history-header {

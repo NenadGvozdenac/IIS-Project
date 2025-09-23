@@ -23,6 +23,40 @@
                     </button>
                 </div>
 
+                <!-- Zone Filters -->
+                <div class="filters-container">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="zoneNameFilter">Filter by Name:</label>
+                            <input 
+                                id="zoneNameFilter" 
+                                v-model="zoneFilters.name" 
+                                type="text" 
+                                class="filter-input" 
+                                placeholder="Search zone name..."
+                            />
+                        </div>
+                        <div class="filter-group">
+                            <label for="zoneStatusFilter">Filter by Status:</label>
+                            <select id="zoneStatusFilter" v-model="zoneFilters.status" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="enabled">Enabled</option>
+                                <option value="disabled">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="zoneRankFilter">Filter by Rank:</label>
+                            <select id="zoneRankFilter" v-model="zoneFilters.rank" class="filter-select">
+                                <option value="">All Ranks</option>
+                                <option v-for="rank in uniqueZoneRanks" :key="rank" :value="rank">{{ rank }}</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button @click="clearZoneFilters" class="btn btn-secondary btn-sm">Clear Filters</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Zones Table -->
                 <div class="table-container">
                     <table class="data-table">
@@ -36,7 +70,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="zone in zones" :key="zone.idZone">
+                            <tr v-for="zone in paginatedZones" :key="zone.idZone">
                                 <td>{{ zone.name }}</td>
                                 <td>{{ zone.rank }}</td>
                                 <td>{{ zone.maximumCapacity }}</td>
@@ -59,9 +93,49 @@
                         </tbody>
                     </table>
 
-                    <div v-if="zones.length === 0" class="empty-state">
-                        <p>No zones to display. Total zones: {{ zones.length }}</p>
-                        <p>Debug: {{ JSON.stringify(zones) }}</p>
+                    <!-- Zone Pagination -->
+                    <div class="pagination-container">
+                        <div class="pagination-info">
+                            <span>Showing {{ (zonePagination.currentPage - 1) * zonePagination.itemsPerPage + 1 }} to 
+                                {{ Math.min(zonePagination.currentPage * zonePagination.itemsPerPage, filteredZones.length) }} 
+                                of {{ filteredZones.length }} zones</span>
+                            <select v-model="zonePagination.itemsPerPage" @change="changeZoneItemsPerPage(zonePagination.itemsPerPage)" class="items-per-page-select">
+                                <option v-for="option in itemsPerPageOptions" :key="option" :value="option">{{ option }} per page</option>
+                            </select>
+                        </div>
+                        <div class="pagination-controls">
+                            <button 
+                                @click="changeZonePage(zonePagination.currentPage - 1)" 
+                                :disabled="zonePagination.currentPage <= 1"
+                                class="btn btn-sm btn-secondary"
+                            >
+                                Previous
+                            </button>
+                            
+                            <template v-for="page in zonePageNumbers" :key="page">
+                                <button 
+                                    v-if="typeof page === 'number'"
+                                    @click="changeZonePage(page)" 
+                                    :class="['btn', 'btn-sm', page === zonePagination.currentPage ? 'btn-primary' : 'btn-secondary']"
+                                >
+                                    {{ page }}
+                                </button>
+                                <span v-else class="pagination-ellipsis">{{ page }}</span>
+                            </template>
+                            
+                            <button 
+                                @click="changeZonePage(zonePagination.currentPage + 1)" 
+                                :disabled="zonePagination.currentPage >= zoneTotalPages"
+                                class="btn btn-sm btn-secondary"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="filteredZones.length === 0" class="empty-state">
+                        <p v-if="hasActiveZoneFilters">No zones match the current filters.</p>
+                        <p v-else>No zones to display. Total zones: {{ zones.length }}</p>
                     </div>
                 </div>
             </div>
@@ -74,6 +148,57 @@
                         <i class="icon-plus"></i>
                         New Seat
                     </button>
+                </div>
+
+                <!-- Seat Filters -->
+                <div class="filters-container">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="seatRowFilter">Filter by Row:</label>
+                            <input 
+                                id="seatRowFilter" 
+                                v-model="seatFilters.row" 
+                                type="text" 
+                                class="filter-input" 
+                                placeholder="Search row..."
+                            />
+                        </div>
+                        <div class="filter-group">
+                            <label for="seatNumberFilter">Filter by Number:</label>
+                            <input 
+                                id="seatNumberFilter" 
+                                v-model="seatFilters.number" 
+                                type="text" 
+                                class="filter-input" 
+                                placeholder="Search number..."
+                            />
+                        </div>
+                        <div class="filter-group">
+                            <label for="seatTypeFilter">Filter by Type:</label>
+                            <select id="seatTypeFilter" v-model="seatFilters.type" class="filter-select">
+                                <option value="">All Types</option>
+                                <option v-for="type in uniqueSeatTypes" :key="type" :value="type">{{ type }}</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="seatZoneFilter">Filter by Zone:</label>
+                            <select id="seatZoneFilter" v-model="seatFilters.zone" class="filter-select">
+                                <option value="">All Zones</option>
+                                <option v-for="zone in zones" :key="zone.idZone" :value="zone.idZone">{{ zone.name }}</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="seatStatusFilter">Filter by Status:</label>
+                            <select id="seatStatusFilter" v-model="seatFilters.status" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="empty">Empty/No Status</option>
+                                <option v-for="status in uniqueSeatStatuses" :key="status" :value="status">{{ status }}</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button @click="clearSeatFilters" class="btn btn-secondary btn-sm">Clear Filters</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Seats Table -->
@@ -91,14 +216,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="seat in seats" :key="seat.idSeat">
+                            <tr v-for="seat in paginatedSeats" :key="seat.idSeat">
                                 <td>{{ seat.row }}</td>
                                 <td>{{ seat.number }}</td>
                                 <td>{{ seat.type }}</td>
                                 <td>{{ seat.direction }}</td>
                                 <td>
                                     <span class="status-badge" :class="seat.status?.toLowerCase()">
-                                        {{ seat.status }}
+                                        {{ seat.status || 'No status' }}
                                     </span>
                                 </td>
                                 <td>{{ getZoneName(seat.idZone) }}</td>
@@ -116,8 +241,49 @@
                         </tbody>
                     </table>
 
-                    <div v-if="seats.length === 0" class="empty-state">
-                        <p>No seats to display.</p>
+                    <!-- Seat Pagination -->
+                    <div class="pagination-container">
+                        <div class="pagination-info">
+                            <span>Showing {{ (seatPagination.currentPage - 1) * seatPagination.itemsPerPage + 1 }} to 
+                                {{ Math.min(seatPagination.currentPage * seatPagination.itemsPerPage, filteredSeats.length) }} 
+                                of {{ filteredSeats.length }} seats</span>
+                            <select v-model="seatPagination.itemsPerPage" @change="changeSeatItemsPerPage(seatPagination.itemsPerPage)" class="items-per-page-select">
+                                <option v-for="option in itemsPerPageOptions" :key="option" :value="option">{{ option }} per page</option>
+                            </select>
+                        </div>
+                        <div class="pagination-controls">
+                            <button 
+                                @click="changeSeatPage(seatPagination.currentPage - 1)" 
+                                :disabled="seatPagination.currentPage <= 1"
+                                class="btn btn-sm btn-secondary"
+                            >
+                                Previous
+                            </button>
+                            
+                            <template v-for="page in seatPageNumbers" :key="page">
+                                <button 
+                                    v-if="typeof page === 'number'"
+                                    @click="changeSeatPage(page)" 
+                                    :class="['btn', 'btn-sm', page === seatPagination.currentPage ? 'btn-primary' : 'btn-secondary']"
+                                >
+                                    {{ page }}
+                                </button>
+                                <span v-else class="pagination-ellipsis">{{ page }}</span>
+                            </template>
+                            
+                            <button 
+                                @click="changeSeatPage(seatPagination.currentPage + 1)" 
+                                :disabled="seatPagination.currentPage >= seatTotalPages"
+                                class="btn btn-sm btn-secondary"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="filteredSeats.length === 0" class="empty-state">
+                        <p v-if="hasActiveSeatFilters">No seats match the current filters.</p>
+                        <p v-else>No seats to display.</p>
                     </div>
                 </div>
             </div>
@@ -127,7 +293,7 @@
         <div v-if="showZoneModal" class="modal-overlay" @click="closeZoneModal">
             <div class="modal" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ isEditingZone ? 'Edit Zone' : 'New Zone' }}</h3>
+                    <h3>{{ isEditingZone ? 'Edit Zone' : 'Create New Zone' }}</h3>
                     <button @click="closeZoneModal" class="close-btn">&times;</button>
                 </div>
 
@@ -162,7 +328,7 @@
                         <button type="button" @click="closeZoneModal" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <button type="submit" class="btn btn-primary" :disabled="loading || !isZoneFormValid">
                             {{ loading ? 'Saving...' : (isEditingZone ? 'Save' : 'Create') }}
                         </button>
                     </div>
@@ -174,7 +340,7 @@
         <div v-if="showSeatModal" class="modal-overlay" @click="closeSeatModal">
             <div class="modal" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ isEditingSeat ? 'Edit Seat' : 'New Seat' }}</h3>
+                    <h3>{{ isEditingSeat ? 'Edit Seat' : 'Create New Seat' }}</h3>
                     <button @click="closeSeatModal" class="close-btn">&times;</button>
                 </div>
 
@@ -194,16 +360,16 @@
                     <div class="form-group">
                         <label for="seatType">Type</label>
                         <input id="seatType" v-model="seatForm.type" type="text" class="form-control" readonly
-                            value="regular" />
+                            value="standard" />
                     </div>
                     <div class="form-group">
                         <label for="seatDirection">Direction *</label>
                         <select id="seatDirection" v-model="seatForm.direction" class="form-control" required>
                             <option value="">Select direction</option>
-                            <option value="North">North</option>
-                            <option value="South">South</option>
-                            <option value="East">East</option>
-                            <option value="West">West</option>
+                            <option value="north">north</option>
+                            <option value="south">south</option>
+                            <option value="east">east</option>
+                            <option value="west">west</option>
                         </select>
                     </div>
 
@@ -230,7 +396,7 @@
                         <button type="button" @click="closeSeatModal" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <button type="submit" class="btn btn-primary" :disabled="loading || !isSeatFormValid">
                             {{ loading ? 'Saving...' : (isEditingSeat ? 'Save' : 'Create') }}
                         </button>
                     </div>
@@ -241,15 +407,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { ZoneService } from '../../services/zone_service.js';
-import { SeatService } from '../../services/seat_service.js';
+import { ref, onMounted, computed } from 'vue';
+import { ZoneService } from '../../services/ticket_service/zone_service.js';
+import { SeatService } from '../../services/ticket_service/seat_service.js';
 
 // Reactive data
 const activeTab = ref('zones');
 const zones = ref([]);
 const seats = ref([]);
 const loading = ref(false);
+
+// Filter data
+const zoneFilters = ref({
+    name: '',
+    status: '',
+    rank: ''
+});
+
+const seatFilters = ref({
+    row: '',
+    number: '',
+    type: '',
+    zone: '',
+    status: ''
+});
+
+// Pagination data
+const zonePagination = ref({
+    currentPage: 1,
+    itemsPerPage: 25,
+    totalItems: 0
+});
+
+const seatPagination = ref({
+    currentPage: 1,
+    itemsPerPage: 25,
+    totalItems: 0
+});
+
+const itemsPerPageOptions = [10, 25, 50, 100];
 
 // Zone modal
 const showZoneModal = ref(false);
@@ -267,11 +463,247 @@ const isEditingSeat = ref(false);
 const seatForm = ref({
     row: null,
     number: null,
-    type: 'regular',
+    type: 'standard',
     direction: '',
     status: '',
-    idZone: null
-});// Methods
+    idZone: ''
+});
+
+// Computed properties for filtering
+const filteredZones = computed(() => {
+    const filtered = zones.value.filter(zone => {
+        const nameMatch = !zoneFilters.value.name || 
+            zone.name.toLowerCase().includes(zoneFilters.value.name.toLowerCase());
+        const statusMatch = !zoneFilters.value.status || 
+            zone.status?.toLowerCase() === zoneFilters.value.status.toLowerCase();
+        const rankMatch = !zoneFilters.value.rank || 
+            zone.rank.toString() === zoneFilters.value.rank.toString();
+        
+        return nameMatch && statusMatch && rankMatch;
+    });
+    
+    zonePagination.value.totalItems = filtered.length;
+    return filtered;
+});
+
+const paginatedZones = computed(() => {
+    const start = (zonePagination.value.currentPage - 1) * zonePagination.value.itemsPerPage;
+    const end = start + zonePagination.value.itemsPerPage;
+    return filteredZones.value.slice(start, end);
+});
+
+const zoneTotalPages = computed(() => {
+    return Math.ceil(filteredZones.value.length / zonePagination.value.itemsPerPage);
+});
+
+const paginatedSeats = computed(() => {
+    const start = (seatPagination.value.currentPage - 1) * seatPagination.value.itemsPerPage;
+    const end = start + seatPagination.value.itemsPerPage;
+    return filteredSeats.value.slice(start, end);
+});
+
+const seatTotalPages = computed(() => {
+    return Math.ceil(filteredSeats.value.length / seatPagination.value.itemsPerPage);
+});
+
+const filteredSeats = computed(() => {
+    const filtered = seats.value.filter(seat => {
+        const rowMatch = !seatFilters.value.row || 
+            seat.row.toString().toLowerCase().includes(seatFilters.value.row.toLowerCase());
+        const numberMatch = !seatFilters.value.number || 
+            seat.number.toString().toLowerCase().includes(seatFilters.value.number.toLowerCase());
+        const typeMatch = !seatFilters.value.type || 
+            seat.type?.toLowerCase() === seatFilters.value.type.toLowerCase();
+        const zoneMatch = !seatFilters.value.zone || 
+            seat.idZone.toString() === seatFilters.value.zone.toString();
+        
+        // Handle status filtering including empty status
+        let statusMatch = true;
+        if (seatFilters.value.status) {
+            if (seatFilters.value.status === 'empty') {
+                statusMatch = !seat.status || seat.status.trim() === '';
+            } else {
+                statusMatch = seat.status?.toLowerCase() === seatFilters.value.status.toLowerCase();
+            }
+        }
+        
+        return rowMatch && numberMatch && typeMatch && zoneMatch && statusMatch;
+    });
+    
+    seatPagination.value.totalItems = filtered.length;
+    return filtered;
+});
+
+// Computed properties for pagination display
+const zonePageNumbers = computed(() => {
+    const current = zonePagination.value.currentPage;
+    const total = zoneTotalPages.value;
+    const pages = [];
+    
+    if (total <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= total; i++) {
+            pages.push(i);
+        }
+    } else {
+        // Always show first page
+        pages.push(1);
+        
+        if (current <= 4) {
+            // Current page is near beginning
+            for (let i = 2; i <= 5; i++) {
+                pages.push(i);
+            }
+            pages.push('...');
+            pages.push(total);
+        } else if (current >= total - 3) {
+            // Current page is near end
+            pages.push('...');
+            for (let i = total - 4; i <= total; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Current page is in middle
+            pages.push('...');
+            for (let i = current - 1; i <= current + 1; i++) {
+                pages.push(i);
+            }
+            pages.push('...');
+            pages.push(total);
+        }
+    }
+    
+    return pages;
+});
+
+const seatPageNumbers = computed(() => {
+    const current = seatPagination.value.currentPage;
+    const total = seatTotalPages.value;
+    const pages = [];
+    
+    if (total <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= total; i++) {
+            pages.push(i);
+        }
+    } else {
+        // Always show first page
+        pages.push(1);
+        
+        if (current <= 4) {
+            // Current page is near beginning
+            for (let i = 2; i <= 5; i++) {
+                pages.push(i);
+            }
+            pages.push('...');
+            pages.push(total);
+        } else if (current >= total - 3) {
+            // Current page is near end
+            pages.push('...');
+            for (let i = total - 4; i <= total; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Current page is in middle
+            pages.push('...');
+            for (let i = current - 1; i <= current + 1; i++) {
+                pages.push(i);
+            }
+            pages.push('...');
+            pages.push(total);
+        }
+    }
+    
+    return pages;
+});
+
+// Unique values for filter dropdowns
+const uniqueZoneRanks = computed(() => {
+    const ranks = zones.value.map(zone => zone.rank).filter(rank => rank != null);
+    return [...new Set(ranks)].sort((a, b) => a - b);
+});
+
+const uniqueSeatTypes = computed(() => {
+    const types = seats.value.map(seat => seat.type).filter(type => type);
+    return [...new Set(types)].sort();
+});
+
+const uniqueSeatStatuses = computed(() => {
+    const statuses = seats.value.map(seat => seat.status).filter(status => status && status.trim() !== '');
+    return [...new Set(statuses)].sort();
+});
+
+// Check if filters are active
+const hasActiveZoneFilters = computed(() => {
+    return zoneFilters.value.name || zoneFilters.value.status || zoneFilters.value.rank;
+});
+
+const hasActiveSeatFilters = computed(() => {
+    return seatFilters.value.row || seatFilters.value.number || seatFilters.value.type || 
+           seatFilters.value.zone || seatFilters.value.status;
+});
+
+// Form validation
+const isZoneFormValid = computed(() => {
+    return zoneForm.value.name && 
+           zoneForm.value.rank && 
+           zoneForm.value.maximumCapacity && 
+           zoneForm.value.status;
+});
+
+const isSeatFormValid = computed(() => {
+    return seatForm.value.row && 
+           seatForm.value.number && 
+           seatForm.value.direction && 
+           seatForm.value.status && 
+           seatForm.value.idZone;
+});
+
+// Filter methods
+const clearZoneFilters = () => {
+    zoneFilters.value = {
+        name: '',
+        status: '',
+        rank: ''
+    };
+    zonePagination.value.currentPage = 1;
+};
+
+const clearSeatFilters = () => {
+    seatFilters.value = {
+        row: '',
+        number: '',
+        type: '',
+        zone: '',
+        status: ''
+    };
+    seatPagination.value.currentPage = 1;
+};
+
+// Pagination methods
+const changeZonePage = (page) => {
+    if (page >= 1 && page <= zoneTotalPages.value) {
+        zonePagination.value.currentPage = page;
+    }
+};
+
+const changeSeatPage = (page) => {
+    if (page >= 1 && page <= seatTotalPages.value) {
+        seatPagination.value.currentPage = page;
+    }
+};
+
+const changeZoneItemsPerPage = (items) => {
+    zonePagination.value.itemsPerPage = items;
+    zonePagination.value.currentPage = 1;
+};
+
+const changeSeatItemsPerPage = (items) => {
+    seatPagination.value.itemsPerPage = items;
+    seatPagination.value.currentPage = 1;
+};
+
+// Methods
 const loadZones = async () => {
     try {
         loading.value = true;
@@ -394,10 +826,10 @@ const openCreateSeatModal = () => {
     seatForm.value = {
         row: null,
         number: null,
-        type: 'regular',
+        type: 'standard',
         direction: '',
         status: '',
-        idZone: null
+        idZone: ''
     };
     showSeatModal.value = true;
 }; const editSeat = (seat) => {
@@ -419,14 +851,49 @@ const closeSeatModal = () => {
     seatForm.value = {
         row: null,
         number: null,
-        type: 'regular',
+        type: 'standard',
         direction: '',
         status: '',
-        idZone: null
+        idZone: ''
     };
 }; const saveSeat = async () => {
     try {
         loading.value = true;
+
+        // Check for duplicate seat when creating a new seat
+        if (!isEditingSeat.value) {
+            const existingSeat = seats.value.find(seat => 
+                seat.row === seatForm.value.row && 
+                seat.number === seatForm.value.number && 
+                seat.direction === seatForm.value.direction &&
+                seat.idZone === seatForm.value.idZone
+            );
+            
+            if (existingSeat) {
+                const zoneName = getZoneName(seatForm.value.idZone);
+                alert(`A seat with row ${seatForm.value.row}, number ${seatForm.value.number}, direction ${seatForm.value.direction}, and zone ${zoneName} already exists.`);
+                loading.value = false;
+                return;
+            }
+        }
+
+        // Check for duplicate seat when editing (exclude current seat from check)
+        if (isEditingSeat.value) {
+            const existingSeat = seats.value.find(seat => 
+                seat.idSeat !== seatForm.value.idSeat && // Exclude current seat
+                seat.row === seatForm.value.row && 
+                seat.number === seatForm.value.number && 
+                seat.direction === seatForm.value.direction &&
+                seat.idZone === seatForm.value.idZone
+            );
+            
+            if (existingSeat) {
+                const zoneName = getZoneName(seatForm.value.idZone);
+                alert(`Cannot update seat: A seat with row ${seatForm.value.row}, number ${seatForm.value.number}, direction ${seatForm.value.direction}, and zone ${zoneName} already exists.`);
+                loading.value = false;
+                return;
+            }
+        }
 
         if (isEditingSeat.value) {
             await SeatService.updateSeat(seatForm.value.idSeat, {
@@ -524,6 +991,127 @@ onMounted(async () => {
     margin-bottom: var(--spacing-lg);
 }
 
+/* Filters */
+.filters-container {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-xs);
+}
+
+.filter-input,
+.filter-select {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.filter-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.filter-group button {
+    align-self: flex-end;
+}
+
+/* Pagination */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.items-per-page-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    background: white;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.pagination-controls .btn {
+    min-width: 40px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.pagination-controls .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pagination-controls span {
+    padding: 0 var(--spacing-sm);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.pagination-ellipsis {
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.25rem;
+    color: var(--color-text-muted);
+    font-weight: bold;
+    user-select: none;
+}
+
 .section-header h2 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -602,21 +1190,22 @@ onMounted(async () => {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .modal {
     background: white;
     border-radius: var(--radius-lg);
-    width: 90%;
     max-width: 500px;
+    width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .modal-header {
@@ -639,12 +1228,7 @@ onMounted(async () => {
     font-size: 1.5rem;
     cursor: pointer;
     color: var(--color-text-muted);
-    padding: 0;
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: color 0.2s ease;
 }
 
 .close-btn:hover {
@@ -656,23 +1240,24 @@ onMounted(async () => {
 }
 
 .form-group {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
 .form-group label {
     display: block;
+    margin-bottom: var(--spacing-xs);
     font-weight: 500;
     color: var(--color-text);
-    margin-bottom: var(--spacing-sm);
+    font-size: 0.875rem;
 }
 
 .form-control {
     width: 100%;
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
-    font-size: 1rem;
-    transition: border-color 0.2s ease;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
 }
 
 .form-control:focus {
@@ -681,13 +1266,30 @@ onMounted(async () => {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.form-control:disabled {
+    background-color: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.text-muted {
+    color: #6b7280;
+}
+
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: var(--spacing-md);
-    padding-top: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-md);
     border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-md);
 }
 
 /* Responsive */
@@ -696,6 +1298,35 @@ onMounted(async () => {
         flex-direction: column;
         align-items: stretch;
         gap: var(--spacing-md);
+    }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        min-width: auto;
+    }
+
+    .filter-group button {
+        align-self: stretch;
+        margin-top: var(--spacing-sm);
+    }
+
+    .pagination-container {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: stretch;
+    }
+
+    .pagination-info {
+        justify-content: space-between;
+    }
+
+    .pagination-controls {
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
     .table-container {

@@ -88,7 +88,7 @@
                                 <div class="seats-in-row">
                                     <div v-for="seat in groupedSeats[row]" :key="seat.idSeat" @click="selectSeat(seat)"
                                         :class="['seat', getSeatStatus(seat)]"
-                                        :title="`Row ${seat.seatRow}, Seat ${seat.seatNumber}`">
+                                        :title="getSeatTooltip(seat)">
                                         {{ seat.seatNumber }}
                                     </div>
                                 </div>
@@ -161,10 +161,10 @@
 </template>
 
 <script>
-import { ZoneService } from '../../services/zone_service.js';
-import { SeatService } from '../../services/seat_service.js';
-import { PurchaseOfferService } from '../../services/purchase_offer_service.js';
-import { MatchService } from '../../services/match_service.js';
+import { ZoneService } from '../../services/ticket_service/zone_service.js';
+import { SeatService } from '../../services/ticket_service/seat_service.js';
+import { PurchaseOfferService } from '../../services/ticket_service/purchase_offer_service.js';
+import { MatchService } from '../../services/ticket_service/match_service.js';
 import { getUserData } from '../../services/auth_service.js';
 
 export default {
@@ -180,6 +180,7 @@ export default {
             seats: [],
             groupedSeats: {},
             seatOffers: {}, // New: store offers for each seat
+            seasonTicketConflicts: {}, // New: store season ticket conflicts for each seat
             selectedSeat: null,
             currentOffer: null,
             loadingZones: false,
@@ -220,7 +221,7 @@ export default {
                             this.error = 'This match has already taken place. Ticket sales are no longer available.';
                             // Redirect back to dashboard after a delay
                             setTimeout(() => {
-                                this.$router.push('/customer-dashboard');
+                                this.$router.push('/customer/dashboard');
                             }, 3000);
                             return;
                         }
@@ -229,7 +230,7 @@ export default {
                     if (!this.selectedMatch) {
                         this.error = 'Match not found.';
                         setTimeout(() => {
-                            this.$router.push('/customer-dashboard');
+                            this.$router.push('/customer/dashboard');
                         }, 2000);
                     }
                 }
@@ -259,6 +260,7 @@ export default {
             this.selectedSeat = null;
             this.currentOffer = null;
             this.seatOffers = {}; // Reset seat offers
+            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
             // Note: Don't load seats yet, wait for side selection
         },
 
@@ -267,6 +269,7 @@ export default {
             this.selectedSeat = null;
             this.currentOffer = null;
             this.seatOffers = {}; // Reset seat offers
+            this.seasonTicketConflicts = {}; // Reset season ticket conflicts
             this.loadSeats(); // Load seats for the selected side
         },
 
@@ -275,54 +278,63 @@ export default {
             
             this.loadingSeats = true;
             try {
-                const response = await SeatService.getSeatsByZone(this.selectedZone.idZone);
+                // Use the optimized endpoint that returns seats with their offers in a single request
+                const response = await SeatService.getSeatsWithOffersForZoneAndDirection(
+                    this.selectedZone.idZone,
+                    this.selectedSide,
+                    this.matchId
+                );
+                
                 if (response.isSuccess) {
-                    // Filter seats by the selected side using the correct field name
-                    console.log('Selected side:', this.selectedSide);
-                    console.log('Total seats from API:', response.value.length);
-                    console.log('Sample seat data:', response.value[0]);
+                    console.log('Optimized seats response:', response.value);
                     
-                    this.seats = response.value.filter(seat => {
-                        console.log(`Seat ${seat.seatRow}-${seat.seatNumber}: direction="${seat.seatDirection}", selectedSide="${this.selectedSide}", match=${seat.seatDirection === this.selectedSide}`);
-                        return seat.seatDirection === this.selectedSide;
+                    // Transform the response to match the expected format
+                    this.seats = response.value.map(seatData => ({
+                        idSeat: seatData.idSeat,
+                        seatRow: seatData.seatRow,
+                        seatNumber: seatData.seatNumber,
+                        seatType: seatData.seatType,
+                        seatDirection: seatData.seatDirection,
+                        seatStatus: seatData.seatStatus,
+                        idZone: seatData.idZone,
+                        zoneName: seatData.zoneName
+                    }));
+                    
+                    // Set up seat offers and conflicts from the response
+                    this.seatOffers = {};
+                    this.seasonTicketConflicts = {};
+                    
+                    response.value.forEach(seatData => {
+                        if (seatData.hasSeasonTicketConflict) {
+                            this.seasonTicketConflicts[seatData.idSeat] = {
+                                hasConflict: true,
+                                conflictReason: seatData.conflictReason
+                            };
+                        } else if (seatData.hasOffer && seatData.idPurchaseOffer) {
+                            this.seatOffers[seatData.idSeat] = {
+                                idPurchaseOffer: seatData.idPurchaseOffer,
+                                matchName: seatData.matchName,
+                                zoneName: seatData.zoneName,
+                                seatRow: seatData.seatRow,
+                                seatNumber: seatData.seatNumber,
+                                seatType: seatData.seatType,
+                                price: seatData.price || 0
+                            };
+                        }
                     });
                     
-                    console.log('Filtered seats count:', this.seats.length);
+                    console.log('Processed seats:', this.seats.length);
+                    console.log('Seat offers:', Object.keys(this.seatOffers).length);
+                    console.log('Season ticket conflicts:', Object.keys(this.seasonTicketConflicts).length);
+                    
                     this.groupSeats();
-                    await this.checkSeatOffers();
                 }
             } catch (error) {
+                console.error('Error loading seats:', error);
                 this.error = 'Failed to load seats';
             } finally {
                 this.loadingSeats = false;
             }
-        },
-
-        async checkSeatOffers() {
-            // Reset seat offers
-            this.seatOffers = {};
-            
-            // Check offers for each seat
-            const offerPromises = this.seats.map(async (seat) => {
-                try {
-                    const response = await PurchaseOfferService.getIndividualTicketOffer(
-                        this.selectedZone.idZone,
-                        seat.seatRow,
-                        seat.seatNumber,
-                        this.selectedSide,
-                        this.matchId
-                    );
-                    
-                    if (response.isSuccess) {
-                        this.seatOffers[seat.idSeat] = response.value;
-                    }
-                } catch (error) {
-                    // If there's no offer for this seat, it will remain unavailable
-                    console.log(`No offer available for seat ${seat.seatRow}-${seat.seatNumber} on ${this.selectedSide} side`);
-                }
-            });
-            
-            await Promise.all(offerPromises);
         },
 
         groupSeats() {
@@ -342,6 +354,11 @@ export default {
         },
 
         async selectSeat(seat) {
+            // Check if seat is covered by season ticket - silently prevent selection
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                return; // No message needed, seat is already shown as unavailable
+            }
+            
             // Check if seat has an available offer
             if (!this.seatOffers[seat.idSeat]) {
                 return; // No offer available, can't select
@@ -385,6 +402,11 @@ export default {
                 return 'selected';
             }
             
+            // Check if seat is covered by season ticket - treat as unavailable
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                return 'unavailable';
+            }
+            
             // Check if there's an available offer for this seat
             const hasOffer = this.seatOffers[seat.idSeat];
             if (hasOffer && seat.seatStatus === 'enabled') {
@@ -392,6 +414,17 @@ export default {
             }
             
             return 'unavailable';
+        },
+
+        getSeatTooltip(seat) {
+            const baseInfo = `Row ${seat.seatRow}, Seat ${seat.seatNumber}`;
+            
+            if (this.seasonTicketConflicts[seat.idSeat]) {
+                const conflict = this.seasonTicketConflicts[seat.idSeat];
+                return `${baseInfo} - ${conflict.conflictReason}`;
+            }
+            
+            return baseInfo;
         },
 
         formatMatchDate(dateString) {
@@ -405,7 +438,7 @@ export default {
         },
 
         goBack() {
-            this.$router.push('/customer-dashboard');
+            this.$router.push('/customer/dashboard');
         },
 
         clearError() {
@@ -417,13 +450,13 @@ export default {
         },
 
         getSideIcon(side) {
-            switch (side) {
-                case 'north': return '⬆️';
-                case 'east': return '➡️';
-                case 'south': return '⬇️';
-                case 'west': return '⬅️';
-                default: return '📍';
-            }
+            const icons = {
+                'north': '↑',
+                'south': '↓',
+                'east': '→',
+                'west': '←'
+            };
+            return icons[side] || '•';
         },
 
         getSideSeatsCount(side) {

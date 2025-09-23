@@ -6,8 +6,16 @@
           
           <nav class="nav-menu" v-if="isTeamManager">
             <router-link to="/club-manager/matches" class="nav-link active">Matches</router-link>
-            <router-link to="/club-manager/travelinfo" class="nav-link">Players</router-link>
-            <router-link to="/club-manager/travel" class="nav-link">Travel Organization</router-link>
+            <router-link to="/club-manager/travelinfo" class="nav-link">Travel Info</router-link>
+            <div class="nav-dropdown">
+                <span class="nav-link dropdown-toggle">Requests</span>
+                <div class="dropdown-menu">
+                    <router-link to="/team-manager/transportation-requests-active" class="dropdown-item">Transportation - Active</router-link>
+                    <router-link to="/team-manager/transportation-requests-archive" class="dropdown-item">Transportation - Archive</router-link>
+                    <router-link to="/team-manager/accommodation-requests-active" class="dropdown-item">Accommodation - Active</router-link>
+                    <router-link to="/team-manager/accommodation-requests-archive" class="dropdown-item">Accommodation - Archive</router-link>
+                </div>
+            </div>
           </nav>
         </div>
       </div>
@@ -28,6 +36,14 @@
         
         <div class="calendar-actions">
           <!-- Club manager nema opciju dodavanja meča -->
+          <button 
+            @click="generateTravelCostReport" 
+            class="btn btn-secondary travel-report-btn"
+            :disabled="isGeneratingReport"
+          >
+            <span v-if="isGeneratingReport">Generating...</span>
+            <span v-else>📊 Travel Cost Report</span>
+          </button>
         </div>
       </div>
 
@@ -141,6 +157,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuthService } from '../../services/auth_service.js'
+import travelCostReportService from '../../services/travelCostReportService.js'
 import axios from 'axios'
 
 const router = useRouter()
@@ -155,6 +172,14 @@ const getUserId = () => {
 }
 
 const currentDate = ref(new Date())
+
+const showTranspoOptions = (match) => {
+  return match.transportationRequired && !isMatchPlayed(match)
+}
+
+const showAccommodOptions = (match) => {
+  return match.accommodationRequired && !isMatchPlayed(match)
+}
 
 const pad = (n) => n.toString().padStart(2, '0')
 const getMinDateTime = () => {
@@ -173,6 +198,7 @@ setInterval(() => {
 }, 60000)
 const matches = ref([])
 const selectedMatch = ref(null)
+const isGeneratingReport = ref(false)
 const showMenu = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 const showCreateModal = ref(false)
@@ -285,13 +311,6 @@ const isMatchPlayed = (match) => {
   return status === 'played'
 }
 
-const showTransportOptions = (match) => {
-  return match.transportationRequired && !isMatchPlayed(match)
-}
-
-const showAccommodationOptions = (match) => {
-  return match.accommodationRequired && !isMatchPlayed(match)
-}
 
 const fetchMatches = async () => {
   try {
@@ -627,25 +646,6 @@ const generateReport = () => {
   hideMenu()
 }
 
-const transportRequest = () => {
-  console.log('Transport request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const transportOffers = () => {
-  console.log('Transport offers for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const accommodationRequest = () => {
-  console.log('Accommodation request for match:', selectedMatch.value)
-  hideMenu()
-}
-
-const accommodationOffers = () => {
-  console.log('Accommodation offers for match:', selectedMatch.value)
-  hideMenu()
-}
 
 const resetNewMatch = () => {
   editMatchData.value = {
@@ -703,6 +703,18 @@ const onTypeChange = () => {
 const logout = () => {
   localStorage.removeItem('token')
   router.push('/login')
+}
+
+const generateTravelCostReport = async () => {
+  try {
+    isGeneratingReport.value = true
+    await travelCostReportService.generateTravelCostReport()
+  } catch (error) {
+    console.error('Error generating travel cost report:', error)
+    alert('Greška pri kreiranju izveštaja. Molimo pokušajte ponovo.')
+  } finally {
+    isGeneratingReport.value = false
+  }
 }
 
 const handleClickOutside = (event) => {
@@ -769,6 +781,61 @@ onUnmounted(() => {
 .nav-link.active {
   color: var(--color-primary);
   background-color: #f3f4f6;
+}
+
+/* Dropdown styles */
+.nav-dropdown {
+  position: relative;
+  padding: 0.5rem;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-toggle::after {
+  content: ' ▼';
+  font-size: 12px;
+}
+
+.nav-dropdown:hover .dropdown-toggle::after {
+  content: ' ▲';
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.3s;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
 }
 
 .user-actions {
@@ -1239,6 +1306,30 @@ onUnmounted(() => {
 
 .btn-icon:hover {
   background: #f9fafb;
+}
+
+.travel-report-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.travel-report-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.travel-report-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Responsive */

@@ -108,17 +108,28 @@ const router = useRouter();
 const userInfo = getUserData();
 
 onMounted(() => {
-  // Redirect customers to their specific dashboard
+  // Redirect users to their specific dashboards based on role
   if (userInfo && userInfo.userRole === 'customer') {
-    router.replace('/customer-dashboard');
+    router.replace('/customer/dashboard');
+    return;
+  }
+  else if(userInfo && userInfo.userRole === 'admin') {
+    router.replace('/admin/dashboard');
+    return;
+  } else if(userInfo && userInfo.userRole === 'club owner') {
+    router.replace('/club-owner/dashboard');
+    return;
+  }
+  else if(userInfo && userInfo.userRole === 'club manager') {
+    router.replace('/club-manager/matches');
     return;
   }
   else if(userInfo && userInfo.userRole === 'team manager') {
     router.replace('/team-manager/matches');
     return;
   }
-  else if(userInfo && userInfo.userRole === 'club manager') {
-    router.replace('/club-manager/matches');
+  else if(userInfo && userInfo.userRole === 'analyst') {
+    router.replace('/analyst');
     return;
   }
   else if(userInfo && userInfo.userRole === 'scouting manager') {

@@ -76,6 +76,53 @@ import { useRouter } from 'vue-router'
 import { getUserData } from '../services/auth_service'
 
 const router = useRouter()
+
+// Get user data
+const userInfo = getUserData()
+
+// Computed properties for template
+const isAuthenticated = computed(() => {
+  return !!userInfo && !!localStorage.getItem('token')
+})
+
+const userName = computed(() => {
+  return userInfo?.userName || 'User'
+})
+
+// Redirect logic on component mount
+onMounted(() => {
+  if (isAuthenticated.value && userInfo) {
+    const userRole = userInfo.userRole
+    
+    // Redirect based on user role
+    switch (userRole) {
+      case 'customer':
+        router.replace('/customer/dashboard')
+        break
+      case 'admin':
+        router.replace('/admin/dashboard')
+        break
+      case 'club manager':
+        router.replace('/club-owner/dashboard')
+        break
+      case 'team manager':
+        router.replace('/team-manager/matches')
+        break
+      case 'analyst':
+        router.replace('/analyst')
+        break
+      default:
+        // For any other role, redirect to general dashboard
+        router.replace('/dashboard')
+        break
+    }
+  }
+})
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getUserData } from '../services/auth_service'
+
+const router = useRouter()
 const userInfo = getUserData()
 
 const isAuthenticated = computed(() => {

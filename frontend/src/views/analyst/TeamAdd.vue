@@ -1,42 +1,5 @@
 <template>
   <div class="team-add">
-    <!-- Header Navigation -->
-    <header class="header">
-      <div class="header-left">
-        <div class="logo">📧</div>
-      </div>
-      
-      <div class="header-center">
-        <nav class="main-nav">
-          <router-link 
-            to="/analyst" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'DataAnalysis' }"
-          >
-            Data analysis
-          </router-link>
-          <router-link 
-            to="/matches" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'Matches' }"
-          >
-            Matches
-          </router-link>
-          <router-link 
-            to="/reports" 
-            class="nav-tab"
-            :class="{ active: $route.name === 'Reports' }"
-          >
-            Reports
-          </router-link>
-        </nav>
-      </div>
-      
-      <div class="header-right">
-        <div class="user-icon">👤</div>
-      </div>
-    </header>
-
     <!-- Main Content -->
     <main class="main-content">
       <div class="content-header">
@@ -256,72 +219,6 @@ const goBack = () => {
   background-color: #f8f9fa;
 }
 
-/* Header Styles - Same as DataAnalysis */
-.header {
-  background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.header-left, .header-right {
-  flex: 1;
-}
-
-.header-right {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.logo, .user-icon {
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-}
-
-.header-center {
-  flex: 2;
-  display: flex;
-  justify-content: center;
-}
-
-.main-nav {
-  display: flex;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  padding: 4px;
-  gap: 4px;
-}
-
-.nav-tab {
-  padding: 8px 24px;
-  text-decoration: none;
-  color: #666;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.nav-tab:hover {
-  background-color: #e0e0e0;
-  text-decoration: none;
-  color: #333;
-}
-
-.nav-tab.active {
-  background-color: white;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
 /* Main Content */
 .main-content {
   padding: 2rem;
@@ -495,21 +392,6 @@ const goBack = () => {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .header {
-    padding: 1rem;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .header-left, .header-center, .header-right {
-    flex: none;
-  }
-
-  .main-nav {
-    width: 100%;
-    justify-content: center;
-  }
-
   .main-content {
     padding: 1rem;
   }

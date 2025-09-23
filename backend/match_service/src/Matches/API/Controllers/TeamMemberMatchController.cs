@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.GetTeamMembersByMatch;
 using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.UpdateStartingLineup;
+using match_service.src.Matches.Core.Application.Features.TeamMemberMatch.PlayerSubstitution;
 
 namespace match_service.src.Matches.API.Controllers;
 
@@ -32,4 +33,26 @@ public class TeamMemberMatchController : BaseController
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
+
+    [HttpPost("match/{matchId}/substitution")]
+    public async Task<ActionResult> PlayerSubstitution(int matchId, [FromBody] PlayerSubstitutionRequest request)
+    {
+        var command = new PlayerSubstitutionCommand
+        {
+            MatchId = matchId,
+            TeamId = request.TeamId,
+            PlayerInId = request.PlayerInId,
+            PlayerOutId = request.PlayerOutId
+        };
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+}
+
+public class PlayerSubstitutionRequest
+{
+    public int TeamId { get; set; }
+    public int PlayerInId { get; set; }
+    public int PlayerOutId { get; set; }
+    public int? AnalystId { get; set; }
 }
