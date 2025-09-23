@@ -63,9 +63,9 @@ public static class ApplicationStartup
         services.AddScoped<ITicketPriceCalculationService, TicketPriceCalculationService>();
         services.AddScoped<INeo4jSeedingService, Neo4jSeedingService>();
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
-    }
-
-    private static void SetupBackgroundServices(IServiceCollection services)
+        services.AddScoped<IEmailService, GmailEmailService>();
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+    }    private static void SetupBackgroundServices(IServiceCollection services)
     {
         services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<MatchFinishedService>();
