@@ -1,4 +1,4 @@
-using scouting_service.src.Scoutings.BuildingBlocks.Infratructure.Database;
+using scouting_service.src.Scoutings.Core.Infrastructure;
 using scouting_service.src.Scoutings.Core.Application.Interfaces;
 using scouting_service.src.Scoutings.Core.Domain.Entities;
 
