@@ -53,8 +53,8 @@ INSERT INTO zone (name, rank, maximum_capacity, status) VALUES
 -- Insert 3 Partizan matches in the coming days (September 2025)
 INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, tickets_for_sale, tickets_went_on_sale, id_competition, id_season, id_team) VALUES 
     ('Partizan vs Crvena Zvezda', '2025-09-05 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-05 19:00:00+01', 1, 1, 2),
-    ('Partizan vs FMP', '2025-09-15 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-15 19:00:00+01', 1, 1, 3),
-    ('Partizan vs Mega', '2025-09-25 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-09-25 19:00:00+01', 1, 1, 4);
+    ('Partizan vs FMP', '2025-10-02 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-10-02 19:00:00+01', 1, 1, 3),
+    ('Partizan vs Mega', '2025-10-07 19:00:00+01', 'home', 'Serbia', 'Belgrade', 'Stark Arena', TRUE, FALSE, FALSE, TRUE, '2025-10-07 19:00:00+01', 1, 1, 4);
 
 -- Insert seats for all zones with 4 sides each
 
@@ -441,24 +441,3 @@ INSERT INTO management (member_name, member_surname, member_role) VALUES
 ('Bogdan', 'Radonjić', 'doctor'),
 ('Uroš', 'Lukić', 'coach'),
 ('Lazar', 'Mihajlović', 'other');
-
--- =====================================================
--- PRIMER KORIŠĆENJA DINAMIČKIH CENA:
--- =====================================================
--- Danas je 2. septembar 2025
--- 
--- Match 1: Partizan vs Crvena Zvezda (5. septembar - za 3 dana)
--- - Derby utakmica, visok price_factor (8.0), time_factor (0.7)
--- - Min: 4000, Max: 12000 dinara
--- SELECT calculate_ticket_price(1, 1); 
---
--- Match 2: Partizan vs FMP (15. septembar - za 13 dana)  
--- - Srednji demand, price_factor (5.0), time_factor (0.5)
--- - Min: 2500, Max: 7500 dinara
--- SELECT calculate_ticket_price(2, 1);
---
--- Match 3: Partizan vs Mega (25. septembar - za 23 dana)
--- - Obična utakmica, nizak price_factor (4.0), time_factor (0.4) 
--- - Min: 2000, Max: 6000 dinara
--- SELECT calculate_ticket_price(3, 1);
--- =====================================================
