@@ -1,6 +1,11 @@
 using travel_service.src.Travels.Core.Application.Interfaces;
 using travel_service.src.Travels.Core.Domain.Entities;
 using travel_service.src.Travels.Core.Infrastructure;
+using travel_service.src.Travels.Core.Application.Features.Trip.GetTravelCostReport;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using System.Text;
+using System;
 
 namespace travel_service.src.Travels.Core.Infrastructure.Repositories;
 
@@ -72,4 +77,5 @@ public class TripRepository : ITripRepository
             o.Type == "accommodation" && 
             o.Chosen == true);
     }
+
 }
