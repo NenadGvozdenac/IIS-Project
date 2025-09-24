@@ -25,18 +25,15 @@ public class UpdateSessionHandler : IRequestHandler<UpdateSessionCommand, Result
                     .WithCode((int)ResultCode.NotFound));
             }
 
-            var session = new Session
-            {
-                IdSession = request.IdSession,
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
-                IdSessionStatus = request.IdSessionStatus,
-                IdSessionType = request.IdSessionType,
-                IdUser = request.IdUser,
-                IdPlayer = request.IdPlayer
-            };
+            // Update the existing tracked entity instead of creating a new one
+            existingSession.StartTime = request.StartTime;
+            existingSession.EndTime = request.EndTime;
+            existingSession.IdSessionStatus = request.IdSessionStatus;
+            existingSession.IdSessionType = request.IdSessionType;
+            existingSession.IdUser = request.IdUser;
+            existingSession.IdPlayer = request.IdPlayer;
 
-            var updatedSession = _sessionRepository.Update(session);
+            var updatedSession = _sessionRepository.Update(existingSession);
 
             var response = new UpdateSessionResponse
             {

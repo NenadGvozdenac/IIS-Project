@@ -429,13 +429,13 @@ const updateSessionData = async () => {
   isUpdating.value = true
   try {
     const updateData = {
-      StartTime: editForm.value.startTime,
-      EndTime: editForm.value.endTime,
-      IdSessionType: parseInt(editForm.value.idSessionType),
-      IdSessionStatus: parseInt(editForm.value.idSessionStatus),
-      Note: editForm.value.note || '',
-      IdPlayer: session.value.idPlayer, // Keep the original player
-      IdUser: session.value.idUser // Keep the original user
+      idSession: 0, // Will be overwritten by controller, but needed for model binding
+      startTime: editForm.value.startTime,
+      endTime: editForm.value.endTime,
+      idSessionType: parseInt(editForm.value.idSessionType),
+      idSessionStatus: parseInt(editForm.value.idSessionStatus),
+      idPlayer: session.value.idPlayer, // Keep the original player
+      idUser: session.value.idUser // Keep the original user
     }
     
     console.log('Updating session with data:', updateData)
