@@ -23,7 +23,7 @@
 
         <!-- Session Edit Form -->
         <div v-if="session && !loading" class="content-card">
-          <form @submit.prevent="updateSession" class="session-edit-form">
+          <form @submit.prevent="updateSessionData" class="session-edit-form">
             <div class="form-row">
               <div class="form-group">
                 <label>Player:</label>
@@ -136,12 +136,56 @@
             <div v-else class="metrics-grid">
               <div 
                 v-for="metric in sessionMetrics" 
-                :key="metric.id"
-                class="metric-card"
+                :key="`session-${metric.id}`"
+                class="metric-card session-metric"
               >
-                <h4>{{ metric.name }}</h4>
-                <p class="metric-value">{{ metric.value }}</p>
-                <p class="metric-type">{{ metric.type }}</p>
+                <div class="metric-header">
+                  <h4>{{ metric.name }}</h4>
+                  <button 
+                    class="btn btn-sm btn-edit"
+                    @click="startEditMetric(metric)"
+                    :disabled="metric.isEditing"
+                  >
+                    Edit
+                  </button>
+                </div>
+                
+                <!-- Display mode -->
+                <div v-if="!metric.isEditing" class="metric-display">
+                  <p class="metric-value">{{ metric.value }}</p>
+                  <p class="metric-type">{{ metric.type }}</p>
+                </div>
+                
+                <!-- Edit mode -->
+                <div v-else class="metric-edit">
+                  <div class="edit-form">
+                    <input 
+                      v-model="metric.editValue" 
+                      type="text" 
+                      class="form-control"
+                      :placeholder="getMetricPlaceholder({ metricTypeName: metric.type })"
+                      @keyup.enter="saveMetricEdit(metric)"
+                      @keyup.escape="cancelMetricEdit(metric)"
+                    />
+                    <div class="edit-actions">
+                      <button 
+                        class="btn btn-sm btn-success"
+                        @click="saveMetricEdit(metric)"
+                        :disabled="metric.isSaving"
+                      >
+                        {{ metric.isSaving ? 'Saving...' : 'Save' }}
+                      </button>
+                      <button 
+                        class="btn btn-sm btn-secondary"
+                        @click="cancelMetricEdit(metric)"
+                        :disabled="metric.isSaving"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <p class="metric-type">{{ metric.type }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -151,11 +195,11 @@
             <h3>Available Metrics</h3>
             
             <!-- Permanent Metrics -->
-            <div class="metric-category">
+            <div class="metric-category" v-if="availablePermanentMetrics.length > 0">
               <h4>Permanent Metrics</h4>
               <div class="metrics-grid">
                 <div 
-                  v-for="metric in permanentMetrics" 
+                  v-for="metric in availablePermanentMetrics" 
                   :key="metric.idMetrics"
                   class="metric-card available"
                   @click="addMetricToSession(metric)"
@@ -168,11 +212,11 @@
             </div>
 
             <!-- Current Season Metrics -->
-            <div class="metric-category">
+            <div class="metric-category" v-if="availableCurrentSeasonMetrics.length > 0">
               <h4>Current Season Metrics</h4>
               <div class="metrics-grid">
                 <div 
-                  v-for="metric in currentSeasonMetrics" 
+                  v-for="metric in availableCurrentSeasonMetrics" 
                   :key="metric.idMetrics"
                   class="metric-card available"
                   @click="addMetricToSession(metric)"
@@ -182,6 +226,10 @@
                   <span class="add-icon">+</span>
                 </div>
               </div>
+            </div>
+            
+            <div v-if="availablePermanentMetrics.length === 0 && availableCurrentSeasonMetrics.length === 0" class="no-metrics">
+              All available metrics have been added to this session.
             </div>
           </div>
         </div>
@@ -232,9 +280,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getSessionTypes, getSessionStatuses, getAllSessionMetrics, getSessionMetricsBySessionId, createSessionMetric, getSessionById } from '../../services/session_service.js'
+import { getSessionTypes, getSessionStatuses, getAllSessionMetrics, getSessionMetricsBySessionId, createSessionMetric, updateSessionMetric, updateSession, getSessionById } from '../../services/session_service.js'
 import { getAllMetrics } from '../../services/metrics_service.js'
 
 // Router
@@ -265,6 +313,19 @@ const editForm = ref({
   note: ''
 })
 
+// Computed properties for available metrics (excluding ones already in session)
+const existingMetricIds = computed(() => {
+  return new Set(sessionMetrics.value.map(metric => metric.id))
+})
+
+const availablePermanentMetrics = computed(() => {
+  return permanentMetrics.value.filter(metric => !existingMetricIds.value.has(metric.idMetrics))
+})
+
+const availableCurrentSeasonMetrics = computed(() => {
+  return currentSeasonMetrics.value.filter(metric => !existingMetricIds.value.has(metric.idMetrics))
+})
+
 // Methods
 const goBack = () => {
   router.push('/scout/sessions')
@@ -277,6 +338,8 @@ const loadSession = async () => {
     
     session.value = {
       idSession: sessionData.idSession,
+      idPlayer: sessionData.idPlayer,
+      idUser: sessionData.idUser,
       playerName: sessionData.playerName,
       userName: sessionData.userName,
       startTime: sessionData.startTime,
@@ -287,8 +350,8 @@ const loadSession = async () => {
     }
 
     editForm.value = {
-      startTime: sessionData.startTime,
-      endTime: sessionData.endTime,
+      startTime: sessionData.startTime ? sessionData.startTime.split('T')[0] : '',
+      endTime: sessionData.endTime ? sessionData.endTime.split('T')[0] : '',
       idSessionType: sessionData.idSessionType,
       idSessionStatus: sessionData.idSessionStatus,
       note: sessionData.note || ''
@@ -346,29 +409,45 @@ const loadSessionMetrics = async () => {
     
     sessionMetrics.value = metrics.map(metric => ({
       id: metric.idMetrics,
-      name: metric.metricName || 'Unknown Metric', // Fallback for missing names
+      sessionId: metric.idSession,
+      name: metric.metricName || 'Unknown Metric',
       value: metric.value || '',
-      type: metric.metricTypeName || 'Unknown Type'
+      type: metric.metricTypeName || 'Unknown Type',
+      isEditing: false,
+      editValue: '',
+      isSaving: false
     }));
     
     console.log('Mapped session metrics:', sessionMetrics.value); // Debug log
   } catch (err) {
     console.error('Error loading session metrics:', err);
-    sessionMetrics.value = []; // Ensure it's an empty array on error
+    sessionMetrics.value = [];
   }
 }
 
-const updateSession = async () => {
+const updateSessionData = async () => {
   isUpdating.value = true
   try {
-    // Here you would call the API to update the session
-    console.log('Updating session:', editForm.value)
+    const updateData = {
+      StartTime: editForm.value.startTime,
+      EndTime: editForm.value.endTime,
+      IdSessionType: parseInt(editForm.value.idSessionType),
+      IdSessionStatus: parseInt(editForm.value.idSessionStatus),
+      Note: editForm.value.note || '',
+      IdPlayer: session.value.idPlayer, // Keep the original player
+      IdUser: session.value.idUser // Keep the original user
+    }
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log('Updating session with data:', updateData)
+    
+    await updateSession(parseInt(sessionId), updateData)
+    
+    // Reload session data to reflect changes
+    await loadSession()
     
     alert('Session updated successfully!')
   } catch (err) {
+    console.error('Error updating session:', err)
     alert('Error updating session: ' + err.message)
   } finally {
     isUpdating.value = false
@@ -405,9 +484,13 @@ const saveMetricValue = async () => {
     // Add to session metrics display with proper metric info
     const newSessionMetric = {
       id: selectedMetric.value.idMetrics,
+      sessionId: parseInt(sessionId),
       name: selectedMetric.value.name || 'Unknown Metric',
       value: metricValue.value,
-      type: selectedMetric.value.metricTypeName || 'Unknown Type'
+      type: selectedMetric.value.metricTypeName || 'Unknown Type',
+      isEditing: false,
+      editValue: '',
+      isSaving: false
     };
     
     console.log('Adding new session metric to display:', newSessionMetric); // Debug log
@@ -421,6 +504,52 @@ const saveMetricValue = async () => {
     alert('Error adding metric: ' + err.message);
   } finally {
     isAddingMetric.value = false;
+  }
+}
+
+// Inline editing methods
+const startEditMetric = (metric) => {
+  metric.isEditing = true;
+  metric.editValue = metric.value;
+}
+
+const cancelMetricEdit = (metric) => {
+  metric.isEditing = false;
+  metric.editValue = '';
+  metric.isSaving = false;
+}
+
+const saveMetricEdit = async (metric) => {
+  if (!metric.editValue.trim()) {
+    alert('Please enter a value');
+    return;
+  }
+  
+  metric.isSaving = true;
+  
+  try {
+    const updateData = {
+      value: metric.editValue,
+      idSession: parseInt(sessionId),
+      idMetrics: metric.id
+    };
+    
+    console.log('Updating session metric:', updateData);
+    
+    // Call API to update session metric
+    await updateSessionMetric(parseInt(sessionId), metric.id, updateData);
+    
+    // Update the display value
+    metric.value = metric.editValue;
+    metric.isEditing = false;
+    metric.editValue = '';
+    
+    console.log('Session metric updated successfully');
+  } catch (err) {
+    console.error('Error updating session metric:', err);
+    alert('Error updating metric: ' + err.message);
+  } finally {
+    metric.isSaving = false;
   }
 }
 
@@ -640,6 +769,77 @@ onMounted(async () => {
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   background: white;
+}
+
+.metric-card.session-metric {
+  border-left: 4px solid #3b82f6;
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.metric-header h4 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn-edit {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.btn-edit:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.btn-success {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.metric-display {
+  /* existing styles */
+}
+
+.metric-edit {
+  /* edit mode styles */
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-control {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .metric-card.available {

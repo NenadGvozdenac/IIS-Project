@@ -111,6 +111,50 @@ export const getAllMetricTypes = async () => {
   }
 };
 
+// Update an existing metric
+export const updateMetric = async (metricId, metricData) => {
+  try {
+    const requestBody = {
+      Name: metricData.name,
+      IsPermanent: metricData.isPermanent ? 1 : 0,
+      MetricWeight: parseInt(metricData.metricWeight),
+      IdUser: parseInt(metricData.idUser),
+      IdMetricType: parseInt(metricData.idMetricType)
+    };
+
+    console.log('Updating metric with data:', requestBody);
+    console.log('Request URL:', `${API_URL}/Metrics/${metricId}`);
+
+    const response = await fetch(`${API_URL}/Metrics/${metricId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      
+      // Try to parse error as JSON for better debugging
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('Parsed error:', errorJson);
+        throw new Error(`HTTP error! status: ${response.status}, error: ${JSON.stringify(errorJson)}`);
+      } catch (parseError) {
+        console.error('Could not parse error as JSON');
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+    }
+
+    return await handleApiResponse(response);
+  } catch (error) {
+    console.error('Error updating metric:', error);
+    throw error;
+  }
+};
+
 // Create a new metric type
 export const createMetricType = async (typeData) => {
   try {

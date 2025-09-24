@@ -4,6 +4,7 @@ using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
 using scouting_service.src.Scoutings.Core.Application.Features.Sessions.GetAllSessions;
 using scouting_service.src.Scoutings.Core.Application.Features.Sessions.GetSessionById;
 using scouting_service.src.Scoutings.Core.Application.Features.Sessions.CreateSession;
+using scouting_service.src.Scoutings.Core.Application.Features.Sessions.UpdateSession;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -37,6 +38,14 @@ public class SessionsController : BaseController
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreateSessionCommand command)
     {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, [FromBody] UpdateSessionCommand command)
+    {
+        command.IdSession = id;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

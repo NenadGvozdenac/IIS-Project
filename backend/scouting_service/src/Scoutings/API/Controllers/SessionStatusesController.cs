@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionStatuses.GetAllSessionStatuses;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionStatuses.CreateSessionStatus;
+using scouting_service.src.Scoutings.Core.Application.Features.SessionStatuses.UpdateSessionStatus;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -28,6 +29,14 @@ public class SessionStatusesController : BaseController
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreateSessionStatusCommand command)
     {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, [FromBody] UpdateSessionStatusCommand command)
+    {
+        command.IdStatus = id;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

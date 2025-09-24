@@ -468,41 +468,41 @@ INSERT INTO session_type (type) VALUES
 -- Insert comprehensive metrics for player evaluation
 -- Quantitative metrics (NBA Box Score Stats)
 INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
-('PTS (Points)', 0, 10, 5, 1),
-('FGM (Field Goals Made)', 0, 8, 5, 1),
-('FGA (Field Goals Attempted)', 0, 6, 5, 1),
-('FG% (Field Goal Percentage)', 0, 9, 5, 1),
-('3PM (Three Points Made)', 0, 8, 5, 1),
-('3PA (Three Points Attempted)', 0, 6, 5, 1),
-('3P% (Three Point Percentage)', 0, 8, 5, 1),
-('FTM (Free Throws Made)', 0, 7, 5, 1),
-('FTA (Free Throws Attempted)', 0, 6, 5, 1),
-('FT% (Free Throw Percentage)', 0, 8, 5, 1),
-('OREB (Offensive Rebounds)', 0, 7, 5, 1),
-('DREB (Defensive Rebounds)', 0, 8, 5, 1),
-('REB (Total Rebounds)', 0, 9, 5, 1),
-('AST (Assists)', 0, 9, 5, 1),
-('STL (Steals)', 0, 7, 5, 1),
-('BLK (Blocks)', 0, 7, 5, 1),
-('TOV (Turnovers)', 0, 6, 5, 1),
-('PF (Personal Fouls)', 0, 5, 5, 1),
-('MIN (Minutes Played)', 0, 6, 5, 1),
-('+/- (Plus Minus)', 0, 7, 5, 1);
+('PTS (Points)', 1, 10, 5, 1),
+('FGM (Field Goals Made)', 1, 8, 5, 1),
+('FGA (Field Goals Attempted)', 1, 6, 5, 1),
+('FG% (Field Goal Percentage)', 1, 9, 5, 1),
+('3PM (Three Points Made)', 1, 8, 5, 1),
+('3PA (Three Points Attempted)', 1, 6, 5, 1),
+('3P% (Three Point Percentage)', 1, 8, 5, 1),
+('FTM (Free Throws Made)', 1, 7, 5, 1),
+('FTA (Free Throws Attempted)', 1, 6, 5, 1),
+('FT% (Free Throw Percentage)', 1, 8, 5, 1),
+('OREB (Offensive Rebounds)', 1, 7, 5, 1),
+('DREB (Defensive Rebounds)', 1, 8, 5, 1),
+('REB (Total Rebounds)', 1, 9, 5, 1),
+('AST (Assists)', 1, 9, 5, 1),
+('STL (Steals)', 1, 7, 5, 1),
+('BLK (Blocks)', 1, 7, 5, 1),
+('TOV (Turnovers)', 1, 6, 5, 1),
+('PF (Personal Fouls)', 1, 5, 5, 1),
+('MIN (Minutes Played)', 1, 6, 5, 1),
+('+/- (Plus Minus)', 1, 7, 5, 1);
 
 -- Descriptive metrics (qualitative/observational) - All created by scout
 INSERT INTO metrics (name, is_permanent, metric_weight, id_user, id_metric_type) VALUES 
-('Leadership Qualities', 0, 9, 5, 2),
-('Team Chemistry', 0, 8, 5, 2),
-('Communication Skills', 0, 8, 5, 2),
-('Work Ethic', 0, 9, 5, 2),
-('Basketball IQ', 0, 10, 5, 2),
-('Defensive Intensity', 0, 8, 5, 2),
-('Clutch Performance', 0, 9, 5, 2),
-('Coachability', 0, 9, 5, 2),
-('Mental Toughness', 0, 8, 5, 2),
-('Court Vision', 0, 9, 5, 2),
-('Shooting Form', 0, 7, 5, 2),
-('Ball Handling Skills', 0, 8, 5, 2);
+('Leadership Qualities', 1, 9, 5, 2),
+('Team Chemistry', 1, 8, 5, 2),
+('Communication Skills', 1, 8, 5, 2),
+('Work Ethic', 1, 9, 5, 2),
+('Basketball IQ', 1, 10, 5, 2),
+('Defensive Intensity', 1, 8, 5, 2),
+('Clutch Performance', 1, 9, 5, 2),
+('Coachability', 1, 9, 5, 2),
+('Mental Toughness', 1, 8, 5, 2),
+('Court Vision', 1, 9, 5, 2),
+('Shooting Form', 1, 7, 5, 2),
+('Ball Handling Skills', 1, 8, 5, 2);
 
 -- ===============================================================
 -- SCOUTING SESSIONS DATA
