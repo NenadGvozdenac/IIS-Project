@@ -1771,10 +1771,11 @@ const saveEventToInfluxDB = async (eventData, action, createdEventId) => {
       matchId: eventData.matchId.toString(),
       eventCategory: eventCategory,
       eventType: action,
-      period: matchTrackingState.value.currentPeriod || 'Q1',
-      periodTime: matchTrackingState.value.elapsedPeriodTime || 0,
+      period: eventData.period || '1',
+      periodTime: eventData.periodTime || 0,
       teamId: eventData.teamId?.toString(),
       playerId: eventData.playerId?.toString(),
+      playerName: eventData.playerName || '',
       eventId: createdEventId || Date.now(), // Use created event ID or timestamp
       notes: eventData.notes,
       ourPoints: matchTrackingState.value.ourPoints || 0,
@@ -1841,15 +1842,26 @@ const recordAction = async (action, teamId) => {
     }
 
     console.log('Creating personal event:', eventData)
-    
     const response = await axios.post(`${MATCHES_URL}/ChronologicalEvent`, eventData)
     
     if (response.data.isSuccess) {
       console.log('Event recorded successfully:', response.data)
+      
+      const eventDataInflux = {
+        matchId: parseInt(matchId),
+        category: 'personal',
+        playerId: selectedPlayer.value.id,
+        playerName: selectedPlayer.value.name,
+        period: response.data.value?.period || matchTrackingState.value.currentPeriod || 1,
+        periodTime: response.data.value?.periodTime || matchTrackingState.value.elapsedPeriodTime || 0,
+        teamId: teamId,
+        type: action,
+        notes: `${selectedPlayer.value.name} - ${eventTypeMap[action] || action}`
+      }
 
       // Save event to InfluxDB for analytics (in parallel with other operations)
       const createdEventId = response.data.value?.eventId || response.data.value?.id
-      saveEventToInfluxDB(eventData, action, createdEventId)
+      saveEventToInfluxDB(eventDataInflux, action, createdEventId)
         .then(success => {
           if (success) {
             console.log('Event also saved to InfluxDB for analytics')

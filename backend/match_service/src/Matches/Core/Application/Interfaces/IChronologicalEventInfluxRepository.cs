@@ -29,9 +29,16 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         Task<bool> DeleteEventsOlderThanAsync(DateTime cutoffDate);
 
         // Health check
+        Task<bool> IsConnectedAsync();
+
         // Complex queries for academic requirements
         Task<IEnumerable<dynamic>> GetAdvancedMatchStatisticsAsync(string matchId);
         Task<IEnumerable<dynamic>> GetPlayerPerformanceComparisonAsync(string matchId);
-        Task<IEnumerable<dynamic>> GetPeriodScoringTrendsAsync(string matchId);
+        Task<IEnumerable<dynamic>> GetSeasonPlayerAveragesAsync(DateTime startTime, DateTime endTime, string? teamId = null, int minMatches = 1);
+
+        // Report methods
+        Task<IEnumerable<dynamic>> GetMatchScoringEventsInfluxReportAsync(string matchId);
+        Task<IEnumerable<dynamic>> GetPlayerEventCountsInfluxReportAsync(string playerId, DateTime startTime, DateTime endTime);
+        Task<IEnumerable<dynamic>> GetTeamPlayerAveragesInfluxReportAsync(DateTime startTime, DateTime endTime, string? teamId = "1");
     }
 }

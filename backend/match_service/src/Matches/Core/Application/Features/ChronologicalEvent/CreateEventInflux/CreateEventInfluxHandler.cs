@@ -33,6 +33,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                     PeriodTime = request.PeriodTime,
                     TeamId = request.TeamId,
                     PlayerId = request.PlayerId,
+                    PlayerName = request.PlayerName,
                     EventId = request.EventId,
                     Notes = request.Notes,
                     OurPoints = request.OurPoints,
