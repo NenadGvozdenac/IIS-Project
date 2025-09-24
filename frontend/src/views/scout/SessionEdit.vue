@@ -50,7 +50,7 @@
               <div class="form-group">
                 <label>Start Date:</label>
                 <input 
-                  type="date" 
+                  type="datetime-local" 
                   v-model="editForm.startTime" 
                   required 
                 />
@@ -59,7 +59,7 @@
               <div class="form-group">
                 <label>End Date:</label>
                 <input 
-                  type="date" 
+                  type="datetime-local" 
                   v-model="editForm.endTime" 
                 />
               </div>
@@ -93,15 +93,6 @@
                   </option>
                 </select>
               </div>
-            </div>
-
-            <div class="form-group full-width">
-              <label>Note:</label>
-              <textarea 
-                v-model="editForm.note" 
-                rows="4"
-                placeholder="Session notes..."
-              ></textarea>
             </div>
 
             <div class="form-actions">
@@ -309,8 +300,7 @@ const editForm = ref({
   startTime: '',
   endTime: '',
   idSessionType: '',
-  idSessionStatus: '',
-  note: ''
+  idSessionStatus: ''
 })
 
 // Computed properties for available metrics (excluding ones already in session)
@@ -345,16 +335,14 @@ const loadSession = async () => {
       startTime: sessionData.startTime,
       endTime: sessionData.endTime,
       sessionTypeName: sessionData.sessionTypeName,
-      sessionStatusName: sessionData.sessionStatusName,
-      note: sessionData.note
+      sessionStatusName: sessionData.sessionStatusName
     }
 
     editForm.value = {
-      startTime: sessionData.startTime ? sessionData.startTime.split('T')[0] : '',
-      endTime: sessionData.endTime ? sessionData.endTime.split('T')[0] : '',
+      startTime: sessionData.startTime ? sessionData.startTime.split('.')[0] : '',
+      endTime: sessionData.endTime ? sessionData.endTime.split('.')[0] : '',
       idSessionType: sessionData.idSessionType,
-      idSessionStatus: sessionData.idSessionStatus,
-      note: sessionData.note || ''
+      idSessionStatus: sessionData.idSessionStatus
     }
   } catch (err) {
     console.error('Error loading session:', err)

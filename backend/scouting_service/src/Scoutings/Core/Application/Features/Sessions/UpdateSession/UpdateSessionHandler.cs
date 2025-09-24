@@ -26,8 +26,8 @@ public class UpdateSessionHandler : IRequestHandler<UpdateSessionCommand, Result
             }
 
             // Update the existing tracked entity instead of creating a new one
-            existingSession.StartTime = request.StartTime;
-            existingSession.EndTime = request.EndTime;
+            existingSession.StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
+            existingSession.EndTime = request.EndTime.HasValue ? DateTime.SpecifyKind(request.EndTime.Value, DateTimeKind.Utc) : null;
             existingSession.IdSessionStatus = request.IdSessionStatus;
             existingSession.IdSessionType = request.IdSessionType;
             existingSession.IdUser = request.IdUser;
