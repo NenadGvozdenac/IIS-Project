@@ -25,6 +25,9 @@
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.18" />
 		<PackageReference Include="MediatR" Version="11.1.0" />
 		<PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+		<!-- Cassandra Columnar Database Dependencies -->
+		<PackageReference Include="CassandraCSharpDriver" Version="3.20.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 	</ItemGroup>
 
   <ItemGroup>

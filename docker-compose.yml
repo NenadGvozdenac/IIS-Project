@@ -67,6 +67,7 @@ services:
       - "5007:5007" # Web UI
     depends_on:
       - postgres_db
+      - cassandra
 
   postgres_db:
     image: postgres:16
@@ -110,6 +111,26 @@ services:
       - neo4j_plugins:/plugins
       - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
 
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra-travel
+    restart: always
+    ports:
+      - "9042:9042" # Native transport port
+    environment:
+      - CASSANDRA_CLUSTER_NAME=travel_cluster
+      - CASSANDRA_KEYSPACE=travel_analytics
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra", "-e", "describe cluster"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
+
   frontend:
     build:
       context: ./frontend
@@ -131,3 +152,4 @@ volumes:
   neo4j_import:
   neo4j_plugins:
   influxdb_storage:
+  cassandra_data:
