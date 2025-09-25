@@ -40,4 +40,10 @@
     <Folder Include="src\Tickets\Core\Application\Features\Users\GetUserById\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Templates\Email\*.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

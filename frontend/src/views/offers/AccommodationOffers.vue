@@ -33,14 +33,6 @@
       <h1>Accommodation offers</h1>
       <div class="header-buttons">
         <button 
-          v-if="isClubManager && offers.length > 1" 
-          @click="autoSelectBestOffer"
-          class="btn btn-auto-select"
-          :disabled="autoSelectLoading">
-          <span v-if="autoSelectLoading">🤖 Selecting...</span>
-          <span v-else>🤖 Auto Select Best</span>
-        </button>
-        <button 
           v-if="isTeamManager" 
           @click="showAddOfferModal = true"
           class="btn btn-primary">
@@ -544,7 +536,6 @@ const autoSelectBestOffer = async () => {
   
   autoSelectLoading.value = true
   error.value = ''
-  
   try {
     const autoSelectData = {
       matchId: matchId.value,
@@ -554,7 +545,6 @@ const autoSelectBestOffer = async () => {
       weightBenefits: 0.2,   // 20% weight for benefits
       weightAgency: 0.1      // 10% weight for agency reliability
     }
-    
     const response = await axios.post('https://localhost:5007/api/offers/auto-select', autoSelectData)
     
     if (response.data.isSuccess) {

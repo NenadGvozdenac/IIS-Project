@@ -33,14 +33,6 @@
       <h1>Transportation offers</h1>
       <div class="header-buttons">
         <button 
-          v-if="isClubManager && offers.length > 1" 
-          @click="autoSelectBestOffer"
-          class="btn btn-auto-select"
-          :disabled="autoSelectLoading">
-          <span v-if="autoSelectLoading">🤖 Selecting...</span>
-          <span v-else>🤖 Auto Select Best</span>
-        </button>
-        <button 
           v-if="isTeamManager" 
           @click="showAddOfferModal = true"
           class="btn btn-primary">

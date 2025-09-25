@@ -37,6 +37,26 @@
             class="nav-link analyst-link">
             Matches
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/create-player"
+            class="nav-link scout-link">
+            Create Player
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/metrics"
+            class="nav-link scout-link">
+            Metrics
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/sessions"
+            class="nav-link scout-link">
+            Sessions
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/analysis"
+            class="nav-link scout-link">
+            Analysis
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/recommendations"
+            class="nav-link scout-link">
+            Recommendations
+          </router-link>
         </div>
 
         <div class="navbar-auth">
@@ -221,6 +241,19 @@ const isCustomer = () => {
   border-color: transparent;
   box-shadow: 0 6px 20px rgba(2,119,189,0.18);
   transform: translateY(-2px);
+}
+
+.scout-link {
+  background-color: white;
+  color: #333;
+  font-weight: 500;
+  border: 1px solid #e0e0e0;
+}
+
+.scout-link:hover {
+  background-color: #f5f5f5;
+  color: #333;
+  border-color: #d0d0d0;
 }
 
 .navbar-auth {
