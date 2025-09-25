@@ -37,5 +37,8 @@ namespace elasticsearch_service.src.Models
 
         [Keyword(Name = "metric_value")]
         public string MetricValue { get; set; } = string.Empty;
+
+        [Keyword(Name = "metric_type")]
+        public string MetricType { get; set; } = string.Empty;
     }
 }

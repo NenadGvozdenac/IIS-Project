@@ -145,5 +145,26 @@ namespace elasticsearch_service.src.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        [HttpPost("bulk")]
+        public async Task<ActionResult> BulkInsertSessions([FromBody] IEnumerable<Session> sessions)
+        {
+            try
+            {
+                if (sessions == null || !sessions.Any())
+                    return BadRequest("Sessions data is required");
+
+                var success = await _elasticsearchService.BulkInsertSessionsAsync(sessions);
+                if (!success)
+                    return StatusCode(500, "Failed to bulk insert sessions");
+
+                return Ok(new { message = "Sessions inserted successfully", count = sessions.Count() });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk inserting sessions");
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }

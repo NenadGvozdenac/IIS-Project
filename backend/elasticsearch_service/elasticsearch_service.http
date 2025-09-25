@@ -132,3 +132,90 @@ POST http://localhost:5008/api/index/create
 
 ### Delete indexes
 DELETE http://localhost:5008/api/index/delete
+
+### AGGREGATION ENDPOINTS ###
+
+### Igraci sa najvećim brojem poena u nekoj sesiji (top 5)
+GET http://localhost:5008/api/players/aggregations/most-points-session?limit=5
+
+### Top 5 igraca sa najvećim max poenima u prošlih godinu dana
+GET http://localhost:5008/api/players/aggregations/top-max-points-last-year
+
+### Igraci sa najvećim minutama igre u playoff utakmicama za određenu državu (limit 5)
+GET http://localhost:5008/api/players/aggregations/playoff-minutes-by-country?country=USA&limit=5
+
+### Kompleksna agregacija - top 5 sesija po određenoj metrici za igrača (samo kvantitativne metrike)
+GET http://localhost:5008/api/players/aggregations/top-sessions-by-metric?playerName=John Doe&metricName=points&limit=5
+
+### Dostupne kvantitativne metrike
+GET http://localhost:5008/api/players/aggregations/available-quantitative-metrics
+
+### Primjer sa drugačijim parametrima
+GET http://localhost:5008/api/players/aggregations/playoff-minutes-by-country?country=Serbia&limit=3
+
+### Primjer sa drugačijom metrikom
+GET http://localhost:5008/api/players/aggregations/top-sessions-by-metric?playerName=Nikola&metricName=rebounds&limit=5
+
+### BULK DATA OPERATIONS ###
+
+### Generate dummy data (100 players + 1000 sessions)
+POST http://localhost:5008/api/players/bulk/generate-dummy-data
+
+### Bulk insert players
+POST http://localhost:5008/api/players/bulk/players
+Content-Type: application/json
+
+[
+  {
+    "idPlayer": 201,
+    "name": "Test",
+    "surname": "Player",
+    "fullName": "Test Player",
+    "birthday": "1995-05-15T00:00:00Z",
+    "nationality": "USA",
+    "position": "Point Guard",
+    "physicalMetrics": [
+      {
+        "verticalJump": 85,
+        "fatPercentage": 8,
+        "benchPressWeight": 100,
+        "squatWeight": 150,
+        "sprintSpeed": 95,
+        "weight": 80,
+        "height": 185,
+        "wingspan": 190,
+        "dateOfMeasurement": "2024-01-15T00:00:00Z"
+      }
+    ]
+  }
+]
+
+### Bulk insert sessions
+POST http://localhost:5008/api/sessions/bulk
+Content-Type: application/json
+
+[
+  {
+    "idSession": 2001,
+    "startTime": "2024-09-01T18:00:00Z",
+    "endTime": "2024-09-01T20:00:00Z",
+    "sessionStatus": "Completed",
+    "sessionType": "Training",
+    "idPlayer": 1,
+    "playerFullName": "John Doe",
+    "metrics": [
+      {
+        "metricName": "points",
+        "metricValue": "25"
+      },
+      {
+        "metricName": "assists",
+        "metricValue": "8"
+      },
+      {
+        "metricName": "rebounds",
+        "metricValue": "12"
+      }
+    ]
+  }
+]

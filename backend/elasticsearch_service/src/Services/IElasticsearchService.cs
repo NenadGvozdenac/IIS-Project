@@ -1,4 +1,5 @@
 using elasticsearch_service.src.Models;
+using elasticsearch_service.src.Models.DTOs;
 
 namespace elasticsearch_service.src.Services
 {
@@ -24,5 +25,17 @@ namespace elasticsearch_service.src.Services
         // Index management
         Task<bool> CreateIndexesAsync();
         Task<bool> DeleteIndexesAsync();
+
+        // Aggregation methods
+        Task<IEnumerable<PlayerSessionPointsDto>> GetPlayersWithMostPointsInSessionAsync(int limit = 5);
+        Task<IEnumerable<PlayerMaxPointsDto>> GetTop5PlayersWithMaxPointsLastYearAsync();
+        Task<IEnumerable<PlayerPlayoffMinutesDto>> GetPlayersWithMostPlayoffMinutesByNationalityAsync(string nationality, int limit = 5);
+        Task<IEnumerable<PlayerMetricSessionDto>> GetTopPlayerSessionsByMetricAsync(string playerName, string metricName, int limit = 5);
+        Task<IEnumerable<MetricTypeDto>> GetAvailableQuantitativeMetricsAsync();
+
+        // Bulk data operations
+        Task<bool> BulkInsertPlayersAsync(IEnumerable<Player> players);
+        Task<bool> BulkInsertSessionsAsync(IEnumerable<Session> sessions);
+        Task<bool> GenerateDummyDataAsync();
     }
 }
