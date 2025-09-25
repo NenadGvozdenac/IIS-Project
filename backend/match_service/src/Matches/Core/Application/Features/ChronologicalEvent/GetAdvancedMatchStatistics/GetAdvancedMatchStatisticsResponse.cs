@@ -11,9 +11,9 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
     {
         public string Period { get; set; } = string.Empty;
         public string EventType { get; set; } = string.Empty;
+        public string TeamId { get; set; } = string.Empty;
         public int Count { get; set; }
-        public DateTime? Timestamp { get; set; }
-        public string PlayerId { get; set; } = string.Empty;
+        //public DateTime? Timestamp { get; set; }
         public double EfficiencyRating { get; set; }
     }
 }

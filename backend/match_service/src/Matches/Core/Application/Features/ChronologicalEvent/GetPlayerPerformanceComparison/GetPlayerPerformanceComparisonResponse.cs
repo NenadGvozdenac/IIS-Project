@@ -10,7 +10,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
     public class PlayerPerformance
     {
         public string PlayerId { get; set; } = string.Empty;
-        public string EventType { get; set; } = string.Empty;
+        //public string EventType { get; set; } = string.Empty;
         public int TotalEvents { get; set; }
         public int Rank { get; set; }
         public double TotalPoints { get; set; }

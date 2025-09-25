@@ -27,6 +27,9 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         // Delete operations (for data management)
         Task<bool> DeleteEventsByMatchIdAsync(string matchId);
         Task<bool> DeleteEventsOlderThanAsync(DateTime cutoffDate);
+        
+        // Saga deletion methods
+        Task<int> DeleteEventsByPlayerAndTeamAsync(int playerId, int teamId);
 
         // Health check
         Task<bool> IsConnectedAsync();

@@ -22,8 +22,8 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
         {
             try
             {
-                _logger.LogInformation("Executing season player averages query for period {StartDate} to {EndDate}, TeamId: {TeamId}", 
-                    request.StartDate, request.EndDate, request.TeamId ?? "All");
+                _logger.LogInformation("Executing season player averages query for period {StartDate} to {EndDate}, TeamId: {TeamId}, MinMatches: {MinMatches}", 
+                    request.StartDate, request.EndDate, request.TeamId ?? "All", request.MinMatches);
 
                 var rawResults = await _influxRepository.GetSeasonPlayerAveragesAsync(
                     request.StartDate, 
@@ -31,10 +31,12 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                     request.TeamId, 
                     request.MinMatches);
 
-                if (!rawResults.Any())
+                _logger.LogInformation("Repository returned {Count} raw results", rawResults?.Count() ?? 0);
+
+                if (rawResults == null || !rawResults.Any())
                 {
-                    _logger.LogWarning("No player data found for the specified period {StartDate} to {EndDate}", 
-                        request.StartDate, request.EndDate);
+                    _logger.LogWarning("No player data found for the specified period {StartDate} to {EndDate}, TeamId: {TeamId}", 
+                        request.StartDate, request.EndDate, request.TeamId ?? "All");
                     
                     return Result<GetSeasonPlayerAveragesResponse>.Success(new GetSeasonPlayerAveragesResponse
                     {
@@ -50,6 +52,13 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
 
                 foreach (var result in rawResults)
                 {
+                    var playerId = result.PlayerId?.ToString() ?? "";
+                    var matchesPlayed = Convert.ToInt32(result.MatchesPlayed ?? 0);
+                    var avgPoints = Convert.ToDouble(result.AvgPoints ?? 0);
+                    
+                    _logger.LogDebug("Processing player result - ID: {PlayerId}, Matches: {Matches}, AvgPoints: {Points}", 
+                        (object)playerId, (object)matchesPlayed, (object)avgPoints);
+
                     playerAverages.Add(new PlayerSeasonAverage
                     {
                         PlayerId = result.PlayerId?.ToString() ?? "",

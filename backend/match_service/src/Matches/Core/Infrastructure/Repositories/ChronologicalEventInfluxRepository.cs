@@ -292,6 +292,52 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
             }
         }
 
+        // Saga deletion method
+        public async Task<int> DeleteEventsByPlayerAndTeamAsync(int playerId, int teamId)
+        {
+            try
+            {
+                // First, count the events to be deleted
+                var countFlux = $@"
+                    from(bucket: ""{_bucket}"")
+                      |> range(start: -10y)
+                      |> filter(fn: (r) => r[""_measurement""] == ""basketball_events"")
+                      |> filter(fn: (r) => r[""player_id""] == ""{playerId}"")
+                      |> filter(fn: (r) => r[""team_id""] == ""{teamId}"")
+                      |> count()";
+
+                var queryApi = _influxDBClient.GetQueryApi();
+                var countResult = await queryApi.QueryAsync(countFlux, _org);
+                var eventsCount = 0;
+
+                foreach (var table in countResult)
+                {
+                    foreach (var record in table.Records)
+                    {
+                        if (record.GetValue() != null && int.TryParse(record.GetValue().ToString(), out var count))
+                        {
+                            eventsCount += count;
+                        }
+                    }
+                }
+
+                // Delete the events
+                var deleteApi = _influxDBClient.GetDeleteApi();
+                var start = DateTime.UtcNow.AddYears(-10);
+                var stop = DateTime.UtcNow.AddDays(1);
+                var predicate = $"player_id=\"{playerId}\" and team_id=\"{teamId}\"";
+
+                await deleteApi.Delete(start, stop, predicate, _bucket, _org);
+                _logger.LogInformation("Successfully deleted {Count} events for player {PlayerId} and team {TeamId}", eventsCount, playerId, teamId);
+                return eventsCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete events for player {PlayerId} and team {TeamId}", playerId, teamId);
+                return 0;
+            }
+        }
+
         public async Task<bool> IsConnectedAsync()
         {
             try
@@ -325,10 +371,10 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                   |> filter(fn: (r) => r.event_category == ""personal"")
                   |> filter(fn: (r) => r.event_type == ""+2p"" or r.event_type == ""+3p"" or r.event_type == ""+ft"" or r.event_type == ""assist"" or r.event_type == ""foul"")
                   |> filter(fn: (r) => r._field == ""event_id"")
-                  |> group(columns: [""period"", ""event_type""])
+                  |> group(columns: [""period"", ""event_type"", ""team_id""])
                   |> count()
                   |> group()
-                  |> sort(columns: [""period"", ""event_type""])";
+                  |> sort(columns: [""period"", ""team_id"", ""event_type""])";
 
             try
             {
@@ -344,6 +390,7 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                         {
                             Period = record.GetValueByKey("period"),
                             EventType = record.GetValueByKey("event_type"),
+                            TeamId = record.GetValueByKey("team_id"),
                             Count = Convert.ToInt32(record.GetValue()),
                             Timestamp = record.GetTime()
                         });
@@ -406,15 +453,42 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
         // Analiza performansi igrača kroz više utakmica sa agregatnim statistikama
         public async Task<IEnumerable<dynamic>> GetSeasonPlayerAveragesAsync(DateTime startTime, DateTime endTime, string? teamId = null, int minMatches = 1)
         {
-            var startTimeRfc = startTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
-            var endTimeRfc = endTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+            // Convert to UTC and use ISO format without 'Z' suffix
+            var startTimeRfc = startTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+            var endTimeRfc = endTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+            
+            _logger.LogInformation("Season player averages query - Start: {StartTime}, End: {EndTime}, TeamId: {TeamId}, MinMatches: {MinMatches}", 
+                startTimeRfc, endTimeRfc, teamId ?? "ALL", minMatches);
             
             var teamFilter = !string.IsNullOrEmpty(teamId) ? $@"|> filter(fn: (r) => r.team_id == ""{teamId}"")" : "";
 
+            // First try a simple query to see if we have any data at all
+            var testFlux = $@"
+                from(bucket: ""{_bucket}"")
+                  |> range(start: {startTimeRfc}, stop: {endTimeRfc})
+                  |> filter(fn: (r) => r._measurement == ""basketball_events"")
+                  |> filter(fn: (r) => r.event_category == ""personal"")
+                  {teamFilter}
+                  |> limit(n: 5)";
+                  
+            _logger.LogInformation("Test query to check for data: {TestFlux}", testFlux);
+            
+            try 
+            {
+                var testQueryApi = _influxDBClient.GetQueryApi();
+                var testTables = await testQueryApi.QueryAsync(testFlux, _org);
+                _logger.LogInformation("Test query returned {TableCount} tables with {TotalRecords} total records", 
+                    testTables.Count, testTables.Sum(t => t.Records.Count));
+            }
+            catch (Exception testEx)
+            {
+                _logger.LogError(testEx, "Test query failed");
+            }
+
+            // Simplified query - single step approach to avoid scope issues  
             var flux = $@"
-                import ""experimental""
+                import ""math""
                 
-                // Step 1: Get per-match per-player event counts
                 data = from(bucket: ""{_bucket}"")
                   |> range(start: {startTimeRfc}, stop: {endTimeRfc})
                   |> filter(fn: (r) => r._measurement == ""basketball_events"")
@@ -444,7 +518,7 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                   }}))
 
                 // Step 3: Aggregate per player across all matches
-                aggregated = pivoted
+                pivoted
                   |> group(columns: [""player_id""])
                   |> reduce(
                     identity: {{
@@ -473,28 +547,42 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                   }}))
                   |> map(fn: (r) => ({{
                     r with
-                    points_variance: (r.points_sum_squares / float(v: r.matches_played)) - (r.avg_points * r.avg_points),
-                    points_stddev: math.sqrt(x: math.max(x: (r.points_sum_squares / float(v: r.matches_played)) - (r.avg_points * r.avg_points), y: 0.0))
+                    points_variance: (r.points_sum_squares / float(v: r.matches_played)) - (r.avg_points * r.avg_points)
                   }}))
-                  |> sort(columns: [""avg_points""], desc: true)
-
-                aggregated";
+                  |> map(fn: (r) => ({{
+                    r with
+                    points_stddev: if r.points_variance >= 0.0 then math.sqrt(x: r.points_variance) else 0.0
+                  }}))
+                  |> sort(columns: [""avg_points""], desc: true)";
 
             try
             {
+                _logger.LogInformation("Executing season player averages flux query: {Flux}", flux);
+                
                 var queryApi = _influxDBClient.GetQueryApi();
                 var tables = await queryApi.QueryAsync(flux, _org);
+                
+                _logger.LogInformation("Query returned {TableCount} tables", tables.Count);
                 
                 var results = new List<dynamic>();
                 foreach (var table in tables)
                 {
+                    _logger.LogInformation("Processing table with {RecordCount} records", table.Records.Count);
+                    
                     foreach (var record in table.Records)
                     {
+                        var playerId = record.GetValueByKey("player_id");
+                        var matchesPlayed = record.GetValueByKey("matches_played");
+                        var avgPoints = record.GetValueByKey("avg_points");
+                        
+                        _logger.LogDebug("Processing record - PlayerId: {PlayerId}, Matches: {Matches}, AvgPoints: {Points}", 
+                            playerId, matchesPlayed, avgPoints);
+                        
                         results.Add(new
                         {
-                            PlayerId = record.GetValueByKey("player_id"),
-                            MatchesPlayed = Convert.ToInt32(record.GetValueByKey("matches_played") ?? 0),
-                            AvgPoints = Math.Round(Convert.ToDouble(record.GetValueByKey("avg_points") ?? 0), 2),
+                            PlayerId = playerId,
+                            MatchesPlayed = Convert.ToInt32(matchesPlayed ?? 0),
+                            AvgPoints = Math.Round(Convert.ToDouble(avgPoints ?? 0), 2),
                             AvgAssists = Math.Round(Convert.ToDouble(record.GetValueByKey("avg_assists") ?? 0), 2),
                             AvgFouls = Math.Round(Convert.ToDouble(record.GetValueByKey("avg_fouls") ?? 0), 2),
                             PointsStdDev = Math.Round(Convert.ToDouble(record.GetValueByKey("points_stddev") ?? 0), 2),
@@ -504,6 +592,8 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                         });
                     }
                 }
+                
+                _logger.LogInformation("Successfully processed {ResultCount} player averages", results.Count);
                 return results;
             }
             catch (Exception ex)

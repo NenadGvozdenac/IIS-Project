@@ -830,12 +830,10 @@ DECLARE
     target_match_id INTEGER;
     target_team_id INTEGER;
 BEGIN
-    -- Određujemo operaciju i uzimamo odgovarajuće vrednosti
     IF TG_OP = 'INSERT' THEN
         target_match_id := NEW.id_match;
         target_team_id := NEW.id_team;
         
-        -- Proveravamo da li je event tip koji donosi poene
         CASE NEW.type
             WHEN '+2p' THEN points_to_add := 2;
             WHEN '+3p' THEN points_to_add := 3;
@@ -847,7 +845,7 @@ BEGIN
         target_match_id := OLD.id_match;
         target_team_id := OLD.id_team;
         
-        -- Pri brisanju, oduzimamo poene (negativni points_to_add)
+        -- negative points_to_add
         CASE OLD.type
             WHEN '+2p' THEN points_to_add := -2;
             WHEN '+3p' THEN points_to_add := -3;
@@ -856,7 +854,6 @@ BEGIN
         END CASE;
     END IF;
     
-    -- Ako event utiče na poene, ažuriramo rezultat u match_tracking
     IF points_to_add != 0 THEN
         UPDATE match_tracking 
         SET 
@@ -872,7 +869,6 @@ BEGIN
         WHERE id_match = target_match_id;
     END IF;
     
-    -- Vraćamo odgovarajući red u zavisnosti od operacije
     IF TG_OP = 'INSERT' THEN
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
@@ -933,7 +929,6 @@ CREATE OR REPLACE FUNCTION calculate_player_match_efficiency(
 DECLARE
     result player_efficiency_stats;
     
-    -- Osnovne statistike
     v_points_2p INTEGER := 0;
     v_points_3p INTEGER := 0;
     v_points_ft INTEGER := 0;
@@ -944,7 +939,6 @@ DECLARE
     v_blocks INTEGER := 0;
     v_fouls INTEGER := 0;
     
-    -- Šuterske statistike
     v_2p_made INTEGER := 0;
     v_2p_attempted INTEGER := 0;
     v_3p_made INTEGER := 0;
@@ -952,7 +946,6 @@ DECLARE
     v_ft_made INTEGER := 0;
     v_ft_attempted INTEGER := 0;
     
-    -- Dodatne statistike
     v_substitutions INTEGER := 0;
     v_sub_in_time INTEGER := 0;
     v_sub_out_time INTEGER := 0;
@@ -960,11 +953,9 @@ DECLARE
     v_is_currently_playing BOOLEAN := FALSE;
     v_is_starting_lineup BOOLEAN := FALSE;
     
-    -- Za plus/minus rating
     v_team_points_when_playing INTEGER := 0;
     v_opponent_points_when_playing INTEGER := 0;
     
-    -- Pomoćne varijable
     v_player_name VARCHAR(255);
     v_match_name VARCHAR(255);
     v_efficiency NUMERIC(8,2);
@@ -993,10 +984,8 @@ BEGIN
       AND m.id_match = p_match_id
     LIMIT 1;
     
-    -- Postavi team_id za rezultat
     v_team_id := p_team_id;
     
-    -- Ako nema podataka, vrati prazan rezultat
     IF v_player_name IS NULL THEN
         result.player_name := 'Player not found';
         result.match_name := 'Match not found';
@@ -1063,12 +1052,10 @@ BEGIN
     END LOOP;
     
     -- Ako je igrač još uvek u igri na kraju (nije izašao), dodaj vreme do kraja utakmice
-    -- Pretpostavljamo da je utakmica 4 perioda po 10 minuta = 2400000 milisekundi
     IF v_is_currently_playing AND v_sub_in_time >= 0 THEN
         v_minutes_played := v_minutes_played + (2400000 - v_sub_in_time); -- 40 minuta = 2400000ms
     END IF;
     
-    -- Dodaj ukupne pokušaje za pogođene šuteve
     v_2p_attempted := v_2p_attempted + v_2p_made;
     v_3p_attempted := v_3p_attempted + v_3p_made;
     v_ft_attempted := v_ft_attempted + v_ft_made;
@@ -1076,17 +1063,12 @@ BEGIN
     -- Konvertuj milisekunde u minute
     v_minutes_played := v_minutes_played / 60000;
     
-    -- Izračunavanje efikasnosti po NBA formuli:
-    -- EFF = (Points + Rebounds + Assists + Steals + Blocks) - (FG Missed + FT Missed + Turnovers)
-    -- Pošto nemamo turnovers, koristićemo faule kao aproksimaciju
+    -- EFF = (Points + Rebounds + Assists + Steals + Blocks) - (FG Missed + FT Missed) - Fouls
     v_efficiency := (v_points_2p + v_points_3p + v_points_ft) + 
                    (v_rebounds_off + v_rebounds_def) + 
                    v_assists + v_steals + v_blocks - 
                    ((v_2p_attempted - v_2p_made) + (v_3p_attempted - v_3p_made) + 
                     (v_ft_attempted - v_ft_made) + v_fouls);
-    
-    -- Izračunavanje efikasnosti BEZ normalizacije po vremenu
-    -- Efikasnost je apsolutna vrednost za utakmicu, ne zavisi od vremena igranja
     
     -- Određivanje ocene na osnovu efikasnosti
     IF v_efficiency >= 30 THEN
@@ -1106,7 +1088,6 @@ BEGIN
     END IF;
     
     -- Računanje plus/minus (aproksimacija - razlika poena dok je igrao)
-    -- Ovo je pojednostavljeno jer bi trebalo da pratimo tačno kad je igrao
     SELECT 
         COALESCE(mt.our_points, 0) - COALESCE(mt.opponent_points, 0)
     INTO v_team_points_when_playing
@@ -1187,7 +1168,6 @@ BEGIN
         WHERE tmm.id_match = p_match_id
         ORDER BY tmm.id_team, p.name, p.surname
     LOOP
-        -- Pozivamo funkciju za računanje efikasnosti svakog igrača
         SELECT * INTO efficiency_result 
         FROM calculate_player_match_efficiency(
             player_rec.id_player,
@@ -1195,7 +1175,6 @@ BEGIN
             p_match_id
         );
         
-        -- Vraćamo rezultat
         RETURN NEXT efficiency_result;
     END LOOP;
     
@@ -1203,7 +1182,6 @@ BEGIN
     
 EXCEPTION
     WHEN OTHERS THEN
-        -- U slučaju greške, vraćamo grešku kao rezultat
         efficiency_result.player_name := 'Error occurred';
         efficiency_result.match_name := SQLERRM;
         efficiency_result.efficiency_rating := 0;
@@ -1214,8 +1192,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --------------------------------------------------------------------------
--- SRDJAN ILIC - KOMPLEKSAN IZVEŠTAJ SA GENERALNIM PODACIMA I TEAM STATISTIKAMA
--- Koristi složene tipove, kursore, WITH klauzule i agregacione operacije
+-- SRDJAN ILIC - KOMPLEKSAN IZVEŠTAJ SA GENERALNIM PODACIMA I TIMSKIM STATISTIKAMA
 
 -- Složeni tip za team statistike
 CREATE TYPE team_match_stats AS (
@@ -1278,7 +1255,7 @@ CREATE TYPE complete_match_report AS (
     opponent_players_stats player_efficiency_stats[]
 );
 
--- Funkcija za računanje team statistika sa kursorom i agregacije
+-- Funkcija za računanje team statistika
 CREATE OR REPLACE FUNCTION calculate_team_match_stats(
     p_team_id INTEGER,
     p_match_id INTEGER
@@ -1286,7 +1263,6 @@ CREATE OR REPLACE FUNCTION calculate_team_match_stats(
 DECLARE
     result team_match_stats;
     
-    -- Varijable za kursor
     player_cursor CURSOR FOR
         SELECT tmm.id_player, p.name, p.surname
         FROM team_member_match tmm
@@ -1320,16 +1296,13 @@ DECLARE
     v_team_name VARCHAR(255);
     
 BEGIN
-    -- Dobijanje naziva tima
     SELECT name INTO v_team_name FROM team WHERE id_team = p_team_id;
     
     -- Korišćenje kursora za prolaz kroz sve igrače tima
     FOR player_rec IN player_cursor LOOP
-        -- Pozivanje funkcije za statistike igrača
         SELECT * INTO player_stats 
         FROM calculate_player_match_efficiency(player_rec.id_player, p_team_id, p_match_id);
         
-        -- Agregiranje statistika
         v_total_points := v_total_points + COALESCE(player_stats.total_points, 0);
         v_total_2p_made := v_total_2p_made + COALESCE(player_stats.shooting_2p_made, 0);
         v_total_2p_attempted := v_total_2p_attempted + COALESCE(player_stats.shooting_2p_attempted, 0);
@@ -1357,12 +1330,10 @@ BEGIN
         v_team_efficiency := v_team_efficiency + COALESCE(player_stats.efficiency_rating, 0);
     END LOOP;
     
-    -- Računanje proseka
     IF v_active_players > 0 THEN
         v_avg_efficiency := v_team_efficiency / v_active_players;
     END IF;
     
-    -- Popunjavanje rezultata
     result.team_id := p_team_id;
     result.team_name := COALESCE(v_team_name, 'Unknown Team');
     result.total_points := v_total_points;
@@ -1418,7 +1389,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- Glavna funkcija za kompletan izveštaj sa WITH klauzulom i složenim upitima
+-- Glavna funkcija za kompletan izveštaj
 CREATE OR REPLACE FUNCTION generate_complete_match_report(
     p_match_id INTEGER
 ) RETURNS complete_match_report AS $$
@@ -1432,11 +1403,9 @@ DECLARE
     v_our_players player_efficiency_stats[];
     v_opponent_players player_efficiency_stats[];
     
-    -- Za iteraciju kroz igrače
     player_rec player_efficiency_stats;
     
 BEGIN
-    -- Korišćenje složenih upita za osnovne podatke
     SELECT 
         m.id_match,
         m.name,
@@ -1467,7 +1436,6 @@ BEGIN
     WHERE m.id_match = p_match_id
     LIMIT 1;
     
-    -- Određivanje našeg i protivničkog tima
     -- Naš tim je uvek tim sa ID = 1 (KK Partizan), ostali su protivnici
     SELECT 
         CASE WHEN EXISTS(SELECT 1 FROM team_member_match WHERE id_match = p_match_id AND id_team = 1) 
@@ -1484,11 +1452,9 @@ BEGIN
     SELECT * INTO v_our_stats FROM calculate_team_match_stats(v_our_team_id, p_match_id);
     SELECT * INTO v_opponent_stats FROM calculate_team_match_stats(v_opponent_team_id, p_match_id);
     
-    -- Dodatne informacije za match_general_info
     v_match_info.our_team_id := v_our_team_id;
     v_match_info.opponent_team_id := v_opponent_team_id;
     
-    -- Dobijanje svih statistika igrača i podela po timovima
     v_our_players := ARRAY[]::player_efficiency_stats[];
     v_opponent_players := ARRAY[]::player_efficiency_stats[];
     
@@ -1504,7 +1470,7 @@ BEGIN
         END IF;
     END LOOP;
     
-    -- Određivanje najviše/najniže individualne efikasnosti koristeći WITH klauzulu
+    -- Određivanje najviše/najniže individualne efikasnosti
     WITH player_efficiency_summary AS (
         SELECT 
             efficiency_rating
@@ -1517,7 +1483,6 @@ BEGIN
     INTO v_match_info.highest_individual_score, v_match_info.lowest_individual_score
     FROM player_efficiency_summary;
     
-    -- Popunjavanje finalnog rezultata
     result.general_info := v_match_info;
     result.our_team_stats := v_our_stats;
     result.opponent_team_stats := v_opponent_stats;
@@ -1528,7 +1493,6 @@ BEGIN
     
 EXCEPTION
     WHEN OTHERS THEN
-        -- U slučaju greške
         result.general_info.match_id := p_match_id;
         result.general_info.match_name := 'Error occurred';
         RETURN result;

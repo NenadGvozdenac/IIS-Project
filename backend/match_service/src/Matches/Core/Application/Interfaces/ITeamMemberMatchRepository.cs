@@ -12,5 +12,8 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         bool Delete(int matchId, int teamId, int playerId);
         bool Exists(int matchId, int teamId, int playerId);
         void AddRange(IEnumerable<TeamMemberMatch> teamMemberMatches);
+        
+        // Saga deletion methods
+        int DeleteByPlayerAndTeam(int playerId, int teamId);
     }
 }

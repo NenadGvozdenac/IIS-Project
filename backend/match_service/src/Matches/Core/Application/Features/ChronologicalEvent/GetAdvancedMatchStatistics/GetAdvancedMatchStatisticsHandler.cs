@@ -48,6 +48,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                     // Convert dynamic results to strongly typed objects
                     var period = result.Period?.ToString() ?? "";
                     var eventType = result.EventType?.ToString() ?? "";
+                    var teamId = result.TeamId?.ToString() ?? "";
                     var count = Convert.ToInt32(result.Count ?? 0);
                     var timestamp = result.Timestamp as DateTime?;
 
@@ -58,17 +59,17 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
                     {
                         Period = period,
                         EventType = eventType,
+                        TeamId = teamId,
                         Count = count,
-                        Timestamp = timestamp,
-                        EfficiencyRating = efficiencyRating,
-                        PlayerId = "" // Will be populated if available in repository result
+                        //Timestamp = timestamp,
+                        EfficiencyRating = efficiencyRating
                     });
                 }
 
                 var response = new GetAdvancedMatchStatisticsResponse
                 {
                     MatchId = request.MatchId,
-                    PeriodStatistics = periodStatistics.OrderBy(p => p.Period).ThenBy(p => p.EventType).ToList()
+                    PeriodStatistics = periodStatistics.OrderBy(p => p.Period).ThenBy(p => p.TeamId).ThenBy(p => p.EventType).ToList()
                 };
 
                 _logger.LogInformation("Successfully retrieved {Count} period statistics for match {MatchId}", 
