@@ -1,0 +1,23 @@
+# 1. Wait for services (run after docker compose up --build)
+Start-Sleep -Seconds 10
+
+# 2. Generate dummy data (creates indexes automatically)
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/bulk/generate-dummy-data" -Method Post
+
+# 3. Wait for indexing
+Start-Sleep -Seconds 5
+
+# 4. Test Aggregation #1: Most Points in Session
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/aggregations/most-points-session" -Method Get | Select-Object -First 3
+
+# 5. Test Aggregation #2: Max Points Last Year  
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/aggregations/top-max-points-last-year" -Method Get | Select-Object -First 3
+
+# 6. Test Aggregation #3: Playoff Minutes by Nationality (Serbia)
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/aggregations/playoff-minutes-by-nationality?nationality=Serbia" -Method Get | Select-Object -First 3
+
+# 7. Test Bonus Aggregation: Player Sessions by Metric
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/aggregations/top-sessions-by-metric?playerName=Michael&metricName=PTS&limit=3" -Method Get
+
+# 8. Show Available Metrics
+Invoke-RestMethod -Uri "http://localhost:5008/api/players/aggregations/available-quantitative-metrics" -Method Get | Select-Object -First 10
