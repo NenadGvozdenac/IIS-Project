@@ -1,0 +1,63 @@
+### Update player using Saga pattern
+POST http://localhost:5010/api/saga/update-player
+Content-Type: application/json
+
+{
+  "player": {
+    "idPlayer": 1,
+    "name": "Michael",
+    "surname": "Jordan",
+    "fullName": "Michael Jordan",
+    "birthday": "1963-02-17T00:00:00Z",
+    "nationality": "USA",
+    "position": "Shooting Guard",
+    "physicalMetrics": [
+      {
+        "verticalJump": 120,
+        "fatPercentage": 6,
+        "benchPressWeight": 110,
+        "squatWeight": 180,
+        "sprintSpeed": 100,
+        "weight": 88,
+        "height": 198,
+        "wingspan": 203,
+        "dateOfMeasurement": "2024-01-15T00:00:00Z"
+      }
+    ]
+  }
+}
+
+### Get specific transaction by ID
+GET http://localhost:5010/api/saga/transactions/00000000-0000-0000-0000-000000000000
+
+### Get all transactions
+GET http://localhost:5010/api/saga/transactions
+
+### Update player with different data (for testing)
+POST http://localhost:5010/api/saga/update-player
+Content-Type: application/json
+
+{
+  "player": {
+    "idPlayer": 2,
+    "name": "LeBron",
+    "surname": "James",
+    "fullName": "LeBron James",
+    "birthday": "1984-12-30T00:00:00Z",
+    "nationality": "USA",
+    "position": "Small Forward",
+    "physicalMetrics": [
+      {
+        "verticalJump": 110,
+        "fatPercentage": 8,
+        "benchPressWeight": 125,
+        "squatWeight": 200,
+        "sprintSpeed": 95,
+        "weight": 110,
+        "height": 206,
+        "wingspan": 214,
+        "dateOfMeasurement": "2024-02-15T00:00:00Z"
+      }
+    ]
+  }
+}

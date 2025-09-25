@@ -1,0 +1,134 @@
+### Get all players
+GET http://localhost:5008/api/players
+
+### Get player by ID
+GET http://localhost:5008/api/players/1
+
+### Create a new player
+POST http://localhost:5008/api/players
+Content-Type: application/json
+
+{
+  "idPlayer": 1,
+  "name": "John",
+  "surname": "Doe",
+  "fullName": "John Doe",
+  "birthday": "1995-05-15T00:00:00Z",
+  "nationality": "USA",
+  "position": "Point Guard",
+  "physicalMetrics": [
+    {
+      "verticalJump": 85,
+      "fatPercentage": 8,
+      "benchPressWeight": 100,
+      "squatWeight": 150,
+      "sprintSpeed": 95,
+      "weight": 80,
+      "height": 185,
+      "wingspan": 190,
+      "dateOfMeasurement": "2024-01-15T00:00:00Z"
+    }
+  ]
+}
+
+### Update a player
+PUT http://localhost:5008/api/players/1
+Content-Type: application/json
+
+{
+  "idPlayer": 1,
+  "name": "John",
+  "surname": "Smith",
+  "fullName": "John Smith",
+  "birthday": "1995-05-15T00:00:00Z",
+  "nationality": "USA",
+  "position": "Shooting Guard",
+  "physicalMetrics": [
+    {
+      "verticalJump": 90,
+      "fatPercentage": 7,
+      "benchPressWeight": 105,
+      "squatWeight": 155,
+      "sprintSpeed": 98,
+      "weight": 82,
+      "height": 185,
+      "wingspan": 190,
+      "dateOfMeasurement": "2024-02-15T00:00:00Z"
+    }
+  ]
+}
+
+### Delete a player
+DELETE http://localhost:5008/api/players/1
+
+### Search players
+GET http://localhost:5008/api/players/search?searchTerm=John&skip=0&take=10
+
+### Get all sessions
+GET http://localhost:5008/api/sessions
+
+### Get session by ID
+GET http://localhost:5008/api/sessions/1
+
+### Create a new session
+POST http://localhost:5008/api/sessions
+Content-Type: application/json
+
+{
+  "idSession": 1,
+  "startTime": "2024-01-15T09:00:00Z",
+  "endTime": "2024-01-15T11:00:00Z",
+  "sessionStatus": "Completed",
+  "sessionType": "Training",
+  "idPlayer": 1,
+  "playerFullName": "John Doe",
+  "metrics": [
+    {
+      "metricName": "Heart Rate",
+      "metricValue": "165"
+    },
+    {
+      "metricName": "Distance Covered",
+      "metricValue": "5.2"
+    }
+  ]
+}
+
+### Update a session
+PUT http://localhost:5008/api/sessions/1
+Content-Type: application/json
+
+{
+  "idSession": 1,
+  "startTime": "2024-01-15T09:00:00Z",
+  "endTime": "2024-01-15T11:30:00Z",
+  "sessionStatus": "Completed",
+  "sessionType": "Training",
+  "idPlayer": 1,
+  "playerFullName": "John Smith",
+  "metrics": [
+    {
+      "metricName": "Heart Rate",
+      "metricValue": "170"
+    },
+    {
+      "metricName": "Distance Covered",
+      "metricValue": "5.8"
+    }
+  ]
+}
+
+### Delete a session
+DELETE http://localhost:5008/api/sessions/1
+
+### Search sessions
+GET http://localhost:5008/api/sessions/search?searchTerm=Training&skip=0&take=10
+
+### Get sessions by player
+GET http://localhost:5008/api/sessions/player/1
+
+### Create indexes
+POST http://localhost:5008/api/index/create
+
+### Delete indexes
+DELETE http://localhost:5008/api/index/delete
