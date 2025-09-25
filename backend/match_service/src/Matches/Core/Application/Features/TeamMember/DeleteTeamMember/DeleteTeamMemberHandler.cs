@@ -1,48 +1,56 @@
+using MassTransit;
 using MediatR;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Interfaces;
+using match_service.src.Matches.Core.Application.Saga.Messages;
 
 namespace match_service.src.Matches.Core.Application.Features.TeamMember.DeleteTeamMember
 {
     public class DeleteTeamMemberHandler : IRequestHandler<DeleteTeamMemberCommand, Result<DeleteTeamMemberResponse>>
     {
         private readonly ITeamMemberRepository _teamMemberRepository;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public DeleteTeamMemberHandler(ITeamMemberRepository teamMemberRepository)
+        public DeleteTeamMemberHandler(ITeamMemberRepository teamMemberRepository, IPublishEndpoint publishEndpoint)
         {
             _teamMemberRepository = teamMemberRepository;
+            _publishEndpoint = publishEndpoint;
         }
 
-        public Task<Result<DeleteTeamMemberResponse>> Handle(DeleteTeamMemberCommand request, CancellationToken cancellationToken)
+        public async Task<Result<DeleteTeamMemberResponse>> Handle(DeleteTeamMemberCommand request, CancellationToken cancellationToken)
         {
             try
             {
                 if (!_teamMemberRepository.Exists(request.IdPlayer, request.IdTeam))
                 {
-                    return Task.FromResult(Result<DeleteTeamMemberResponse>.Failure($"Team member with Player ID {request.IdPlayer} and Team ID {request.IdTeam} not found.")
-                        .WithCode((int)ResultCode.NotFound));
+                    return Result<DeleteTeamMemberResponse>.Failure($"Team member with Player ID {request.IdPlayer} and Team ID {request.IdTeam} not found.")
+                        .WithCode((int)ResultCode.NotFound);
                 }
 
-                var deleted = _teamMemberRepository.Delete(request.IdPlayer, request.IdTeam);
-
-                if (!deleted)
+                // Start the distributed transaction saga
+                var sagaCommand = new DeleteTeamMemberSagaCommand
                 {
-                    return Task.FromResult(Result<DeleteTeamMemberResponse>.Failure("Failed to delete team member.")
-                        .WithCode((int)ResultCode.InternalServerError));
-                }
+                    CorrelationId = Guid.NewGuid(),
+                    PlayerId = request.IdPlayer,
+                    TeamId = request.IdTeam,
+                    RequesterId = "system", // Could be from the current user context
+                    RequestedAt = DateTime.UtcNow
+                };
+
+                await _publishEndpoint.Publish(sagaCommand, cancellationToken);
 
                 var response = new DeleteTeamMemberResponse
                 {
                     IsDeleted = true,
-                    Message = $"Team member with Player ID {request.IdPlayer} and Team ID {request.IdTeam} has been successfully deleted."
+                    Message = $"Team member deletion process initiated for Player ID {request.IdPlayer} and Team ID {request.IdTeam}. The deletion will be processed across all services."
                 };
 
-                return Task.FromResult(Result<DeleteTeamMemberResponse>.Success(response));
+                return Result<DeleteTeamMemberResponse>.Success(response);
             }
             catch (Exception ex)
             {
-                return Task.FromResult(Result<DeleteTeamMemberResponse>.Failure($"An error occurred while deleting team member: {ex.Message}")
-                    .WithCode((int)ResultCode.InternalServerError));
+                return Result<DeleteTeamMemberResponse>.Failure($"An error occurred while initiating team member deletion: {ex.Message}")
+                    .WithCode((int)ResultCode.InternalServerError);
             }
         }
     }

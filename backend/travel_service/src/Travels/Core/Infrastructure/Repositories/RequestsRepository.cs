@@ -103,4 +103,21 @@ public class RequestsRepository : IRequestsRepository
             .Where(r => r.IdMatch == matchId && r.Type == type)
             .FirstOrDefault();
     }
+
+    // Saga deletion method
+    public bool DeleteTeamMemberRequests(int playerId, int teamId)
+    {
+        try
+        {
+            var rowsAffected = _travelDbContext.Database.ExecuteSqlRaw(
+                "DELETE FROM team_member_request WHERE id_player = {0} AND id_team = {1}",
+                playerId, teamId);
+            
+            return rowsAffected > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

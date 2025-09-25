@@ -26,11 +26,13 @@ services:
     depends_on:
       - postgres_db
       - influxdb
+      - rabbitmq
     environment:
       - InfluxDB__Url=http://influxdb:8086
       - InfluxDB__Token=basketball-events-token-2024
       - InfluxDB__Org=basketball_org
       - InfluxDB__Bucket=events_bucket
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -68,6 +70,9 @@ services:
     depends_on:
       - postgres_db
       - cassandra
+      - rabbitmq
+    environment:
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672
 
   postgres_db:
     image: postgres:16
@@ -131,6 +136,19 @@ services:
       retries: 10
       start_period: 240s
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   frontend:
     build:
       context: ./frontend
@@ -153,3 +171,4 @@ volumes:
   neo4j_plugins:
   influxdb_storage:
   cassandra_data:
+  rabbitmq_data:

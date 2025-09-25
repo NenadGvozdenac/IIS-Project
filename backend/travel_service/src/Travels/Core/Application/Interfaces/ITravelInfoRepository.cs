@@ -8,4 +8,8 @@ public interface ITravelInfoRepository
     IEnumerable<TravelInformation> GetAll();
     TravelInformation Create(TravelInformation travelInformation);
     TravelInformation Update(TravelInformation travelInformation);
+    
+    // Saga deletion methods
+    IEnumerable<TravelInformation> GetByPlayerAndTeam(int playerId, int teamId);
+    bool Delete(int id);
 }

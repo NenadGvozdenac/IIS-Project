@@ -6,4 +6,8 @@ public interface IVisaRepository
 {
     IEnumerable<Visa> GetByTravelInformationId(int id);
     Visa Create(Visa visa);
+    
+    // Saga deletion methods
+    IEnumerable<Visa> GetByTravelInformationIds(IEnumerable<int> travelInfoIds);
+    bool Delete(string visaNumber);
 }

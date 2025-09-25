@@ -10,6 +10,7 @@ const string corsPolicy = "_corsPolicy";
 builder.Services.ConfigureCors(corsPolicy);
 builder.Services.ConfigureAuth();
 builder.Services.ConfigureApplication(builder.Configuration);
+builder.Services.ConfigureMassTransit(builder.Configuration);
 
 var app = builder.Build();
 
