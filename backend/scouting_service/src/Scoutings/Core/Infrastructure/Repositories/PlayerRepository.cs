@@ -3,6 +3,7 @@ using scouting_service.src.Scoutings.Core.Domain.Entities;
 using scouting_service.src.Scoutings.Core.Infrastructure;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSeasonMetricAverages;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSessions;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerRecommendations;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Data.Common;
@@ -145,6 +146,118 @@ public class PlayerRepository : IPlayerRepository
                 SessionType = reader.GetString(4), // session_type
                 ScoutName = reader.GetString(5), // scout_name
                 ScoutSurname = reader.GetString(6) // scout_surname
+            });
+        }
+        
+        return result;
+    }
+
+    public async Task<List<PlayerRecommendation>> GetPlayerRecommendationsAsync(List<MetricWeight> metricWeights)
+    {
+        var players = GetAll().ToList();
+        var playerRecommendations = new List<PlayerRecommendation>();
+        
+        foreach (var player in players)
+        {
+            // Get player metrics across all sessions (using a modified query)
+            var playerMetrics = await GetPlayerAllSessionsMetricAveragesAsync(player.IdPlayer);
+            var playerMetricValues = new List<PlayerMetricValue>();
+            decimal totalScore = 0m;
+            
+            foreach (var metricWeight in metricWeights)
+            {
+                var metric = playerMetrics.FirstOrDefault(pm => pm.MetricId == metricWeight.MetricId);
+                if (metric != null)
+                {
+                    var weightedValue = metric.AverageValue * metricWeight.Weight;
+                    totalScore += weightedValue;
+                    
+                    playerMetricValues.Add(new PlayerMetricValue
+                    {
+                        MetricId = metric.MetricId,
+                        MetricName = metric.MetricName,
+                        AverageValue = metric.AverageValue,
+                        WeightedValue = weightedValue,
+                        Weight = metricWeight.Weight
+                    });
+                }
+            }
+            
+            playerRecommendations.Add(new PlayerRecommendation
+            {
+                PlayerId = player.IdPlayer,
+                Name = player.Name,
+                Surname = player.Surname,
+                Score = totalScore,
+                ScorePercentage = 0, // Will calculate after sorting
+                MetricValues = playerMetricValues
+            });
+        }
+        
+        // Sort by score descending
+        playerRecommendations = playerRecommendations.OrderByDescending(p => p.Score).ToList();
+        
+        // Calculate percentages based on highest score
+        if (playerRecommendations.Any())
+        {
+            var maxScore = playerRecommendations.First().Score;
+            if (maxScore > 0)
+            {
+                foreach (var player in playerRecommendations)
+                {
+                    player.ScorePercentage = maxScore > 0 ? (player.Score / maxScore) * 100 : 0;
+                }
+            }
+        }
+        
+        return playerRecommendations;
+    }
+
+    private async Task<List<GetPlayerSeasonMetricAveragesResponse>> GetPlayerAllSessionsMetricAveragesAsync(int playerId)
+    {
+        // Modified query to get averages across all sessions, not just a specific season
+        var sql = @"
+            SELECT 
+                m.id_metrics as metric_id,
+                m.name as metric_name,
+                m.metric_weight,
+                COALESCE(AVG(sm.value), 0) as average_value,
+                COUNT(sm.value) as session_count
+            FROM metrics m
+            LEFT JOIN session_metrics sm ON m.id_metrics = sm.id_metrics
+            LEFT JOIN sessions s ON sm.id_sessions = s.id_sessions
+            WHERE s.id_player = @p_player_id
+                AND m.is_permanent = 1
+            GROUP BY m.id_metrics, m.name, m.metric_weight
+            ORDER BY m.name";
+        
+        var parameters = new List<NpgsqlParameter>
+        {
+            new NpgsqlParameter("p_player_id", playerId)
+        };
+        
+        using var connection = _context.Database.GetDbConnection();
+        await connection.OpenAsync();
+        
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var param in parameters)
+        {
+            command.Parameters.Add(param);
+        }
+        
+        var result = new List<GetPlayerSeasonMetricAveragesResponse>();
+        
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            result.Add(new GetPlayerSeasonMetricAveragesResponse
+            {
+                MetricId = reader.GetInt32(0), // metric_id
+                MetricName = reader.GetString(1), // metric_name
+                MetricWeight = reader.GetInt32(2), // metric_weight
+                AverageValue = reader.GetDecimal(3), // average_value
+                SessionCount = reader.GetInt32(4) // session_count
             });
         }
         
