@@ -7,6 +7,7 @@ using scouting_service.src.Scoutings.Core.Application.Features.Players.CreatePla
 using scouting_service.src.Scoutings.Core.Application.Features.Players.UpdatePlayer;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSeasonMetricAverages;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSessions;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerRecommendations;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -68,6 +69,13 @@ public class PlayersController : BaseController
         [FromQuery] string? dateTo = null)
     {
         var query = new GetPlayerSessionsQuery(playerId, seasonId, status, dateFrom, dateTo);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpPost("recommendations")]
+    public async Task<ActionResult> GetPlayerRecommendations([FromBody] GetPlayerRecommendationsQuery query)
+    {
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }

@@ -68,6 +68,40 @@ services:
     depends_on:
       - postgres_db
 
+  elasticsearch_service:
+    image: ${DOCKER_REGISTRY-}elasticsearchservice
+    build:
+      context: .
+      dockerfile: backend/elasticsearch_service/Dockerfile
+    ports:
+      - "5008:5008"
+    depends_on:
+      - elasticsearch
+
+  elastic_orchestrator_service:
+    image: ${DOCKER_REGISTRY-}elasticorchestratorservice
+    build:
+      context: .
+      dockerfile: backend/elastic_orchestrator_service/Dockerfile
+    ports:
+      - "5010:5010"
+    depends_on:
+      - scouting_service
+      - elasticsearch_service
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
   postgres_db:
     image: postgres:16
     environment:
@@ -131,3 +165,4 @@ volumes:
   neo4j_import:
   neo4j_plugins:
   influxdb_storage:
+  elasticsearch_data:
