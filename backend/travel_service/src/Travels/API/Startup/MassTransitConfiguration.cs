@@ -11,6 +11,7 @@ public static class MassTransitConfiguration
         {
             // Add consumers
             x.AddConsumer<DeleteTravelDataConsumer>();
+            x.AddConsumer<RollbackTravelDataConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -22,6 +23,11 @@ public static class MassTransitConfiguration
                 cfg.ReceiveEndpoint("delete-travel-data", e =>
                 {
                     e.ConfigureConsumer<DeleteTravelDataConsumer>(context);
+                });
+
+                cfg.ReceiveEndpoint("rollback-travel-data", e =>
+                {
+                    e.ConfigureConsumer<RollbackTravelDataConsumer>(context);
                 });
 
                 cfg.ConfigureEndpoints(context);

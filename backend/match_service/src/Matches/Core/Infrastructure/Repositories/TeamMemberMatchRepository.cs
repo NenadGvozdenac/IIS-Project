@@ -93,5 +93,18 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
             _context.SaveChanges();
             return teamMemberMatches.Count;
         }
+
+        // SAGA BACKUP METHOD - VRAĆA PODATKE PRE BRISANJA
+        public List<TeamMemberMatch> GetByPlayerAndTeam(int playerId, int teamId)
+        {
+            return _context.TeamMemberMatches
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdPlayerNavigation)
+                        .ThenInclude(p => p.IdPositionNavigation)
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdTeamNavigation)
+                .Where(tmm => tmm.IdPlayer == playerId && tmm.IdTeam == teamId)
+                .ToList();
+        }
     }
 }

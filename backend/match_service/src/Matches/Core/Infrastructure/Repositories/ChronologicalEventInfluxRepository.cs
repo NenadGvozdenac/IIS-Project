@@ -993,5 +993,28 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
                 return "|> range(start: -1y)";
             }
         }
+
+        // SAGA BACKUP METHOD - VRAĆA EVENTS PRE BRISANJA
+        public async Task<List<ChronologicalEventInflux>> GetEventsByPlayerAndTeamAsync(int playerId, int teamId)
+        {
+            try
+            {
+                var flux = $@"
+                    from(bucket: ""{_bucket}"")
+                      |> range(start: -1y)
+                      |> filter(fn: (r) => r._measurement == ""basketball_events"")
+                      |> filter(fn: (r) => r.player_id == ""{playerId}"")
+                      |> filter(fn: (r) => r.team_id == ""{teamId}"")
+                      |> sort(columns: [""_time""])";
+
+                var events = await ExecuteQueryAsync(flux);
+                return events.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get events by player {PlayerId} and team {TeamId}", playerId, teamId);
+                return new List<ChronologicalEventInflux>();
+            }
+        }
     }
 }
