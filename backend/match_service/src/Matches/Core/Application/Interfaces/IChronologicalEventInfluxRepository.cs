@@ -30,6 +30,9 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         
         // Saga deletion methods
         Task<int> DeleteEventsByPlayerAndTeamAsync(int playerId, int teamId);
+        
+        // Saga backup methods
+        Task<List<ChronologicalEventInflux>> GetEventsByPlayerAndTeamAsync(int playerId, int teamId);
 
         // Health check
         Task<bool> IsConnectedAsync();

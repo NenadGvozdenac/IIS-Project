@@ -104,5 +104,15 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
             _context.SaveChanges();
             return personalEvents.Count;
         }
+
+        // SAGA BACKUP METHOD - VRAĆA PODATKE PRE BRISANJA
+        public List<PersonalEvent> GetByPlayerAndTeam(int playerId, int teamId)
+        {
+            return _context.PersonalEvents
+                .Include(pe => pe.Id) // TeamMember navigation
+                .Include(pe => pe.IdMatchNavigation)
+                .Where(pe => pe.IdPlayer == playerId && pe.IdTeam == teamId)
+                .ToList();
+        }
     }
 }

@@ -18,6 +18,8 @@ public static class MassTransitConfiguration
             x.AddConsumer<DeleteMatchDataConsumer>();
             x.AddConsumer<DeleteInfluxEventsConsumer>();
             x.AddConsumer<DeleteTeamMemberConsumer>();
+            x.AddConsumer<RollbackMatchDataConsumer>();
+            x.AddConsumer<RollbackInfluxEventsConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -45,6 +47,16 @@ public static class MassTransitConfiguration
                 cfg.ReceiveEndpoint("delete-team-member", e =>
                 {
                     e.ConfigureConsumer<DeleteTeamMemberConsumer>(context);
+                });
+
+                cfg.ReceiveEndpoint("rollback-match-data", e =>
+                {
+                    e.ConfigureConsumer<RollbackMatchDataConsumer>(context);
+                });
+
+                cfg.ReceiveEndpoint("rollback-influx-events", e =>
+                {
+                    e.ConfigureConsumer<RollbackInfluxEventsConsumer>(context);
                 });
 
                 cfg.ConfigureEndpoints(context);

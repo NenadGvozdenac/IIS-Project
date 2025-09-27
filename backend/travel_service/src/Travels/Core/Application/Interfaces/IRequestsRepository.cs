@@ -17,4 +17,13 @@ public interface IRequestsRepository
     
     // Saga deletion method
     bool DeleteTeamMemberRequests(int playerId, int teamId);
+    
+    // Saga backup method 
+    IEnumerable<Request> GetRequestsByPlayerAndTeam(int playerId, int teamId);
+    
+    // Saga backup method for TeamMemberRequests
+    IEnumerable<(int IdTeam, int IdPlayer, int IdRequest)> GetTeamMemberRequestsByPlayerAndTeam(int playerId, int teamId);
+    
+    // Saga restore method for TeamMemberRequests
+    void RestoreTeamMemberRequests(IEnumerable<(int IdTeam, int IdPlayer, int IdRequest)> teamMemberRequests);
 }
