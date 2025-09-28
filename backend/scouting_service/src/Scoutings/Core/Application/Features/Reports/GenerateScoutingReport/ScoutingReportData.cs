@@ -14,4 +14,9 @@ public class ScoutingReportData
     public decimal TotalScoutingScore { get; set; }
     public decimal NormalizedScore { get; set; }
     public DateTime ReportDate { get; set; }
+    
+    // Basketball performance metrics
+    public decimal? AveragePoints { get; set; }
+    public decimal? AverageAssists { get; set; }
+    public decimal? AverageMinutes { get; set; }
 }

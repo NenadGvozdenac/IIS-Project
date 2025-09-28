@@ -326,6 +326,48 @@ public class PlayerRepository : IPlayerRepository
                 
                 await _context.Database.CloseConnectionAsync();
                 
+                // Now fetch basketball performance data for each player
+                foreach (var player in results)
+                {
+                    try
+                    {
+                        using var basketballCommand = _context.Database.GetDbConnection().CreateCommand();
+                        basketballCommand.CommandText = "SELECT * FROM get_player_basketball_averages(@p_player_id, @p_season_id)";
+                        
+                        var playerIdParam = basketballCommand.CreateParameter();
+                        playerIdParam.ParameterName = "p_player_id";
+                        playerIdParam.Value = player.PlayerId;
+                        basketballCommand.Parameters.Add(playerIdParam);
+
+                        var basketballSeasonIdParam = basketballCommand.CreateParameter();
+                        basketballSeasonIdParam.ParameterName = "p_season_id";
+                        basketballSeasonIdParam.Value = (object?)seasonId ?? DBNull.Value;
+                        basketballCommand.Parameters.Add(basketballSeasonIdParam);
+
+                        await _context.Database.OpenConnectionAsync();
+                        
+                        using var basketballReader = await basketballCommand.ExecuteReaderAsync();
+                        if (await basketballReader.ReadAsync())
+                        {
+                            player.AveragePoints = basketballReader.IsDBNull(0) ? null : basketballReader.GetDecimal(0);
+                            player.AverageAssists = basketballReader.IsDBNull(1) ? null : basketballReader.GetDecimal(1);
+                            player.AverageMinutes = basketballReader.IsDBNull(2) ? null : basketballReader.GetDecimal(2);
+                        }
+                        
+                        await _context.Database.CloseConnectionAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to get basketball averages for player {player.PlayerId}: {ex.Message}");
+                        // Set defaults if basketball data fetch fails
+                        player.AveragePoints = null;
+                        player.AverageAssists = null;
+                        player.AverageMinutes = null;
+                    }
+                }
+                
+                await _context.Database.CloseConnectionAsync();
+                
                 Console.WriteLine($"Relative normalization function returned {results.Count} players");
                 return results.OrderByDescending(r => r.NormalizedScore).ToList();
             }
@@ -452,6 +494,46 @@ public class PlayerRepository : IPlayerRepository
                 {
                     Console.WriteLine($"Fallback failed for player {player.IdPlayer}: {ex.Message}");
                     continue;
+                }
+            }
+
+            // Now fetch basketball performance data for fallback results
+            foreach (var player in results)
+            {
+                try
+                {
+                    using var basketballCommand = _context.Database.GetDbConnection().CreateCommand();
+                    basketballCommand.CommandText = "SELECT * FROM get_player_basketball_averages(@p_player_id, @p_season_id)";
+                    
+                    var playerIdParam = basketballCommand.CreateParameter();
+                    playerIdParam.ParameterName = "p_player_id";
+                    playerIdParam.Value = player.PlayerId;
+                    basketballCommand.Parameters.Add(playerIdParam);
+
+                    var fallbackSeasonIdParam = basketballCommand.CreateParameter();
+                    fallbackSeasonIdParam.ParameterName = "p_season_id";
+                    fallbackSeasonIdParam.Value = (object?)seasonId ?? DBNull.Value;
+                    basketballCommand.Parameters.Add(fallbackSeasonIdParam);
+
+                    await _context.Database.OpenConnectionAsync();
+                    
+                    using var basketballReader = await basketballCommand.ExecuteReaderAsync();
+                    if (await basketballReader.ReadAsync())
+                    {
+                        player.AveragePoints = basketballReader.IsDBNull(0) ? null : basketballReader.GetDecimal(0);
+                        player.AverageAssists = basketballReader.IsDBNull(1) ? null : basketballReader.GetDecimal(1);
+                        player.AverageMinutes = basketballReader.IsDBNull(2) ? null : basketballReader.GetDecimal(2);
+                    }
+                    
+                    await _context.Database.CloseConnectionAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to get basketball averages for player {player.PlayerId}: {ex.Message}");
+                    // Set defaults if basketball data fetch fails
+                    player.AveragePoints = null;
+                    player.AverageAssists = null;
+                    player.AverageMinutes = null;
                 }
             }
 

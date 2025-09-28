@@ -194,3 +194,38 @@ export const createMetricType = async (typeData) => {
     throw error;
   }
 };
+
+// Delete a metric (only non-permanent metrics can be deleted)
+export const deleteMetric = async (metricId) => {
+  try {
+    console.log('Deleting metric with ID:', metricId);
+    
+    const response = await fetch(`${API_URL}/Metrics/${metricId}`, {
+      method: 'DELETE',
+      headers: createHeaders()
+    });
+
+    // Log response for debugging
+    console.log('Raw response for metric deletion:', response);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response body:', errorText);
+      
+      // Try to parse error as JSON for better debugging
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('Parsed error:', errorJson);
+        throw new Error(`HTTP error! status: ${response.status}, error: ${JSON.stringify(errorJson)}`);
+      } catch (parseError) {
+        console.error('Could not parse error as JSON');
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+    }
+
+    return await handleApiResponse(response);
+  } catch (error) {
+    console.error('Error deleting metric:', error);
+    throw error;
+  }
+};

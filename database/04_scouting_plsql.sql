@@ -121,6 +121,42 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to get player basketball performance averages (Points, Assists, Minutes)
+CREATE OR REPLACE FUNCTION get_player_basketball_averages(
+    p_player_id INTEGER,
+    p_season_id INTEGER DEFAULT NULL -- NULL means ALL seasons
+)
+RETURNS TABLE (
+    avg_points DECIMAL(10,2),
+    avg_assists DECIMAL(10,2),
+    avg_minutes DECIMAL(10,2)
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH player_sessions AS (
+        SELECT s.id_session
+        FROM session s
+        WHERE s.id_player = p_player_id
+    ),
+    basketball_metrics AS (
+        SELECT 
+            sm.id_metrics,
+            sm.value,
+            m.name
+        FROM session_metrics sm
+        INNER JOIN player_sessions ps ON sm.id_session = ps.id_session
+        INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
+        WHERE m.name IN ('PTS (Points)', 'AST (Assists)', 'MIN (Minutes Played)')
+        AND sm.value ~ '^[0-9]+\.?[0-9]*$' -- Only numeric values
+    )
+    SELECT 
+        COALESCE(ROUND(AVG(CASE WHEN name = 'PTS (Points)' THEN CAST(value AS DECIMAL) END), 2), 0.00) as avg_points,
+        COALESCE(ROUND(AVG(CASE WHEN name = 'AST (Assists)' THEN CAST(value AS DECIMAL) END), 2), 0.00) as avg_assists,
+        COALESCE(ROUND(AVG(CASE WHEN name = 'MIN (Minutes Played)' THEN CAST(value AS DECIMAL) END), 2), 0.00) as avg_minutes
+    FROM basketball_metrics;
+END;
+$$ LANGUAGE plpgsql;
+
 -- II. Triggers for Scouting Automation
 
 -- FUNCTION 1: Auto-update player table on new physical metrics
@@ -176,6 +212,55 @@ CREATE TRIGGER trigger_validate_quantitative_metric_value
 BEFORE INSERT OR UPDATE ON session_metrics
 FOR EACH ROW
 EXECUTE FUNCTION validate_quantitative_metric_value();
+
+-- FUNCTION 3: Auto-manage season_metrics when metrics are inserted/deleted
+CREATE OR REPLACE FUNCTION manage_season_metrics()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_current_season_id INTEGER;
+BEGIN
+    -- Find the current season (ended_at is NULL or current date is within season range)
+    SELECT id_season INTO v_current_season_id
+    FROM season
+    WHERE ended_at IS NULL 
+       OR (started_at <= CURRENT_DATE AND ended_at >= CURRENT_DATE)
+    ORDER BY started_at DESC
+    LIMIT 1;
+
+    -- If no current season found, get the most recent one
+    IF v_current_season_id IS NULL THEN
+        SELECT id_season INTO v_current_season_id
+        FROM season
+        ORDER BY started_at DESC
+        LIMIT 1;
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        -- Add new metric to current season only if is_permanent = 0 (avoid duplicates)
+        IF NEW.is_permanent = 0 THEN
+            INSERT INTO season_metrics (id_season, id_metrics)
+            VALUES (v_current_season_id, NEW.id_metrics)
+            ON CONFLICT (id_season, id_metrics) DO NOTHING;
+        END IF;
+        
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        -- Remove metric from all seasons when deleted
+        DELETE FROM season_metrics 
+        WHERE id_metrics = OLD.id_metrics;
+        
+        RETURN OLD;
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGER 3: Execute after inserting or deleting a metrics record
+CREATE TRIGGER trigger_manage_season_metrics
+AFTER INSERT OR DELETE ON metrics
+FOR EACH ROW
+EXECUTE FUNCTION manage_season_metrics();
 
 
 -- =========================================================================

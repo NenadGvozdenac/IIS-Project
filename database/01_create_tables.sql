@@ -706,7 +706,7 @@ ALTER TABLE request
 ALTER TABLE season_metrics
     ADD CONSTRAINT fk_season_metrics_metrics 
         FOREIGN KEY (id_metrics)
-        REFERENCES metrics (id_metrics);
+        REFERENCES metrics (id_metrics) ON DELETE CASCADE;
 
 ALTER TABLE season_metrics
     ADD CONSTRAINT fk_season_metrics_season 

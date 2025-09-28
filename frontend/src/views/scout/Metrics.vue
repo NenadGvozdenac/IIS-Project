@@ -166,6 +166,15 @@
                   <button type="button" @click="clearSelection" class="btn btn-secondary">
                     Cancel
                   </button>
+                  <!-- Delete button - only show for non-permanent metrics -->
+                  <button 
+                    v-if="selectedMetric && !selectedMetric.isPermanent" 
+                    type="button" 
+                    @click="confirmDeleteMetric" 
+                    class="btn btn-danger"
+                    :disabled="deletingMetric || updatingMetric">
+                    {{ deletingMetric ? 'Deleting...' : 'Delete Metric' }}
+                  </button>
                 </div>
               </form>
             </div>
@@ -186,6 +195,7 @@ import {
   getAllMetrics, 
   createMetric as createMetricAPI, 
   updateMetric as updateMetricAPI,
+  deleteMetric as deleteMetricAPI,
   getAllMetricTypes, 
   createMetricType as createMetricTypeAPI 
 } from '../../services/metrics_service.js'
@@ -200,6 +210,7 @@ const selectedMetricType = ref('')
 const selectedMetric = ref(null)
 const creatingMetric = ref(false)
 const updatingMetric = ref(false)
+const deletingMetric = ref(false)
 const creatingMetricType = ref(false)
 
 // Current user data
@@ -419,6 +430,58 @@ const updateMetric = async () => {
     error.value = `Failed to update metric: ${err.message}`
   } finally {
     updatingMetric.value = false
+  }
+}
+
+// Confirm delete metric with user confirmation
+const confirmDeleteMetric = () => {
+  if (!selectedMetric.value) {
+    return
+  }
+  
+  const metricName = selectedMetric.value.name
+  const isPermanent = selectedMetric.value.isPermanent
+  
+  if (isPermanent) {
+    alert('Permanent metrics cannot be deleted.')
+    return
+  }
+  
+  if (confirm(`Are you sure you want to delete the metric "${metricName}"? This action cannot be undone and will remove all associated data.`)) {
+    deleteMetric()
+  }
+}
+
+// Delete metric function
+const deleteMetric = async () => {
+  if (!selectedMetric.value) {
+    return
+  }
+  
+  // Store metric info before clearing selection
+  const metricId = selectedMetric.value.idMetrics
+  const metricName = selectedMetric.value.name
+  
+  try {
+    deletingMetric.value = true
+    error.value = null
+    
+    console.log('Deleting metric with ID:', metricId);
+    
+    const result = await deleteMetricAPI(metricId)
+    
+    console.log('Delete result:', result);
+    
+    // Reload data after successful deletion
+    await loadData()
+    clearSelection()
+    
+    alert(`Metric "${metricName}" deleted successfully!`)
+  } catch (err) {
+    console.error('Error deleting metric:', err)
+    error.value = `Failed to delete metric: ${err.message}`
+  } finally {
+    deletingMetric.value = false
   }
 }
 </script>
@@ -663,6 +726,22 @@ const updateMetric = async () => {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--color-secondary-dark);
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-danger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .btn-sm {

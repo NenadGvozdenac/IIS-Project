@@ -71,14 +71,8 @@ public class GenerateScoutingReportHandler : IRequestHandler<GenerateScoutingRep
                         var reportInfo = new Paragraph($"Generated on: {DateTime.Now:yyyy-MM-dd HH:mm}")
                             .SetTextAlignment(TextAlignment.CENTER)
                             .SetFontSize(12)
-                            .SetMarginBottom(10);
-                        document.Add(reportInfo);
-
-                        var seasonInfo = new Paragraph($"Season ID: {request.SeasonId}")
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(12)
                             .SetMarginBottom(20);
-                        document.Add(seasonInfo);
+                        document.Add(reportInfo);
 
                         // Add filters info if any
                         if (request.Filters != null)
@@ -118,7 +112,7 @@ public class GenerateScoutingReportHandler : IRequestHandler<GenerateScoutingRep
 
                         // Add data rows with alternating colors
                         var rank = 1;
-                        foreach (var player in reportData.Take(25)) // Show top 25 players
+                        foreach (var player in reportData.Take(10)) // Show top 10 players
                         {
                             var backgroundColor = rank % 2 == 0 ? ColorConstants.WHITE : new DeviceRgb(248, 249, 250);
                             
@@ -135,12 +129,12 @@ public class GenerateScoutingReportHandler : IRequestHandler<GenerateScoutingRep
 
                         document.Add(table);
 
-                        // Add comprehensive summary statistics
+                        // Add comprehensive summary statistics with smaller gap
                         document.Add(new Paragraph("\nAdvanced Analytics Summary")
                             .SetFontSize(16)
                             .SetBold()
-                            .SetMarginTop(20)
-                            .SetMarginBottom(10));
+                            .SetMarginTop(10)
+                            .SetMarginBottom(8));
 
                         var totalPlayers = reportData.Count;
                         
@@ -157,29 +151,53 @@ public class GenerateScoutingReportHandler : IRequestHandler<GenerateScoutingRep
                             var stats = new Paragraph()
                                 .Add($"Total Players Analyzed: {totalPlayers}\n")
                                 .Add($"Average Score: {avgScore:F2}%\n")
-                                .Add($"Highest Score: {maxScore:F2}% ({topPlayer.PlayerFullName})\n")
-                                .Add($"Lowest Score: {minScore:F2}% ({bottomPlayer.PlayerFullName})\n")
                                 .Add($"Total Sessions Analyzed: {totalSessions}\n")
                                 .Add($"Average Sessions per Player: {avgSessions:F1}")
-                                .SetMarginBottom(20);
+                                .SetMarginBottom(15);
 
                             document.Add(stats);
 
-                            // Add top performers section
+                            // Add top performers section with basketball stats
                             var topPerformers = reportData.Take(5).ToList();
                             if (topPerformers.Any())
                             {
-                                document.Add(new Paragraph("Top 5 Performers")
+                                document.Add(new Paragraph("Top 5 Performers - Basketball Performance")
                                     .SetFontSize(14)
                                     .SetBold()
-                                    .SetMarginBottom(10));
+                                    .SetMarginBottom(8));
 
+                                // Create a table for top performers with basketball stats
+                                var topPerformersTable = new Table(6).UseAllAvailableWidth();
+                                
+                                // Headers
+                                var performerHeaders = new[] { "Rank", "Player", "Score %", "Avg Points", "Avg Assists", "Avg Minutes" };
+                                foreach (var header in performerHeaders)
+                                {
+                                    topPerformersTable.AddHeaderCell(new Cell()
+                                        .Add(new Paragraph(header).SetBold())
+                                        .SetBackgroundColor(new DeviceRgb(52, 152, 219))
+                                        .SetFontColor(ColorConstants.WHITE)
+                                        .SetTextAlignment(TextAlignment.CENTER)
+                                        .SetBorder(new SolidBorder(1)));
+                                }
+
+                                // Add top performer data
+                                var performerRank = 1;
                                 foreach (var performer in topPerformers)
                                 {
-                                    document.Add(new Paragraph($"{performer.PlayerFullName} ({performer.PositionName}): {performer.NormalizedScore:F1}%")
-                                        .SetMarginLeft(20)
-                                        .SetMarginBottom(5));
+                                    var backgroundColor = performerRank % 2 == 0 ? ColorConstants.WHITE : new DeviceRgb(240, 248, 255);
+                                    
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph(performerRank.ToString())).SetTextAlignment(TextAlignment.CENTER).SetBackgroundColor(backgroundColor));
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph($"{performer.PlayerFullName} ({performer.PositionName})")).SetBackgroundColor(backgroundColor));
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph($"{performer.NormalizedScore:F1}%")).SetTextAlignment(TextAlignment.CENTER).SetBackgroundColor(backgroundColor));
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph(performer.AveragePoints?.ToString("F1") ?? "N/A")).SetTextAlignment(TextAlignment.CENTER).SetBackgroundColor(backgroundColor));
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph(performer.AverageAssists?.ToString("F1") ?? "N/A")).SetTextAlignment(TextAlignment.CENTER).SetBackgroundColor(backgroundColor));
+                                    topPerformersTable.AddCell(new Cell().Add(new Paragraph(performer.AverageMinutes?.ToString("F1") ?? "N/A")).SetTextAlignment(TextAlignment.CENTER).SetBackgroundColor(backgroundColor));
+                                    performerRank++;
                                 }
+                                
+                                document.Add(topPerformersTable);
+                                document.Add(new Paragraph("\n"));
                             }
                         }
                         else
