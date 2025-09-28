@@ -7,6 +7,10 @@ public class GetPlayerRecommendationsQuery : IRequest<Result<GetPlayerRecommenda
 {
     public List<MetricWeight> MetricWeights { get; set; } = new();
 
+    public GetPlayerRecommendationsQuery()
+    {
+    }
+
     public GetPlayerRecommendationsQuery(List<MetricWeight> metricWeights)
     {
         MetricWeights = metricWeights;
