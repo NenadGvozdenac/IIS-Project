@@ -4,6 +4,7 @@ using scouting_service.src.Scoutings.Core.Infrastructure;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSeasonMetricAverages;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSessions;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerRecommendations;
+using scouting_service.src.Scoutings.Core.Application.Features.Reports.GenerateScoutingReport;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Data.Common;
@@ -263,6 +264,204 @@ public class PlayerRepository : IPlayerRepository
             Console.WriteLine($"Error in GetPlayerAllSessionsMetricAveragesAsync for player {playerId}: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
             return new List<GetPlayerSeasonMetricAveragesResponse>();
+        }
+    }
+
+    public async Task<List<ScoutingReportData>> GetScoutingReportDataAsync(int? seasonId, string? position = null, string? nationality = null, string? playerName = null)
+    {
+        try
+        {
+            var results = new List<ScoutingReportData>();
+            
+            // First try the new relative normalization function
+            try
+            {
+                using var command = _context.Database.GetDbConnection().CreateCommand();
+                command.CommandText = "SELECT * FROM generate_relative_scouting_summary(@p_season_id, @p_position_filter, @p_nationality_filter, @p_player_name_filter)";
+                
+                var seasonIdParam = command.CreateParameter();
+                seasonIdParam.ParameterName = "p_season_id";
+                seasonIdParam.Value = (object?)seasonId ?? DBNull.Value; // NULL means all seasons
+                command.Parameters.Add(seasonIdParam);
+
+                var positionParam = command.CreateParameter();
+                positionParam.ParameterName = "p_position_filter";
+                positionParam.Value = (object?)position ?? DBNull.Value;
+                command.Parameters.Add(positionParam);
+
+                var nationalityParam = command.CreateParameter();
+                nationalityParam.ParameterName = "p_nationality_filter";
+                nationalityParam.Value = (object?)nationality ?? DBNull.Value;
+                command.Parameters.Add(nationalityParam);
+
+                var playerNameParam = command.CreateParameter();
+                playerNameParam.ParameterName = "p_player_name_filter";
+                playerNameParam.Value = (object?)playerName ?? DBNull.Value;
+                command.Parameters.Add(playerNameParam);
+
+                await _context.Database.OpenConnectionAsync();
+                
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var reportData = new ScoutingReportData
+                    {
+                        PlayerId = reader.GetInt32(0), // player_id
+                        PlayerFullName = reader.GetString(1), // player_full_name
+                        PositionName = reader.GetString(2), // position_name
+                        NationalityName = reader.GetString(3), // nationality_name
+                        LatestHeight = reader.IsDBNull(4) ? null : reader.GetInt32(4), // latest_height
+                        LatestWeight = reader.IsDBNull(5) ? null : reader.GetInt32(5), // latest_weight
+                        LatestJumpDate = reader.IsDBNull(6) ? null : reader.GetDateTime(6), // latest_jump_date
+                        LatestVerticalJump = reader.IsDBNull(7) ? null : reader.GetInt32(7), // latest_vertical_jump
+                        TotalSessionsAnalyzed = reader.IsDBNull(8) ? 0 : reader.GetInt32(8), // total_sessions_analyzed (handle NULL)
+                        TotalScoutingScore = reader.IsDBNull(9) ? 0 : reader.GetDecimal(9), // total_scouting_score (handle NULL)
+                        NormalizedScore = reader.IsDBNull(10) ? 0 : reader.GetDecimal(10), // relative_normalized_score (handle NULL)
+                        ReportDate = reader.GetDateTime(11) // report_date
+                    };
+                    
+                    results.Add(reportData);
+                    Console.WriteLine($"Relative normalization for player {reportData.PlayerId}: {reportData.NormalizedScore}%");
+                }
+                
+                await _context.Database.CloseConnectionAsync();
+                
+                Console.WriteLine($"Relative normalization function returned {results.Count} players");
+                return results.OrderByDescending(r => r.NormalizedScore).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Relative normalization function failed: {ex.Message}. Falling back to old approach.");
+                await _context.Database.CloseConnectionAsync();
+            }
+
+            // Fallback to old individual player approach if new function fails
+            var playersQuery = _context.Players
+                .Include(p => p.IdPositionNavigation)
+                .Include(p => p.IdNationalityNavigation)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(position))
+            {
+                playersQuery = playersQuery.Where(p => p.IdPositionNavigation.Name.Contains(position));
+            }
+
+            if (!string.IsNullOrEmpty(nationality))
+            {
+                playersQuery = playersQuery.Where(p => p.IdNationalityNavigation.State.Contains(nationality));
+            }
+
+            if (!string.IsNullOrEmpty(playerName))
+            {
+                playersQuery = playersQuery.Where(p => (p.Name + " " + p.Surname).Contains(playerName));
+            }
+
+            var players = await playersQuery.ToListAsync();
+            Console.WriteLine($"Fallback: Found {players.Count} players matching criteria");
+
+            // Get raw scores first to find maximum
+            var playerScores = new Dictionary<int, decimal>();
+            foreach (var player in players)
+            {
+                try
+                {
+                    using var command = _context.Database.GetDbConnection().CreateCommand();
+                    command.CommandText = "SELECT * FROM generate_player_scouting_summary(@p_player_id, @p_season_id)";
+                    
+                    var playerIdParam = command.CreateParameter();
+                    playerIdParam.ParameterName = "p_player_id";
+                    playerIdParam.Value = player.IdPlayer;
+                    command.Parameters.Add(playerIdParam);
+
+                    var seasonIdParam = command.CreateParameter();
+                    seasonIdParam.ParameterName = "p_season_id";
+                    seasonIdParam.Value = (object?)seasonId ?? DBNull.Value; // NULL means all seasons
+                    command.Parameters.Add(seasonIdParam);
+
+                    await _context.Database.OpenConnectionAsync();
+                    
+                    using var reader = await command.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        var rawScore = reader.IsDBNull(9) ? 0 : reader.GetDecimal(9); // total_scouting_score (handle NULL)
+                        playerScores[player.IdPlayer] = rawScore;
+                    }
+                    
+                    await _context.Database.CloseConnectionAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to get score for player {player.IdPlayer}: {ex.Message}");
+                    playerScores[player.IdPlayer] = 0;
+                }
+            }
+
+            // Find maximum score for relative normalization
+            var maxScore = playerScores.Values.Max();
+            if (maxScore == 0) maxScore = 1; // Avoid division by zero
+
+            // Generate final results with relative normalization
+            foreach (var player in players)
+            {
+                try
+                {
+                    using var command = _context.Database.GetDbConnection().CreateCommand();
+                    command.CommandText = "SELECT * FROM generate_player_scouting_summary(@p_player_id, @p_season_id)";
+                    
+                    var playerIdParam = command.CreateParameter();
+                    playerIdParam.ParameterName = "p_player_id";
+                    playerIdParam.Value = player.IdPlayer;
+                    command.Parameters.Add(playerIdParam);
+
+                    var seasonIdParam = command.CreateParameter();
+                    seasonIdParam.ParameterName = "p_season_id";
+                    seasonIdParam.Value = (object?)seasonId ?? DBNull.Value; // NULL means all seasons
+                    command.Parameters.Add(seasonIdParam);
+
+                    await _context.Database.OpenConnectionAsync();
+                    
+                    using var reader = await command.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        var rawScore = reader.IsDBNull(9) ? 0 : reader.GetDecimal(9); // total_scouting_score (handle NULL)
+                        var relativeScore = Math.Round((rawScore / maxScore) * 100, 2);
+                        
+                        var reportData = new ScoutingReportData
+                        {
+                            PlayerId = reader.GetInt32(0), // player_id
+                            PlayerFullName = reader.GetString(1), // player_full_name
+                            PositionName = reader.GetString(2), // position_name
+                            NationalityName = reader.GetString(3), // nationality_name
+                            LatestHeight = reader.IsDBNull(4) ? null : reader.GetInt32(4), // latest_height
+                            LatestWeight = reader.IsDBNull(5) ? null : reader.GetInt32(5), // latest_weight
+                            LatestJumpDate = reader.IsDBNull(6) ? null : reader.GetDateTime(6), // latest_jump_date
+                            LatestVerticalJump = reader.IsDBNull(7) ? null : reader.GetInt32(7), // latest_vertical_jump
+                            TotalSessionsAnalyzed = reader.IsDBNull(8) ? 0 : reader.GetInt32(8), // total_sessions_analyzed (handle NULL)
+                            TotalScoutingScore = rawScore, // total_scouting_score
+                            NormalizedScore = relativeScore, // Calculated relative score (0-100%)
+                            ReportDate = reader.GetDateTime(11) // report_date
+                        };
+                        
+                        results.Add(reportData);
+                        Console.WriteLine($"Fallback relative normalization for player {player.IdPlayer}: {relativeScore}% (raw: {rawScore}, max: {maxScore})");
+                    }
+                    
+                    await _context.Database.CloseConnectionAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Fallback failed for player {player.IdPlayer}: {ex.Message}");
+                    continue;
+                }
+            }
+
+            Console.WriteLine($"Final result: {results.Count} players with relative normalization");
+            return results.OrderByDescending(r => r.NormalizedScore).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetScoutingReportDataAsync: {ex.Message}");
+            return new List<ScoutingReportData>();
         }
     }
 }

@@ -19,7 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_team_member_player_team ON team_member (id_player
 -- This function returns all quantitative metrics with their average values for a specific player and season
 CREATE OR REPLACE FUNCTION get_player_season_metric_averages(
     p_player_id INTEGER,
-    p_season_id INTEGER,
+    p_season_id INTEGER DEFAULT NULL, -- NULL means ALL seasons
     p_session_type_filter VARCHAR DEFAULT NULL -- NULL means all session types
 )
 RETURNS TABLE (
@@ -32,7 +32,7 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     WITH season_metrics AS (
-        -- Get all metrics for the season (permanent + season-specific)
+        -- Get all metrics for the season (permanent + season-specific), or all if season_id is NULL
         SELECT DISTINCT 
             m.id_metrics,
             m.name,
@@ -42,7 +42,7 @@ BEGIN
         WHERE (m.is_permanent = 1 OR m.id_metrics IN (
             SELECT sm.id_metrics 
             FROM season_metrics sm 
-            WHERE sm.id_season = p_season_id
+            WHERE (p_season_id IS NULL OR sm.id_season = p_season_id)
         ))
         AND m.id_metric_type = 1 -- Only quantitative metrics
     ),
@@ -210,7 +210,7 @@ CREATE TYPE player_scouting_report AS (
 -- FUNCTION 3: Generate Player Scouting Summary Scorecard
 CREATE OR REPLACE FUNCTION generate_player_scouting_summary(
     p_player_id INTEGER,
-    p_season_id INTEGER,
+    p_season_id INTEGER DEFAULT NULL, -- NULL means ALL seasons
     p_normalization_max_score NUMERIC DEFAULT 100.0
 )
 RETURNS player_scouting_report AS $$
@@ -317,3 +317,100 @@ CREATE OR REPLACE VIEW player_scouting_report_view AS
 SELECT 
     (generate_player_scouting_summary(p.id_player, (SELECT MAX(id_season) FROM season))).*
 FROM player p;
+
+-- FUNCTION: Generate relative normalized scouting scores
+-- This function calculates scores for all players and normalizes them so the highest score = 100%
+CREATE OR REPLACE FUNCTION generate_relative_scouting_summary(
+    p_season_id INTEGER DEFAULT NULL, -- NULL means ALL seasons
+    p_position_filter VARCHAR DEFAULT NULL,
+    p_nationality_filter VARCHAR DEFAULT NULL,
+    p_player_name_filter VARCHAR DEFAULT NULL
+)
+RETURNS TABLE (
+    player_id INTEGER,
+    player_full_name VARCHAR(255),
+    position_name VARCHAR(100),
+    nationality_name VARCHAR(100),
+    latest_height INTEGER,
+    latest_weight INTEGER,
+    latest_jump_date DATE,
+    latest_vertical_jump INTEGER,
+    total_sessions_analyzed INTEGER,
+    total_scouting_score NUMERIC,
+    relative_normalized_score NUMERIC(5,2),
+    report_date TIMESTAMP
+) AS $$
+DECLARE
+    v_max_raw_score NUMERIC := 0;
+    v_current_player RECORD;
+    v_player_report player_scouting_report;
+BEGIN
+    -- First pass: Find the maximum raw score among all filtered players
+    FOR v_current_player IN 
+        SELECT p.id_player, p.name, p.surname, pos.name as position, nat.state as nationality
+        FROM player p
+        JOIN position pos ON p.id_position = pos.id_position
+        JOIN nationality nat ON p.id_nationality = nat.id_nationality
+        WHERE (p_position_filter IS NULL OR pos.name ILIKE '%' || p_position_filter || '%')
+          AND (p_nationality_filter IS NULL OR nat.state ILIKE '%' || p_nationality_filter || '%')
+          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%')
+    LOOP
+        BEGIN
+            -- Get the raw score for this player
+            v_player_report := generate_player_scouting_summary(v_current_player.id_player, p_season_id);
+            
+            -- Track the maximum raw score
+            IF v_player_report.total_scouting_score > v_max_raw_score THEN
+                v_max_raw_score := v_player_report.total_scouting_score;
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            -- Skip players that cause errors
+            CONTINUE;
+        END;
+    END LOOP;
+
+    -- Second pass: Generate normalized results
+    FOR v_current_player IN 
+        SELECT p.id_player, p.name, p.surname, pos.name as position, nat.state as nationality
+        FROM player p
+        JOIN position pos ON p.id_position = pos.id_position
+        JOIN nationality nat ON p.id_nationality = nat.id_nationality
+        WHERE (p_position_filter IS NULL OR pos.name ILIKE '%' || p_position_filter || '%')
+          AND (p_nationality_filter IS NULL OR nat.state ILIKE '%' || p_nationality_filter || '%')
+          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%')
+    LOOP
+        BEGIN
+            -- Get the full report for this player
+            v_player_report := generate_player_scouting_summary(v_current_player.id_player, p_season_id);
+            
+            -- Return the player data with relative normalization
+            player_id := v_player_report.player_id;
+            player_full_name := v_player_report.player_full_name;
+            position_name := v_player_report.position_name;
+            nationality_name := v_player_report.nationality_name;
+            latest_height := v_player_report.latest_height;
+            latest_weight := v_player_report.latest_weight;
+            latest_jump_date := v_player_report.latest_jump_date;
+            latest_vertical_jump := v_player_report.latest_vertical_jump;
+            total_sessions_analyzed := v_player_report.total_sessions_analyzed;
+            total_scouting_score := v_player_report.total_scouting_score;
+            
+            -- Calculate relative normalized score (highest player = 100%)
+            IF v_max_raw_score > 0 THEN
+                relative_normalized_score := ROUND((v_player_report.total_scouting_score / v_max_raw_score) * 100, 2);
+            ELSE
+                relative_normalized_score := 0.00;
+            END IF;
+            
+            report_date := NOW();
+            
+            RETURN NEXT;
+        EXCEPTION WHEN OTHERS THEN
+            -- Skip players that cause errors
+            CONTINUE;
+        END;
+    END LOOP;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;

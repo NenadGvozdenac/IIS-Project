@@ -7,72 +7,93 @@
           <p>AI-powered player recommendations based on weighted metrics across all sessions</p>
         </div>
 
-        <!-- Selected Metrics -->
-        <div class="content-card mb-6" v-if="selectedMetrics.length > 0">
-          <div class="flex items-center justify-between mb-4">
-            <h2>Selected Metrics</h2>
-            <button @click="calculateRecommendations" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Calculating...' : 'Calculate Recommendations' }}
-            </button>
-          </div>
-          <div class="metrics-table-container">
-            <table class="metrics-table">
-              <thead>
-                <tr>
-                  <th>Metric Name</th>
-                  <th>Weight</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="metric in selectedMetrics" :key="metric.metricId">
-                  <td>{{ metric.metricName }}</td>
-                  <td>
-                    <input 
-                      type="number" 
-                      v-model.number="metric.weight" 
-                      min="0" 
-                      step="0.1"
-                      class="weight-input"
-                      @input="validateWeight(metric)"
-                    />
-                  </td>
-                  <td>
-                    <button @click="removeMetric(metric)" class="btn btn-danger btn-sm">
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- Metrics Management Section -->
+        <div class="metrics-section">
+          <div class="metrics-tables-row">
+            <!-- Available Metrics Table -->
+            <div class="metrics-table-card">
+              <div class="table-header">
+                <h3>Available Metrics</h3>
+                <div class="table-info">{{ availableMetrics.length }} metrics</div>
+              </div>
+              <div class="small-table-container">
+                <table class="compact-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Weight</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="metric in availableMetrics.slice(0, 6)" :key="metric.metricId">
+                      <td class="metric-name">{{ truncateText(metric.metricName, 15) }}</td>
+                      <td class="metric-weight">{{ metric.weight }}</td>
+                      <td>
+                        <button @click="addMetric(metric)" class="btn-small btn-add">
+                          +
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="availableMetrics.length === 0" class="no-data-small">
+                  No available metrics
+                </div>
+                <div v-if="availableMetrics.length > 6" class="table-footer">
+                  +{{ availableMetrics.length - 6 }} more metrics
+                </div>
+              </div>
+            </div>
 
-        <!-- Available Metrics -->
-        <div class="content-card mb-6" v-if="availableMetrics.length > 0">
-          <h2>Available Metrics</h2>
-          <p class="text-gray-600 mb-4">Click on a metric to add it to your selection</p>
-          <div class="metrics-table-container">
-            <table class="metrics-table">
-              <thead>
-                <tr>
-                  <th>Metric Name</th>
-                  <th>Default Weight</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="metric in availableMetrics" :key="metric.metricId">
-                  <td>{{ metric.metricName }}</td>
-                  <td>{{ metric.weight }}</td>
-                  <td>
-                    <button @click="addMetric(metric)" class="btn btn-primary btn-sm">
-                      Add
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <!-- Selected Metrics Table -->
+            <div class="metrics-table-card">
+              <div class="table-header">
+                <h3>Selected Metrics</h3>
+                <div class="table-actions">
+                  <button @click="calculateRecommendations" class="btn-calculate" :disabled="loading || selectedMetrics.length === 0">
+                    {{ loading ? 'Loading...' : 'Calculate' }}
+                  </button>
+                </div>
+              </div>
+              <div class="small-table-container">
+                <table class="compact-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Weight</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="metric in selectedMetrics.slice(0, 6)" :key="metric.metricId">
+                      <td class="metric-name">{{ truncateText(metric.metricName, 15) }}</td>
+                      <td>
+                        <input 
+                          type="number" 
+                          v-model.number="metric.weight" 
+                          min="0" 
+                          step="0.1"
+                          class="weight-input-small"
+                          @input="validateWeight(metric)"
+                        />
+                      </td>
+                      <td>
+                        <button @click="removeMetric(metric)" class="btn-small btn-remove">
+                          ×
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="selectedMetrics.length === 0" class="no-data-small">
+                  No metrics selected
+                </div>
+                <div v-if="selectedMetrics.length > 6" class="table-footer">
+                  +{{ selectedMetrics.length - 6 }} more metrics
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -235,6 +256,12 @@ const calculateRecommendations = async () => {
 const getMetricValue = (player, metricId) => {
   return player.metricValues.find(mv => mv.metricId === metricId);
 };
+
+// Truncate text helper function
+const truncateText = (text, maxLength) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + '...';
+};
 </script>
 
 <style scoped>
@@ -370,6 +397,187 @@ const getMetricValue = (player, metricId) => {
 .weight-input:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+/* Compact Metrics Section */
+.metrics-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.metrics-tables-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.metrics-table-card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.table-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.table-info {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.table-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-calculate {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-calculate:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-calculate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.small-table-container {
+  height: 280px;
+  overflow-y: auto;
+}
+
+.compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.compact-table th {
+  background-color: #f8fafc;
+  color: var(--color-text);
+  padding: var(--spacing-sm);
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.compact-table td {
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.compact-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.metric-name {
+  font-weight: 500;
+}
+
+.metric-weight {
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.weight-input-small {
+  width: 60px;
+  padding: 2px 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.weight-input-small:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btn-small {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-add {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-add:hover {
+  background-color: #059669;
+  transform: scale(1.1);
+}
+
+.btn-remove {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-remove:hover {
+  background-color: #dc2626;
+  transform: scale(1.1);
+}
+
+.no-data-small {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+.table-footer {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: #f1f5f9;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .metrics-tables-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .small-table-container {
+    height: 200px;
+  }
 }
 
 .rank {
