@@ -208,12 +208,13 @@
                 required
                 class="form-control"
                 :min="minDateTime"
+                :disabled="showEditModal"
               >
             </div>
             
             <div class="form-group mb-3">
               <label class="form-label">Match Type</label>
-              <select v-model="editMatchData.type" required class="form-select" @change="onTypeChange">
+              <select v-model="editMatchData.type" required class="form-select" @change="onTypeChange" :disabled="showEditModal">
                 <option value="">Select Type</option>
                 <option value="home">Home</option>
                 <option value="away">Away</option>
@@ -232,8 +233,8 @@
 
             <div v-if="editMatchData.type === 'home'" class="form-group mb-3">
               <div class="form-check">
-                <input v-model="editMatchData.isInOurHall" type="checkbox" class="form-check-input" id="ourHallCheck">
-                <label class="form-check-label" for="ourHallCheck">
+                <input v-model="editMatchData.isInOurHall" type="checkbox" class="form-check-input" id="ourHallCheck" :disabled="showEditModal">
+                <label class="form-check-label" for="ourHallCheck" :class="{ 'disabled-label': showEditModal }">
                   Is in our hall
                 </label>
               </div>
@@ -241,8 +242,8 @@
 
             <div v-if="editMatchData.type === 'home'" class="form-group mb-3">
               <div class="form-check">
-                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="homeTransportCheck">
-                <label class="form-check-label" for="homeTransportCheck">
+                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="homeTransportCheck" :disabled="showEditModal">
+                <label class="form-check-label" for="homeTransportCheck" :class="{ 'disabled-label': showEditModal }">
                   Transportation Required
                 </label>
               </div>
@@ -250,8 +251,8 @@
 
             <div v-if="editMatchData.type === 'away'" class="form-group mb-3">
               <div class="form-check">
-                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="transportCheck">
-                <label class="form-check-label" for="transportCheck">
+                <input v-model="editMatchData.transportationRequired" type="checkbox" class="form-check-input" id="transportCheck" :disabled="showEditModal">
+                <label class="form-check-label" for="transportCheck" :class="{ 'disabled-label': showEditModal }">
                   Transportation Required
                 </label>
               </div>
@@ -259,8 +260,8 @@
 
             <div v-if="editMatchData.type === 'away'" class="form-group mb-3">
               <div class="form-check">
-                <input v-model="editMatchData.accommodationRequired" type="checkbox" class="form-check-input" id="accommodationCheck">
-                <label class="form-check-label" for="accommodationCheck">
+                <input v-model="editMatchData.accommodationRequired" type="checkbox" class="form-check-input" id="accommodationCheck" :disabled="showEditModal">
+                <label class="form-check-label" for="accommodationCheck" :class="{ 'disabled-label': showEditModal }">
                   Accommodation Required
                 </label>
               </div>

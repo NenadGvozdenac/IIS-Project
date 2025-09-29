@@ -35,4 +35,23 @@ public class TravelInfoRepository : ITravelInfoRepository
         _travelDbContext.SaveChanges();
         return travelInformation;
     }
+
+    // Saga deletion methods
+    public IEnumerable<TravelInformation> GetByPlayerAndTeam(int playerId, int teamId)
+    {
+        return _travelDbContext.TravelInformations
+            .Where(ti => ti.IdPlayer == playerId && ti.IdTeam == teamId)
+            .ToList();
+    }
+
+    public bool Delete(int id)
+    {
+        var travelInfo = GetById(id);
+        if (travelInfo == null)
+            return false;
+
+        _travelDbContext.TravelInformations.Remove(travelInfo);
+        _travelDbContext.SaveChanges();
+        return true;
+    }
 }

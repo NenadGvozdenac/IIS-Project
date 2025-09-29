@@ -12,6 +12,7 @@ namespace match_service.src.Matches.Core.Application.Features.ChronologicalEvent
         public int? PeriodTime { get; set; }
         public string? TeamId { get; set; }
         public string? PlayerId { get; set; }
+        public string? PlayerName { get; set; }
         public int EventId { get; set; }
         public string? Notes { get; set; }
         public int? OurPoints { get; set; }

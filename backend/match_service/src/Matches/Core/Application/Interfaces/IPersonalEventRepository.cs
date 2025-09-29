@@ -12,5 +12,11 @@ namespace match_service.src.Matches.Core.Application.Interfaces
         void Update(PersonalEvent personalEvent);
         bool Delete(int eventId);
         bool Exists(int eventId);
+        
+        // Saga deletion methods
+        int DeleteByPlayerAndTeam(int playerId, int teamId);
+        
+        // Saga backup methods
+        List<PersonalEvent> GetByPlayerAndTeam(int playerId, int teamId);
     }
 }

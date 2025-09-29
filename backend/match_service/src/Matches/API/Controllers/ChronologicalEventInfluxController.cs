@@ -1,5 +1,11 @@
 using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.CreateEventInflux;
 using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetMatchEventsInflux;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetAdvancedMatchStatistics;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetPlayerPerformanceComparison;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetSeasonPlayerAverages;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetMatchScoringEventsInfluxReport;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetPlayerEventCountsInfluxReport;
+using match_service.src.Matches.Core.Application.Features.ChronologicalEvent.GetTeamPlayerAveragesInfluxReport;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
@@ -92,12 +98,9 @@ namespace match_service.src.Matches.API.Controllers
         [HttpGet("match/{matchId}/advanced-statistics")]
         public async Task<ActionResult> GetAdvancedMatchStatistics(string matchId)
         {
-            // Ovo je privremeno rešenje - u realnoj aplikaciji biste dodali proper handler
-            return Ok(new { 
-                Message = "Complex Query 1: Period-based player efficiency analysis",
-                Description = "Flux query with filtering, grouping, aggregation and sorting",
-                MatchId = matchId 
-            });
+            var query = new GetAdvancedMatchStatisticsQuery { MatchId = matchId };
+            var result = await _mediator.Send(query);
+            return CreateResponse(result);
         }
 
         /// <summary>
@@ -107,25 +110,103 @@ namespace match_service.src.Matches.API.Controllers
         [HttpGet("match/{matchId}/player-rankings")]
         public async Task<ActionResult> GetPlayerPerformanceComparison(string matchId)
         {
-            return Ok(new { 
-                Message = "Complex Query 2: Player performance comparison with ranking",
-                Description = "Aggregation functions with player ranking by total points",
-                MatchId = matchId 
-            });
+            var query = new GetPlayerPerformanceComparisonQuery { MatchId = matchId };
+            var result = await _mediator.Send(query);
+            return CreateResponse(result);
         }
 
         /// <summary>
-        /// SLOŽEN UPIT 3: Vremenska analiza scoringa
-        /// Sliding window agregacija sa moving average
+        /// SLOŽEN UPIT 3: Season per-player averages across multiple matches
+        /// Kombinuje filtriranje, grupisanje, agregaciju i sortiranje sa statističkim funkcijama
         /// </summary>
-        [HttpGet("match/{matchId}/scoring-trends")]
-        public async Task<ActionResult> GetPeriodScoringTrends(string matchId)
+        /// <param name="startDate">Start date for season analysis</param>
+        /// <param name="endDate">End date for season analysis</param>
+        /// <param name="teamId">Optional: Filter by specific team</param>
+        /// <param name="minMatches">Optional: Minimum matches played (default: 1)</param>
+        /// <returns>List of players with season averages and statistics</returns>
+        [HttpGet("season-averages")]
+        public async Task<ActionResult> GetSeasonPlayerAverages(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] string? teamId = null,
+            [FromQuery] int minMatches = 1)
         {
-            return Ok(new { 
-                Message = "Complex Query 3: Temporal scoring analysis",
-                Description = "5-minute interval aggregation with moving average",
-                MatchId = matchId 
-            });
+            var query = new GetSeasonPlayerAveragesQuery 
+            { 
+                StartDate = startDate,
+                EndDate = endDate,
+                TeamId = teamId,
+                MinMatches = minMatches
+            };
+            var result = await _mediator.Send(query);
+            return CreateResponse(result);
+        }
+
+        /// <summary>
+        /// INFLUX REPORT 1: Lista događaja za određenu utakmicu pri čemu je event_type '+2p', '+3p', '+ft' i event_category je 'personal' sortirano po vremenu
+        /// </summary>
+        /// <param name="matchId">Match identifier</param>
+        /// <returns>List of scoring events sorted by time</returns>
+        [HttpGet("reports/match/{matchId}/scoring-events")]
+        public async Task<ActionResult> GetMatchScoringEventsInfluxReport(string matchId)
+        {
+            var query = new GetMatchScoringEventsInfluxReportQuery(matchId);
+            var result = await _mediator.Send(query);
+            
+            if (result.Success)
+            {
+                return Ok(result.ScoringEvents);
+            }
+            
+            return BadRequest(result.ErrorMessage);
+        }
+
+        /// <summary>
+        /// INFLUX REPORT 2: Prikaz broja događaja za svaki event_type (gde je event_category personal), grupisano po match-u za određenog igrača
+        /// </summary>
+        /// <param name="playerId">Player identifier</param>
+        /// <param name="startDate">Start date for analysis</param>
+        /// <param name="endDate">End date for analysis</param>
+        /// <returns>Player event counts grouped by match</returns>
+        [HttpGet("reports/player/{playerId}/event-counts")]
+        public async Task<ActionResult> GetPlayerEventCountsInfluxReport(
+            string playerId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            var query = new GetPlayerEventCountsInfluxReportQuery(playerId, startDate, endDate);
+            var result = await _mediator.Send(query);
+            
+            if (result.Success)
+            {
+                return Ok(result.PlayerEventCounts);
+            }
+            
+            return BadRequest(result.ErrorMessage);
+        }
+
+        /// <summary>
+        /// INFLUX REPORT 3: Za zadati vremenski period (teamId = 1) vratiti za svakog igrača broj odigranih utakmica, avgPoints, avgAssists, avgFouls
+        /// </summary>
+        /// <param name="startDate">Start date for analysis</param>
+        /// <param name="endDate">End date for analysis</param>
+        /// <param name="teamId">Optional: Team identifier (default: "1")</param>
+        /// <returns>Team player averages for the specified period</returns>
+        [HttpGet("reports/team/player-averages")]
+        public async Task<ActionResult> GetTeamPlayerAveragesInfluxReport(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] string? teamId = "1")
+        {
+            var query = new GetTeamPlayerAveragesInfluxReportQuery(startDate, endDate, teamId);
+            var result = await _mediator.Send(query);
+            
+            if (result.Success)
+            {
+                return Ok(result.TeamPlayerAverages);
+            }
+            
+            return BadRequest(result.ErrorMessage);
         }
     }
 }

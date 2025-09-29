@@ -26,4 +26,22 @@ public class VisaRepository : IVisaRepository
             .ToList();
     }
 
+    // Saga deletion methods
+    public IEnumerable<Visa> GetByTravelInformationIds(IEnumerable<int> travelInfoIds)
+    {
+        return _travelDbContext.Visas
+            .Where(v => travelInfoIds.Contains(v.IdTravelInformation))
+            .ToList();
+    }
+
+    public bool Delete(string visaNumber)
+    {
+        var visa = _travelDbContext.Visas.Find(visaNumber);
+        if (visa == null)
+            return false;
+
+        _travelDbContext.Visas.Remove(visa);
+        _travelDbContext.SaveChanges();
+        return true;
+    }
 }

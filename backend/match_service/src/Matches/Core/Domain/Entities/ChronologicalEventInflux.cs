@@ -33,6 +33,9 @@ public class ChronologicalEventInflux
     [Column("event_id")]
     public int EventId { get; set; }
 
+    [Column("player_name")]
+    public string? PlayerName { get; set; }
+
     [Column("period_time")]
     public int? PeriodTime { get; set; }
 
@@ -60,7 +63,7 @@ public class ChronologicalEventInflux
     }
 
     // Factory methods for creating events from existing entities
-    public static ChronologicalEventInflux FromPersonalEvent(PersonalEvent personalEvent, int? ourPoints = null, int? opponentPoints = null)
+    public static ChronologicalEventInflux FromPersonalEvent(PersonalEvent personalEvent, string? playerName = null, int? ourPoints = null, int? opponentPoints = null)
     {
         return new ChronologicalEventInflux
         {
@@ -73,6 +76,7 @@ public class ChronologicalEventInflux
             PeriodTime = personalEvent.PeriodTime,
             TeamId = personalEvent.IdTeam.ToString(),
             PlayerId = personalEvent.IdPlayer.ToString(),
+            PlayerName = playerName,
             Notes = personalEvent.Notes,
             CreationTime = personalEvent.CreationTime,
             OurPoints = ourPoints,
