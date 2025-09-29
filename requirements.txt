@@ -1,0 +1,11 @@
+# Requirements for Elasticsearch Report Generator
+# Install with: pip install -r requirements.txt
+
+# Core HTTP library
+requests>=2.31.0
+
+# PDF generation library
+reportlab>=4.0.4
+
+# Optional: Better date/time handling
+python-dateutil>=2.8.2

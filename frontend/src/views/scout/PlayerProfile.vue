@@ -95,6 +95,9 @@
           </div>
           
           <div class="actions">
+            <button @click="viewDetails" class="btn btn-details">
+              Details
+            </button>
             <button @click="editPlayer" class="btn btn-primary">
               Edit Player Profile
             </button>
@@ -206,6 +209,10 @@ const hasValidMetrics = (metrics) => {
 
 const editPlayer = () => {
   router.push(`/scout/player/${playerId}/edit`)
+}
+
+const viewDetails = () => {
+  router.push(`/scout/analysis/${playerId}`)
 }
 
 const goBack = () => {
@@ -333,7 +340,7 @@ const goBack = () => {
 
 .actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--spacing-md);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
@@ -353,6 +360,15 @@ const goBack = () => {
   justify-content: center;
 }
 
+.btn-details {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-details:hover {
+  background-color: #059669;
+}
+
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
@@ -365,6 +381,7 @@ const goBack = () => {
 .btn-secondary {
   background-color: var(--color-secondary);
   color: white;
+  margin-left: auto;
 }
 
 .btn-secondary:hover {

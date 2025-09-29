@@ -7,9 +7,9 @@ public partial class Session
 {
     public int IdSession { get; set; }
 
-    public DateOnly StartTime { get; set; }
+    public DateTime StartTime { get; set; }
 
-    public DateOnly? EndTime { get; set; }
+    public DateTime? EndTime { get; set; }
 
     public int IdSessionStatus { get; set; }
 

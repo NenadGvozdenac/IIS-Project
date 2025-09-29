@@ -49,10 +49,6 @@
             class="nav-link scout-link">
             Sessions
           </router-link>
-          <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/analysis"
-            class="nav-link scout-link">
-            Analysis
-          </router-link>
           <router-link v-if="userInfo && userInfo.userRole === 'scouting manager'" to="/scout/recommendations"
             class="nav-link scout-link">
             Recommendations
@@ -68,7 +64,7 @@
             <router-link v-if="isCustomer()" to="/profile" class="btn btn-ghost">Profile</router-link>
             <router-link v-if="isCustomer()" to="/seasonal-tickets" class="btn btn-ghost">Season Tickets</router-link>
             <router-link v-if="isCustomer()" to="/cart" class="btn btn-ghost">Cart</router-link>
-            <router-link to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
+            <router-link v-if="userInfo.userRole !== 'scouting manager'" to="/dashboard" class="btn btn-ghost">Dashboard</router-link>
             <button @click="handleLogout" class="btn btn-secondary">Logout</button>
           </template>
         </div>

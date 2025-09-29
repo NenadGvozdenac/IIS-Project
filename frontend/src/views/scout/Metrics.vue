@@ -32,7 +32,6 @@
                   <tr>
                     <th>Name</th>
                     <th>Type</th>
-                    <th>Permanent</th>
                     <th>Weight</th>
                     <th>Created By</th>
                     <th>Actions</th>
@@ -44,12 +43,7 @@
                       :class="{ 'selected': selectedMetric?.idMetrics === metric.idMetrics }"
                       @click="selectMetric(metric)">
                     <td>{{ metric.name }}</td>
-                    <td>{{ metric.metricTypeName }}</td>
-                    <td>
-                      <span class="status-badge" :class="metric.isPermanent ? 'permanent' : 'temporary'">
-                        {{ metric.isPermanent ? 'Yes' : 'No' }}
-                      </span>
-                    </td>
+                    <td>{{ metric.metricTypeName || 'Unknown Type' }}</td>
                     <td>{{ metric.metricWeight }}</td>
                     <td>{{ metric.userName || 'Unknown' }}</td>
                     <td>
@@ -160,19 +154,9 @@
                   </select>
                 </div>
                 
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="editMetricWeight">Weight</label>
-                    <input v-model.number="editMetric.metricWeight" type="number" id="editMetricWeight" class="form-control" required min="1" max="100">
-                  </div>
-                  <div class="form-group">
-                    <label for="editIsPermanent">Permanent</label>
-                    <select v-model="editMetric.isPermanent" id="editIsPermanent" class="form-control" required>
-                      <option value="">Select</option>
-                      <option :value="true">Yes</option>
-                      <option :value="false">No</option>
-                    </select>
-                  </div>
+                <div class="form-group">
+                  <label for="editMetricWeight">Weight</label>
+                  <input v-model.number="editMetric.metricWeight" type="number" id="editMetricWeight" class="form-control" required min="1" max="100">
                 </div>
                 
                 <div class="form-actions">
@@ -181,6 +165,15 @@
                   </button>
                   <button type="button" @click="clearSelection" class="btn btn-secondary">
                     Cancel
+                  </button>
+                  <!-- Delete button - only show for non-permanent metrics -->
+                  <button 
+                    v-if="selectedMetric && !selectedMetric.isPermanent" 
+                    type="button" 
+                    @click="confirmDeleteMetric" 
+                    class="btn btn-danger"
+                    :disabled="deletingMetric || updatingMetric">
+                    {{ deletingMetric ? 'Deleting...' : 'Delete Metric' }}
                   </button>
                 </div>
               </form>
@@ -201,6 +194,8 @@ import { ref, onMounted, computed } from 'vue'
 import { 
   getAllMetrics, 
   createMetric as createMetricAPI, 
+  updateMetric as updateMetricAPI,
+  deleteMetric as deleteMetricAPI,
   getAllMetricTypes, 
   createMetricType as createMetricTypeAPI 
 } from '../../services/metrics_service.js'
@@ -215,6 +210,7 @@ const selectedMetricType = ref('')
 const selectedMetric = ref(null)
 const creatingMetric = ref(false)
 const updatingMetric = ref(false)
+const deletingMetric = ref(false)
 const creatingMetricType = ref(false)
 
 // Current user data
@@ -229,7 +225,7 @@ const newMetricType = ref({
 const newMetric = ref({
   name: '',
   isPermanent: '',
-  metricWeight: 50,
+  metricWeight: 1,
   idUser: 0,
   idMetricType: ''
 })
@@ -238,7 +234,7 @@ const newMetric = ref({
 const editMetric = ref({
   name: '',
   isPermanent: '',
-  metricWeight: 0,
+  metricWeight: 1,
   idUser: 0,
   idMetricType: ''
 })
@@ -275,6 +271,9 @@ const loadData = async () => {
       getAllMetricTypes()
     ])
     
+    console.log('Metrics data received:', metricsData)
+    console.log('Types data received:', typesData)
+    
     metrics.value = metricsData || []
     metricTypes.value = typesData || []
   } catch (err) {
@@ -295,7 +294,7 @@ const selectMetric = (metric) => {
   editMetric.value = {
     name: metric.name,
     isPermanent: Boolean(metric.isPermanent),
-    metricWeight: metric.metricWeight,
+    metricWeight: metric.metricWeight || 1,
     idUser: metric.idUser,
     idMetricType: metric.idMetricType
   }
@@ -306,7 +305,7 @@ const clearSelection = () => {
   editMetric.value = {
     name: '',
     isPermanent: '',
-    metricWeight: 0,
+    metricWeight: 1,
     idUser: 0,
     idMetricType: ''
   }
@@ -360,7 +359,7 @@ const createMetric = async () => {
     const metricData = {
       name: newMetric.value.name,
       isPermanent: newMetric.value.isPermanent,
-      metricWeight: newMetric.value.metricWeight || 50,
+      metricWeight: newMetric.value.metricWeight || 1,
       idUser: currentUser.value.userID || currentUser.value.id,
       idMetricType: newMetric.value.idMetricType
     }
@@ -376,7 +375,7 @@ const createMetric = async () => {
     newMetric.value = {
       name: '',
       isPermanent: '',
-      metricWeight: 50,
+      metricWeight: 1,
       idUser: currentUser.value.userID || currentUser.value.id,
       idMetricType: ''
     }
@@ -395,25 +394,94 @@ const updateMetric = async () => {
     updatingMetric.value = true
     error.value = null
     
-    // Note: Since there's no update API endpoint available, we'll create a new metric
-    // This is a limitation of the current backend implementation
-    const metricData = {
-      ...editMetric.value,
-      idUser: currentUser.value.userID || currentUser.value.id
+    if (!selectedMetric.value) {
+      throw new Error('No metric selected for update')
     }
     
-    await createMetricAPI(metricData)
+    if (!currentUser.value) {
+      throw new Error('User not authenticated')
+    }
+    
+    // Validate required fields
+    if (!editMetric.value.name || !editMetric.value.idMetricType) {
+      throw new Error('Please fill in all required fields')
+    }
+    
+    const metricData = {
+      name: editMetric.value.name,
+      isPermanent: editMetric.value.isPermanent,
+      metricWeight: editMetric.value.metricWeight || 1,
+      idUser: currentUser.value.userID || currentUser.value.id,
+      idMetricType: editMetric.value.idMetricType
+    }
+    
+    console.log('Updating metric with ID:', selectedMetric.value.idMetrics);
+    console.log('Update data:', metricData);
+    
+    await updateMetricAPI(selectedMetric.value.idMetrics, metricData)
     
     // Reload data after successful update
     await loadData()
     clearSelection()
     
-    alert('Metric updated successfully! (Note: A new record was created as the API does not support updates)')
+    alert('Metric updated successfully!')
   } catch (err) {
     console.error('Error updating metric:', err)
-    error.value = 'Failed to update metric. Please try again.'
+    error.value = `Failed to update metric: ${err.message}`
   } finally {
     updatingMetric.value = false
+  }
+}
+
+// Confirm delete metric with user confirmation
+const confirmDeleteMetric = () => {
+  if (!selectedMetric.value) {
+    return
+  }
+  
+  const metricName = selectedMetric.value.name
+  const isPermanent = selectedMetric.value.isPermanent
+  
+  if (isPermanent) {
+    alert('Permanent metrics cannot be deleted.')
+    return
+  }
+  
+  if (confirm(`Are you sure you want to delete the metric "${metricName}"? This action cannot be undone and will remove all associated data.`)) {
+    deleteMetric()
+  }
+}
+
+// Delete metric function
+const deleteMetric = async () => {
+  if (!selectedMetric.value) {
+    return
+  }
+  
+  // Store metric info before clearing selection
+  const metricId = selectedMetric.value.idMetrics
+  const metricName = selectedMetric.value.name
+  
+  try {
+    deletingMetric.value = true
+    error.value = null
+    
+    console.log('Deleting metric with ID:', metricId);
+    
+    const result = await deleteMetricAPI(metricId)
+    
+    console.log('Delete result:', result);
+    
+    // Reload data after successful deletion
+    await loadData()
+    clearSelection()
+    
+    alert(`Metric "${metricName}" deleted successfully!`)
+  } catch (err) {
+    console.error('Error deleting metric:', err)
+    error.value = `Failed to delete metric: ${err.message}`
+  } finally {
+    deletingMetric.value = false
   }
 }
 </script>
@@ -658,6 +726,22 @@ const updateMetric = async () => {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--color-secondary-dark);
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-danger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .btn-sm {

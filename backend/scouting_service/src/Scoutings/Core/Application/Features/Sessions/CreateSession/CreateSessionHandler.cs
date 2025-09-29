@@ -18,8 +18,8 @@ public class CreateSessionHandler : IRequestHandler<CreateSessionCommand, Result
     {
         var session = new Session
         {
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc),
+            EndTime = request.EndTime.HasValue ? DateTime.SpecifyKind(request.EndTime.Value, DateTimeKind.Utc) : null,
             IdSessionStatus = request.IdSessionStatus,
             IdSessionType = request.IdSessionType,
             IdUser = request.IdUser,

@@ -354,8 +354,8 @@ CREATE TABLE sent_request (
 
 CREATE TABLE session (
     id_session        SERIAL NOT NULL,
-    start_time        DATE,
-    end_time          DATE,
+    start_time        TIMESTAMP WITH TIME ZONE,
+    end_time          TIMESTAMP WITH TIME ZONE,
     id_session_status INTEGER NOT NULL,
     id_session_type   INTEGER NOT NULL,
     id_user           INTEGER NOT NULL,
@@ -706,7 +706,7 @@ ALTER TABLE request
 ALTER TABLE season_metrics
     ADD CONSTRAINT fk_season_metrics_metrics 
         FOREIGN KEY (id_metrics)
-        REFERENCES metrics (id_metrics);
+        REFERENCES metrics (id_metrics) ON DELETE CASCADE;
 
 ALTER TABLE season_metrics
     ADD CONSTRAINT fk_season_metrics_season 
