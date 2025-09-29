@@ -749,24 +749,3 @@ INSERT INTO session_metrics (value, id_session, id_metrics) VALUES
 
 -- Player 22 training (session 19)
 ('12', 19, 1), ('4', 19, 2), ('10', 19, 3), ('40.0', 19, 4), ('7.6', 19, 21), ('8.4', 19, 25);
-
--- ===============================================================
--- SEASON METRICS CONNECTIONS
--- ===============================================================
-
--- Link key NBA box score metrics to the current season (2025/26) for tracking
-INSERT INTO season_metrics (id_season, id_metrics) VALUES 
-(1, 1), 
-(1, 4),
-(1, 7), 
-(1, 10), 
-(1, 13),
-(1, 14),
-(1, 15),
-(1, 16),
-(1, 21), -- Leadership Qualities
-(1, 22), -- Team Chemistry
-(1, 24), -- Work Ethic
-(1, 25), -- Basketball IQ
-(1, 27), -- Clutch Performance
-(1, 30); -- Court Vision
