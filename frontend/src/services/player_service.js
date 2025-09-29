@@ -173,3 +173,37 @@ export const deletePlayer = async (playerId) => {
     throw error;
   }
 };
+
+// Generate PDF scouting report
+export const generateScoutingReport = async (filters = {}) => {
+  try {
+    // Send data in the format expected by GenerateScoutingReportCommand
+    const requestData = {
+      seasonId: filters.seasonId, // Can be null for general summaries across all seasons
+      filters: {
+        position: filters.position || null,
+        nationality: filters.nationality || null,
+        playerName: filters.playerName || null
+      }
+    };
+
+    console.log('Generating scouting report with data:', requestData); // Debug log
+
+    const response = await fetch(`${API_URL}/scoutingreports/generate-report`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Return the PDF blob
+    const blob = await response.blob();
+    return blob;
+  } catch (error) {
+    console.error('Error generating scouting report:', error);
+    throw error;
+  }
+};

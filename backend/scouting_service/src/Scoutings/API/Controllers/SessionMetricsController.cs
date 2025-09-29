@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionMetrics.GetAllSessionMetrics;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionMetrics.CreateSessionMetric;
+using scouting_service.src.Scoutings.Core.Application.Features.SessionMetrics.UpdateSessionMetric;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -28,6 +29,15 @@ public class SessionMetricsController : BaseController
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreateSessionMetricCommand command)
     {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("{sessionId}/{metricId}")]
+    public async Task<ActionResult> Update(int sessionId, int metricId, [FromBody] UpdateSessionMetricCommand command)
+    {
+        command.IdSession = sessionId;
+        command.IdMetrics = metricId;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

@@ -5,6 +5,9 @@ using scouting_service.src.Scoutings.Core.Application.Features.Players.GetAllPla
 using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerById;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.CreatePlayer;
 using scouting_service.src.Scoutings.Core.Application.Features.Players.UpdatePlayer;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSeasonMetricAverages;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerSessions;
+using scouting_service.src.Scoutings.Core.Application.Features.Players.GetPlayerRecommendations;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -46,6 +49,34 @@ public class PlayersController : BaseController
     {
         command.IdPlayer = id;
         var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("{playerId}/season/{seasonId}/metrics/averages")]
+    public async Task<ActionResult> GetPlayerSeasonMetricAverages(int playerId, int seasonId, [FromQuery] string? sessionType = null)
+    {
+        var query = new GetPlayerSeasonMetricAveragesQuery(playerId, seasonId, sessionType);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpGet("{playerId}/sessions")]
+    public async Task<ActionResult> GetPlayerSessions(
+        int playerId,
+        [FromQuery] int? seasonId = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? dateFrom = null,
+        [FromQuery] string? dateTo = null)
+    {
+        var query = new GetPlayerSessionsQuery(playerId, seasonId, status, dateFrom, dateTo);
+        var result = await _mediator.Send(query);
+        return CreateResponse(result);
+    }
+
+    [HttpPost("recommendations")]
+    public async Task<ActionResult> GetPlayerRecommendations([FromBody] GetPlayerRecommendationsQuery query)
+    {
+        var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
 

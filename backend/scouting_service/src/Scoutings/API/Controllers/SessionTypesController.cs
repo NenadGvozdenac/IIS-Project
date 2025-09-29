@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionTypes.GetAllSessionTypes;
 using scouting_service.src.Scoutings.Core.Application.Features.SessionTypes.CreateSessionType;
+using scouting_service.src.Scoutings.Core.Application.Features.SessionTypes.UpdateSessionType;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -28,6 +29,14 @@ public class SessionTypesController : BaseController
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreateSessionTypeCommand command)
     {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, [FromBody] UpdateSessionTypeCommand command)
+    {
+        command.IdType = id;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

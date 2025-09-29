@@ -13,7 +13,7 @@ services:
   scouting_service:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=5082
+      - ASPNETCORE_HTTP_PORTS=5002
       - ASPNETCORE_HTTPS_PORTS=5003
     ports:
       - "5002:5002"

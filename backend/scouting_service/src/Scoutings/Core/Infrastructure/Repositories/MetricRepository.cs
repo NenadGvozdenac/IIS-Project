@@ -1,6 +1,7 @@
 using scouting_service.src.Scoutings.Core.Application.Interfaces;
 using scouting_service.src.Scoutings.Core.Domain.Entities;
 using scouting_service.src.Scoutings.Core.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace scouting_service.src.Scoutings.Core.Infrastructure.Repositories;
 
@@ -15,12 +16,18 @@ public class MetricRepository : IMetricRepository
 
     public IEnumerable<Metric> GetAll()
     {
-        return _context.Metrics.ToList();
+        return _context.Metrics
+            .Include(m => m.IdUserNavigation)
+            .Include(m => m.IdMetricTypeNavigation)
+            .ToList();
     }
 
     public Metric? GetById(int id)
     {
-        return _context.Metrics.Find(id);
+        return _context.Metrics
+            .Include(m => m.IdUserNavigation)
+            .Include(m => m.IdMetricTypeNavigation)
+            .FirstOrDefault(m => m.IdMetrics == id);
     }
 
     public Metric Create(Metric metric)
@@ -49,16 +56,28 @@ public class MetricRepository : IMetricRepository
 
     public IEnumerable<Metric> GetByUser(int userId)
     {
-        return _context.Metrics.Where(m => m.IdUser == userId).ToList();
+        return _context.Metrics
+            .Include(m => m.IdUserNavigation)
+            .Include(m => m.IdMetricTypeNavigation)
+            .Where(m => m.IdUser == userId)
+            .ToList();
     }
 
     public IEnumerable<Metric> GetByType(int typeId)
     {
-        return _context.Metrics.Where(m => m.IdMetricType == typeId).ToList();
+        return _context.Metrics
+            .Include(m => m.IdUserNavigation)
+            .Include(m => m.IdMetricTypeNavigation)
+            .Where(m => m.IdMetricType == typeId)
+            .ToList();
     }
 
     public IEnumerable<Metric> GetPermanent()
     {
-        return _context.Metrics.Where(m => m.IsPermanent == 1).ToList();
+        return _context.Metrics
+            .Include(m => m.IdUserNavigation)
+            .Include(m => m.IdMetricTypeNavigation)
+            .Where(m => m.IsPermanent == 1)
+            .ToList();
     }
 }

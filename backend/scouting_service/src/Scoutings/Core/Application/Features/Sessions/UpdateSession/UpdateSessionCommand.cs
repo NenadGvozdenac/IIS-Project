@@ -1,0 +1,15 @@
+using MediatR;
+using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
+
+namespace scouting_service.src.Scoutings.Core.Application.Features.Sessions.UpdateSession;
+
+public class UpdateSessionCommand : IRequest<Result<UpdateSessionResponse>>
+{
+    public int IdSession { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public int IdSessionStatus { get; set; }
+    public int IdSessionType { get; set; }
+    public int IdUser { get; set; }
+    public int IdPlayer { get; set; }
+}

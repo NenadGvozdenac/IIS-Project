@@ -94,6 +94,22 @@ export const createSession = async (sessionData) => {
   }
 };
 
+// Update an existing session
+export const updateSession = async (sessionId, sessionData) => {
+  try {
+    const response = await fetch(`${API_URL}/Sessions/${sessionId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(sessionData)
+    });
+    
+    return await handleApiResponse(response);
+  } catch (error) {
+    console.error('Error updating session:', error);
+    throw error;
+  }
+};
+
 // Get all session types
 export const getSessionTypes = async () => {
   try {
@@ -182,6 +198,22 @@ export const createSessionMetric = async (sessionMetricData) => {
     return await handleApiResponse(response);
   } catch (error) {
     console.error('Error creating session metric:', error);
+    throw error;
+  }
+};
+
+// Update session metric
+export const updateSessionMetric = async (sessionId, metricId, sessionMetricData) => {
+  try {
+    const response = await fetch(`${API_URL}/SessionMetrics/${sessionId}/${metricId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(sessionMetricData)
+    });
+    
+    return await handleApiResponse(response);
+  } catch (error) {
+    console.error('Error updating session metric:', error);
     throw error;
   }
 };
