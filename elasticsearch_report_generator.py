@@ -202,6 +202,196 @@ class ElasticsearchReportGenerator:
         print("❌ No playoff data found for any nationality")
         return None
     
+    def step_7_saga_transaction_test(self) -> Optional[Dict]:
+        """Test Elastic Orchestrator Service Player Update Transaction"""
+        self.print_section("SAGA TRANSACTION TEST: Player Update via Orchestrator")
+        print("📋 Description: Test the elastic orchestrator service saga pattern for player updates")
+        print("   This demonstrates distributed transaction management across microservices")
+        
+        # Define the orchestrator service URL (port 5010)
+        orchestrator_url = "http://localhost:5010"
+        
+        # Check if orchestrator service is available
+        print("\n🔍 Checking Elastic Orchestrator Service availability...")
+        try:
+            response = requests.get(f"{orchestrator_url}/api/saga/transactions", timeout=5)
+            if response.status_code != 200:
+                print(f"⚠️  Orchestrator service responded with status {response.status_code}")
+                print("   Make sure the elastic_orchestrator_service is running on port 5010")
+                return None
+        except requests.exceptions.ConnectionError:
+            print("❌ Could not connect to Elastic Orchestrator Service")
+            print("   Make sure the elastic_orchestrator_service is running on port 5010")
+            return None
+        except Exception as e:
+            print(f"❌ Error connecting to orchestrator: {str(e)}")
+            return None
+        
+        print("✅ Elastic Orchestrator Service is available")
+        
+        # Create a test player update request
+        test_player_data = {
+            "player": {
+                "idPlayer": 1,
+                "name": "Test",
+                "surname": "Player",
+                "fullName": "Test Player Updated",
+                "birthday": "1995-06-15T00:00:00Z",
+                "nationality": "USA",
+                "position": "Point Guard",
+                "physicalMetrics": [
+                    {
+                        "verticalJump": 85,
+                        "fatPercentage": 8,
+                        "benchPressWeight": 120,
+                        "squatWeight": 180,
+                        "sprintSpeed": 95,
+                        "weight": 85,
+                        "height": 188,
+                        "wingspan": 195,
+                        "dateOfMeasurement": "2025-09-29T00:00:00Z"
+                    }
+                ]
+            }
+        }
+        
+        print("\n🔄 Starting player update saga transaction...")
+        print(f"   Player ID: {test_player_data['player']['idPlayer']}")
+        print(f"   Player Name: {test_player_data['player']['fullName']}")
+        
+        # Start the saga transaction
+        try:
+            response = requests.post(
+                f"{orchestrator_url}/api/saga/update-player",
+                json=test_player_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code == 202:  # Accepted
+                transaction = response.json()
+                transaction_id = transaction.get('transactionId')
+                print(f"✅ Saga transaction started successfully")
+                print(f"   Transaction ID: {transaction_id}")
+                print(f"   Status: {transaction.get('status', 'N/A')}")
+                
+                # Wait a bit for transaction to process
+                print("\n⏳ Waiting for transaction to process...")
+                time.sleep(3)
+                
+                # Check transaction status
+                status_response = requests.get(
+                    f"{orchestrator_url}/api/saga/transactions/{transaction_id}",
+                    timeout=5
+                )
+                
+                if status_response.status_code == 200:
+                    updated_transaction = status_response.json()
+                    print(f"\n📊 Transaction Status Update:")
+                    print(f"   Transaction ID: {updated_transaction.get('transactionId', 'N/A')}")
+                    print(f"   Status: {updated_transaction.get('status', 'N/A')}")
+                    print(f"   Created At: {updated_transaction.get('createdAt', 'N/A')}")
+                    print(f"   Completed At: {updated_transaction.get('completedAt', 'N/A')}")
+                    
+                    # Show saga steps
+                    steps = updated_transaction.get('steps', [])
+                    if steps:
+                        print(f"\n📋 Saga Steps ({len(steps)} total):")
+                        print(f"{'Step':<30}{'Status':<15}{'Executed At':<20}")
+                        print("-" * 70)
+                        for step in steps:
+                            executed_at = step.get('executedAt', 'N/A')
+                            if executed_at and executed_at != 'N/A':
+                                try:
+                                    date_obj = datetime.fromisoformat(executed_at.replace('Z', '+00:00'))
+                                    executed_at = date_obj.strftime('%Y-%m-%d %H:%M:%S')
+                                except:
+                                    pass
+                            print(f"{step.get('stepName', 'N/A'):<30}{step.get('status', 'N/A'):<15}{executed_at:<20}")
+                    
+                    # Show error message if any
+                    error_msg = updated_transaction.get('errorMessage')
+                    if error_msg:
+                        print(f"\n⚠️  Error Message: {error_msg}")
+                    
+                    return updated_transaction
+                else:
+                    print(f"⚠️  Could not get specific transaction status: {status_response.status_code}")
+                    print("   Trying to get all transactions to find our transaction...")
+                    
+                    # Fallback: Get all transactions and find ours
+                    try:
+                        all_transactions_response = requests.get(
+                            f"{orchestrator_url}/api/saga/transactions",
+                            timeout=5
+                        )
+                        
+                        if all_transactions_response.status_code == 200:
+                            all_transactions = all_transactions_response.json()
+                            if isinstance(all_transactions, list):
+                                # Find our transaction by ID
+                                our_transaction = None
+                                for tx in all_transactions:
+                                    if str(tx.get('transactionId', '')).lower() == str(transaction_id).lower():
+                                        our_transaction = tx
+                                        break
+                                
+                                if our_transaction:
+                                    print(f"✅ Found transaction in all transactions list")
+                                    print(f"\n📊 Transaction Status Update:")
+                                    print(f"   Transaction ID: {our_transaction.get('transactionId', 'N/A')}")
+                                    print(f"   Status: {our_transaction.get('status', 'N/A')}")
+                                    print(f"   Created At: {our_transaction.get('createdAt', 'N/A')}")
+                                    print(f"   Completed At: {our_transaction.get('completedAt', 'N/A')}")
+                                    
+                                    # Show saga steps
+                                    steps = our_transaction.get('steps', [])
+                                    if steps:
+                                        print(f"\n📋 Saga Steps ({len(steps)} total):")
+                                        print(f"{'Step':<30}{'Status':<15}{'Executed At':<20}")
+                                        print("-" * 70)
+                                        for step in steps:
+                                            executed_at = step.get('executedAt', 'N/A')
+                                            if executed_at and executed_at != 'N/A':
+                                                try:
+                                                    date_obj = datetime.fromisoformat(executed_at.replace('Z', '+00:00'))
+                                                    executed_at = date_obj.strftime('%Y-%m-%d %H:%M:%S')
+                                                except:
+                                                    pass
+                                            print(f"{step.get('stepName', 'N/A'):<30}{step.get('status', 'N/A'):<15}{executed_at:<20}")
+                                    
+                                    # Show error message if any
+                                    error_msg = our_transaction.get('errorMessage')
+                                    if error_msg:
+                                        print(f"\n⚠️  Error Message: {error_msg}")
+                                    
+                                    return our_transaction
+                                else:
+                                    print(f"⚠️  Transaction {transaction_id} not found in transactions list")
+                                    print(f"   Available transactions: {len(all_transactions)}")
+                                    return transaction
+                            else:
+                                print(f"⚠️  Unexpected response format from all transactions endpoint")
+                                return transaction
+                        else:
+                            print(f"⚠️  Could not get all transactions: {all_transactions_response.status_code}")
+                            return transaction
+                    except Exception as e:
+                        print(f"⚠️  Error getting all transactions: {str(e)}")
+                        return transaction
+                    
+            else:
+                print(f"❌ Failed to start saga transaction: {response.status_code}")
+                print(f"   Response: {response.text}")
+                return None
+                
+        except requests.exceptions.Timeout:
+            print("❌ Request timeout - saga transaction may still be processing")
+            return None
+        except Exception as e:
+            print(f"❌ Error starting saga transaction: {str(e)}")
+            return None
+    
     def generate_pdf_report(self, simple_agg1: List[Dict], simple_agg2: List[Dict], complex_agg: List[Dict]):
         """Generate PDF report with results"""
         if not PDF_AVAILABLE:
@@ -362,7 +552,8 @@ class ElasticsearchReportGenerator:
         print("3. Generate dummy data")
         print("4. Run simple aggregations (2)")
         print("5. Run complex aggregation (1)")
-        print("6. Generate PDF report")
+        print("6. Test saga transaction (player update)")
+        print("7. Generate PDF report")
         print()
         
         # Check service availability
@@ -394,7 +585,10 @@ class ElasticsearchReportGenerator:
         # Step 6: Complex aggregation
         complex_agg = self.step_6_complex_aggregation()
         
-        # Generate PDF report
+        # Step 7: Saga transaction test
+        saga_result = self.step_7_saga_transaction_test()
+        
+        # Generate PDF report (only with aggregation results, not saga test)
         if any([simple_agg1, simple_agg2, complex_agg]):
             self.generate_pdf_report(
                 simple_agg1 or [],
@@ -408,6 +602,7 @@ class ElasticsearchReportGenerator:
         print(f"   Simple Aggregation 1: {'✅ Success' if simple_agg1 else '❌ Failed'}")
         print(f"   Simple Aggregation 2: {'✅ Success' if simple_agg2 else '❌ Failed'}")
         print(f"   Complex Aggregation:  {'✅ Success' if complex_agg else '❌ Failed'}")
+        print(f"   Saga Transaction:     {'✅ Success' if saga_result else '❌ Failed'}")
         
         if PDF_AVAILABLE:
             print("   PDF Report: ✅ Generated")

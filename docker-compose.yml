@@ -145,19 +145,6 @@ services:
       - neo4j_plugins:/plugins
       - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
 
-  elasticsearch:
-    image: elasticsearch:8.10.2
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      - xpack.security.enabled=false
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-
   kibana:
     image: kibana:8.10.2
     container_name: kibana
