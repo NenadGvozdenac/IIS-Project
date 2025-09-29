@@ -12,9 +12,6 @@ CREATE INDEX IF NOT EXISTS idx_metrics_type_permanent ON metrics (id_metric_type
 -- Index 4: Efficiently retrieves a player's physical history
 CREATE INDEX IF NOT EXISTS idx_physical_metrics_player_date ON physical_metrics (id_player, date_of_measurement DESC);
 
--- Index 5: For quick team membership check
-CREATE INDEX IF NOT EXISTS idx_team_member_player_team ON team_member (id_player, id_team);
-
 -- Function to get player metric averages for a season
 -- This function returns all quantitative metrics with their average values for a specific player and season
 CREATE OR REPLACE FUNCTION get_player_season_metric_averages(
