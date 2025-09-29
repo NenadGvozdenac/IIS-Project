@@ -4,6 +4,14 @@
     <main class="main-content">
       <div class="content-header">
         <h1>Partizan profile</h1>
+        <button 
+          class="influx-report-btn" 
+          @click="openInfluxReportModal"
+          title="Generate InfluxDB Analytics Report"
+        >
+          <span class="btn-icon">📊</span>
+          InfluxDB Report
+        </button>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -195,6 +203,12 @@
         </div>
       </div>
     </div>
+
+    <!-- InfluxDB Report Modal -->
+    <InfluxReportModal 
+      :visible="showInfluxReportModal" 
+      @close="closeInfluxReportModal" 
+    />
   </div>
 </template>
 
@@ -203,11 +217,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { MATCHES_URL } from '../../services/const_service'
+import InfluxReportModal from '../../components/InfluxReportModal.vue'
 
 const router = useRouter()
 const loading = ref(false)
 const error = ref(null)
 const showStartupModal = ref(false)
+const showInfluxReportModal = ref(false)
 const selectedMatch = ref(null)
 const ourTeamPlayers = ref([])
 const opponentTeamPlayers = ref([])
@@ -454,6 +470,15 @@ const acceptMatchStartup = async () => {
   }
 }
 
+// InfluxDB Report Modal functions
+const openInfluxReportModal = () => {
+  showInfluxReportModal.value = true
+}
+
+const closeInfluxReportModal = () => {
+  showInfluxReportModal.value = false
+}
+
 onMounted(() => {
   fetchMatches()
 })
@@ -472,11 +497,46 @@ onMounted(() => {
   margin: 0 auto;
 }
 
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
 .content-header h1 {
   font-size: 2rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 2rem;
+  margin: 0;
+}
+
+.influx-report-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.influx-report-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004494 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.influx-report-btn .btn-icon {
+  font-size: 1.2rem;
 }
 
 /* Loading and Error States */

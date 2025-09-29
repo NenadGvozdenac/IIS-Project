@@ -332,6 +332,115 @@
           </div>
         </div>
       </div>
+
+      <!-- Advanced Analytics Loading -->
+      <div v-if="advancedAnalyticsLoading" class="advanced-analytics-loading">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <p>Učitavanje naprednih analitika...</p>
+        </div>
+      </div>
+
+      <!-- Top 3 Players Section -->
+      <div v-else-if="topPlayers.length > 0" class="top-players-section">
+        <h2>🏆 Top 3 Match Players</h2>
+        <div class="top-players-grid">
+          <div 
+            v-for="(player, index) in topPlayers" 
+            :key="player.playerId"
+            class="top-player-card"
+            :class="{ 'first-place': index === 0, 'second-place': index === 1, 'third-place': index === 2 }"
+          >
+            <div class="rank-badge">
+              <span class="rank-number">{{ index + 1 }}</span>
+              <span class="rank-icon">{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}</span>
+            </div>
+            
+            <div class="player-info">
+              <h3 class="player-name">{{ getPlayerName(player.playerId) }}</h3>
+            </div>
+            
+            <div class="player-stats-summary">
+              <div class="stat-row">
+                <span class="stat-label">Total Points:</span>
+                <span class="stat-value points">{{ player.totalPoints }}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Total Events:</span>
+                <span class="stat-value">{{ player.totalEvents }}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Performance:</span>
+                <span class="stat-value performance">{{ player.performanceScore }}</span>
+              </div>
+            </div>
+            
+            <div class="event-breakdown">
+              <h4>Event Breakdown:</h4>
+              <div class="breakdown-grid">
+                <div v-for="(count, eventType) in player.eventTypeBreakdown" :key="eventType" 
+                     v-show="['+2p', '+3p', '+ft', 'assist', 'block', 'steal', 'reb def', 'reb of'].includes(eventType)"
+                     class="breakdown-item positive-event">
+                  <span class="event-name">{{ eventType }}</span>
+                  <span class="event-count">{{ count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Period Statistics Table Section -->
+      <div v-if="formattedPeriodStats.length > 0" class="period-statistics-section">
+        <h2>📊 Period Statistics</h2>
+        <div class="period-table-container">
+          <table class="period-stats-table">
+            <thead>
+              <tr>
+                <th class="team-header">Team</th>
+                <th class="period-header">1st Quarter</th>
+                <th class="period-header">2nd Quarter</th>
+                <th class="period-header">3rd Quarter</th>
+                <th class="period-header">4th Quarter</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="teamRow in formattedPeriodStats" :key="teamRow.teamId" :class="teamRow.teamClass">
+                <td class="team-name-cell">
+                  <div class="team-name-content">
+                    <span class="team-indicator" :class="teamRow.teamClass"></span>
+                    {{ teamRow.teamName }}
+                  </div>
+                </td>
+                <td v-for="period in ['1', '2', '3', '4']" :key="period" class="period-data-cell">
+                  <div class="period-stats-grid">
+                    <div class="stat-item positive">
+                      <span class="stat-label">+2p:</span>
+                      <span class="stat-count">{{ teamRow.periods[period]['+2p'] }}</span>
+                    </div>
+                    <div class="stat-item positive">
+                      <span class="stat-label">+3p:</span>
+                      <span class="stat-count">{{ teamRow.periods[period]['+3p'] }}</span>
+                    </div>
+                    <div class="stat-item positive">
+                      <span class="stat-label">+ft:</span>
+                      <span class="stat-count">{{ teamRow.periods[period]['+ft'] }}</span>
+                    </div>
+                    <div class="stat-item neutral">
+                      <span class="stat-label">assist:</span>
+                      <span class="stat-count">{{ teamRow.periods[period]['assist'] }}</span>
+                    </div>
+                    <div class="stat-item negative">
+                      <span class="stat-label">foul:</span>
+                      <span class="stat-count">{{ teamRow.periods[period]['foul'] }}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -354,6 +463,11 @@ const opponentTeam = ref('Unknown Opponent')
 const ourTeamPlayers = ref([])
 const opponentTeamPlayers = ref([])
 
+// Advanced analytics data
+const topPlayers = ref([])
+const periodStatistics = ref([])
+const advancedAnalyticsLoading = ref(false)
+
 // Team statistics computed from player data
 const ourTeamStats = computed(() => {
   return calculateTeamStats(ourTeamPlayers.value)
@@ -362,6 +476,57 @@ const ourTeamStats = computed(() => {
 const opponentTeamStats = computed(() => {
   return calculateTeamStats(opponentTeamPlayers.value)
 })
+
+// Format period statistics for table display
+const formattedPeriodStats = computed(() => {
+  const periods = ['1', '2', '3', '4']
+  const teams = [
+    { id: '1', name: 'KK Partizan', class: 'our-team' },
+    { id: '2', name: opponentTeam, class: 'opponent-team' }
+  ]
+  
+  return teams.map(team => {
+    const teamRow = {
+      teamId: team.id,
+      teamName: team.name,
+      teamClass: team.class,
+      periods: {}
+    }
+    
+    periods.forEach(period => {
+      const periodStats = periodStatistics.value.filter(stat => 
+        stat.period === period && stat.teamId === team.id
+      )
+      
+      teamRow.periods[period] = {
+        '+2p': periodStats.find(s => s.eventType === '+2p')?.count || 0,
+        '+3p': periodStats.find(s => s.eventType === '+3p')?.count || 0,
+        '+ft': periodStats.find(s => s.eventType === '+ft')?.count || 0,
+        'foul': periodStats.find(s => s.eventType === 'foul')?.count || 0,
+        'assist': periodStats.find(s => s.eventType === 'assist')?.count || 0
+      }
+    })
+    
+    return teamRow
+  })
+})
+
+// Get player name by ID (helper function)
+const getPlayerName = (playerId) => {
+  // First try our team players
+  const ourPlayer = ourTeamPlayers.value.find(p => p.id?.toString() === playerId || p.playerId?.toString() === playerId)
+  if (ourPlayer) {
+    return `${ourPlayer.firstName || ''} ${ourPlayer.lastName || ''}`.trim() || `Player ${playerId}`
+  }
+  
+  // Then try opponent players
+  const opponentPlayer = opponentTeamPlayers.value.find(p => p.id?.toString() === playerId || p.playerId?.toString() === playerId)
+  if (opponentPlayer) {
+    return `${opponentPlayer.firstName || ''} ${opponentPlayer.lastName || ''}`.trim() || `Player ${playerId}`
+  }
+  
+  return `Player ${playerId}`
+}
 
 // Get match result indicator (W/L)
 const getMatchResult = (match) => {
@@ -437,6 +602,33 @@ const calculateTeamStats = (players) => {
   return stats
 }
 
+// Fetch advanced analytics data
+const fetchAdvancedAnalytics = async (matchId) => {
+  advancedAnalyticsLoading.value = true
+  
+  try {
+    // Fetch player performance comparison (top players)
+    const playerRankingsResponse = await axios.get(`${MATCHES_URL}/ChronologicalEventInflux/match/${matchId}/player-rankings`)
+    if (playerRankingsResponse.data?.isSuccess) {
+      // Get top 3 players
+      topPlayers.value = playerRankingsResponse.data.value.playerRankings.slice(0, 3)
+      console.log('Top 3 players:', topPlayers.value)
+    }
+    
+    // Fetch advanced match statistics (period statistics)  
+    const advancedStatsResponse = await axios.get(`${MATCHES_URL}/ChronologicalEventInflux/match/${matchId}/advanced-statistics`)
+    if (advancedStatsResponse.data?.isSuccess) {
+      periodStatistics.value = advancedStatsResponse.data.value.periodStatistics
+      console.log('Period statistics:', periodStatistics.value)
+    }
+    
+  } catch (err) {
+    console.error('Error fetching advanced analytics:', err)
+  } finally {
+    advancedAnalyticsLoading.value = false
+  }
+}
+
 // Fetch match details and statistics
 const fetchMatchDetails = async () => {
   loading.value = true
@@ -457,6 +649,9 @@ const fetchMatchDetails = async () => {
       // Fetch team members and calculate statistics using SQL function
       await calculatePlayerStatisticsSQLFunction(matchId)
       //await fetchPlayerStatistics(matchId) // Alternative approach if needed
+      
+      // Fetch advanced analytics after basic data
+      await fetchAdvancedAnalytics(matchId)
     }
     
   } catch (err) {
@@ -1357,6 +1552,7 @@ onMounted(() => {
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
 }
 
 .player-stats-section h2 {
@@ -1639,6 +1835,396 @@ onMounted(() => {
     color: white;
     border-radius: 4px;
     margin-bottom: 0.5rem;
+  }
+}
+
+/* Advanced Analytics Loading */
+.advanced-analytics-loading {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Top Players Section */
+.top-players-section {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.top-players-section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.top-players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.top-player-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.top-player-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.top-player-card.first-place {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-color: #f39c12;
+}
+
+.top-player-card.second-place {
+  background: linear-gradient(135deg, #f4f4f4 0%, #ddd 100%);
+  border-color: #95a5a6;
+}
+
+.top-player-card.third-place {
+  background: linear-gradient(135deg, #fdeaa7 0%, #fab1a0 100%);
+  border-color: #e17055;
+}
+
+.rank-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+
+.rank-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.rank-icon {
+  font-size: 1.5rem;
+}
+
+.player-info {
+  margin-bottom: 1rem;
+}
+
+.player-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.25rem 0;
+}
+
+.player-id {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.player-stats-summary {
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.stat-value.points {
+  color: #28a745;
+  font-size: 1.3rem;
+}
+
+.stat-value.performance {
+  color: #007bff;
+}
+
+.event-breakdown h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.8);
+  transition: all 0.2s ease;
+}
+
+.breakdown-item:hover {
+  transform: scale(1.05);
+}
+
+.breakdown-item.positive-event {
+  border-left: 4px solid #28a745;
+}
+
+.breakdown-item.negative-event {
+  border-left: 4px solid #dc3545;
+}
+
+.event-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.event-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Period Statistics Section */
+.period-statistics-section {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.period-statistics-section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.period-table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 100%;
+}
+
+.period-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 13px;
+  min-width: 480px;
+}
+
+.period-stats-table th {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.6rem;
+  border-bottom: 2px solid #004494;
+  font-size: 1rem;
+}
+
+.team-header {
+  width: 160px;
+  text-align: left !important;
+  font-size: 0.95rem;
+}
+
+.period-header {
+  width: 80px;
+  font-size: 0.8rem;
+}
+
+.period-stats-table td {
+  padding: 0.5rem;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.team-name-cell {
+  background: #f8f9fa;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.team-name-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.team-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.team-indicator.our-team {
+  background: #007bff;
+}
+
+.team-indicator.opponent-team {
+  background: #fd7e14;
+}
+
+.period-data-cell {
+  background: #fdfdfd;
+}
+
+.period-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.stat-item {
+  max-width: 110px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.2rem 0.17rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: scale(1.02);
+}
+
+.stat-item.positive {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border-left: 2px solid #28a745;
+}
+
+.stat-item.neutral {
+  background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+  border-left: 2px solid #6c757d;
+}
+
+.stat-item.negative {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border-left: 2px solid #dc3545;
+}
+
+.stat-item .stat-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.stat-item .stat-count {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #212529;
+  margin-right: 2px;
+}
+
+.period-stats-table tbody tr.our-team .period-data-cell {
+  background: linear-gradient(135deg, #e7f1ff 0%, #f0f7ff 100%);
+}
+
+.period-stats-table tbody tr.opponent-team .period-data-cell {
+  background: linear-gradient(135deg, #fff4e6 0%, #fef8f0 100%);
+}
+
+/* Responsive Design for Advanced Analytics */
+@media (max-width: 768px) {
+  .top-players-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .top-player-card {
+    padding: 1rem;
+  }
+  
+  .breakdown-grid {
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.25rem;
+  }
+  
+  .period-table-container {
+    font-size: 12px;
+  }
+  
+  .period-stats-table th,
+  .period-stats-table td {
+    padding: 0.5rem;
+  }
+  
+  .period-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 }
 </style>

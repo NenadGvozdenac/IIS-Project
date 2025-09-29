@@ -26,11 +26,13 @@ services:
     depends_on:
       - postgres_db
       - influxdb
+      - rabbitmq
     environment:
       - InfluxDB__Url=http://influxdb:8086
       - InfluxDB__Token=basketball-events-token-2024
       - InfluxDB__Org=basketball_org
       - InfluxDB__Bucket=events_bucket
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672
 
   scouting_service:
     image: ${DOCKER_REGISTRY-}scoutingservice
@@ -68,6 +70,10 @@ services:
       - "5007:5007" # Web UI
     depends_on:
       - postgres_db
+      - cassandra
+      - rabbitmq
+    environment:
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672
 
   elasticsearch_service:
     image: ${DOCKER_REGISTRY-}elasticsearchservice
@@ -144,6 +150,41 @@ services:
       - neo4j_import:/var/lib/neo4j/import
       - neo4j_plugins:/plugins
       - ./database/graph_database/neo4j_init.cql:/docker-entrypoint-initdb.d/neo4j_init.cql
+
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra-travel
+    restart: always
+    ports:
+      - "9042:9042" # Native transport port
+    environment:
+      - CASSANDRA_CLUSTER_NAME=travel_cluster
+      - CASSANDRA_KEYSPACE=travel_analytics
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra", "-e", "describe cluster"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   frontend:
     build:
       context: ./frontend
@@ -167,3 +208,5 @@ volumes:
   influxdb_storage:
   es_data:  
   elasticsearch_data:
+  cassandra_data:
+  rabbitmq_data:

@@ -78,5 +78,33 @@ namespace match_service.src.Matches.Core.Infrastructure.Repositories
         {
             _context.TeamMemberMatches.AddRange(teamMemberMatches);
         }
+
+        // Saga deletion method
+        public int DeleteByPlayerAndTeam(int playerId, int teamId)
+        {
+            var teamMemberMatches = _context.TeamMemberMatches
+                .Where(tmm => tmm.IdPlayer == playerId && tmm.IdTeam == teamId)
+                .ToList();
+
+            if (!teamMemberMatches.Any())
+                return 0;
+
+            _context.TeamMemberMatches.RemoveRange(teamMemberMatches);
+            _context.SaveChanges();
+            return teamMemberMatches.Count;
+        }
+
+        // SAGA BACKUP METHOD - VRAĆA PODATKE PRE BRISANJA
+        public List<TeamMemberMatch> GetByPlayerAndTeam(int playerId, int teamId)
+        {
+            return _context.TeamMemberMatches
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdPlayerNavigation)
+                        .ThenInclude(p => p.IdPositionNavigation)
+                .Include(tmm => tmm.Id)
+                    .ThenInclude(tm => tm.IdTeamNavigation)
+                .Where(tmm => tmm.IdPlayer == playerId && tmm.IdTeam == teamId)
+                .ToList();
+        }
     }
 }

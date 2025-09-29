@@ -280,6 +280,93 @@
           <p>No match history available.</p>
         </div>
       </div>
+
+      <!-- Season Statistics Section -->
+      <div class="season-statistics-section">
+        <h2>Season Player Statistics</h2>
+        
+        <!-- Date Range Controls -->
+        <div class="season-controls">
+          <div class="date-inputs">
+            <div class="date-input-group">
+              <label for="season-start">Start Date:</label>
+              <input 
+                id="season-start"
+                type="date" 
+                v-model="seasonStartDate" 
+                class="date-input"
+              />
+            </div>
+            <div class="date-input-group">
+              <label for="season-end">End Date:</label>
+              <input 
+                id="season-end"
+                type="date" 
+                v-model="seasonEndDate" 
+                class="date-input"
+              />
+            </div>
+          </div>
+          <button 
+            @click="fetchSeasonAverages" 
+            :disabled="loadingSeasonAverages"
+            class="btn-fetch-season"
+          >
+            {{ loadingSeasonAverages ? 'Loading...' : 'Fetch Season Statistics' }}
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="loadingSeasonAverages" class="loading-season">
+          Loading season statistics...
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="seasonAveragesError" class="error-season">
+          <p>Error: {{ seasonAveragesError }}</p>
+          <button @click="fetchSeasonAverages" class="btn-primary">Retry</button>
+        </div>
+
+        <!-- Season Statistics Table -->
+        <div v-else-if="seasonAverages.length > 0" class="season-table-container">
+          <table class="season-stats-table">
+            <thead>
+              <tr>
+                <th class="player-col">Player</th>
+                <th class="matches-col">Matches</th>
+                <th class="avg-col">Avg Points</th>
+                <th class="avg-col">Avg Assists</th>
+                <th class="avg-col">Avg Fouls</th>
+                <th class="total-col">Total Points</th>
+                <th class="total-col">Total Assists</th>
+                <th class="total-col">Total Fouls</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="player in seasonAverages" :key="player.playerId" class="season-player-row">
+                <td class="player-name-cell">
+                  <div class="player-info">
+                    <span class="player-name">{{ getPlayerNameById(parseInt(player.playerId)) || `Player ${player.playerId}` }}</span>
+                  </div>
+                </td>
+                <td class="matches-cell">{{ player.matchesPlayed || 0 }}</td>
+                <td class="avg-cell">{{ (player.avgPoints || 0).toFixed(2) }}</td>
+                <td class="avg-cell">{{ (player.avgAssists || 0).toFixed(2) }}</td>
+                <td class="avg-cell">{{ (player.avgFouls || 0).toFixed(2) }}</td>
+                <td class="total-cell">{{ Math.round(player.totalPoints || 0) }}</td>
+                <td class="total-cell">{{ Math.round(player.totalAssists || 0) }}</td>
+                <td class="total-cell">{{ Math.round(player.totalFouls || 0) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- No Data State -->
+        <div v-else class="no-season-data">
+          <p>No season statistics available for the selected date range.</p>
+          <p>Try adjusting the date range or ensure there are matches in this period.</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -307,6 +394,13 @@ const team = ref(null)
 const teamStats = ref(null)
 const players = ref([])
 const matches = ref([])
+
+// Season averages data
+const seasonStartDate = ref(new Date(new Date().getFullYear(), 0, 1).toISOString().substr(0, 10))
+const seasonEndDate = ref(new Date().toISOString().substr(0, 10))
+const loadingSeasonAverages = ref(false)
+const seasonAveragesError = ref(null)
+const seasonAverages = ref([])
 
 const goBack = () => {
   router.push('/analyst')
@@ -479,6 +573,75 @@ const handleMatchAction = (match) => {
 const goToPlayerDetail = (playerId) => {
   console.log('Navigating to player detail:', playerId, 'from team:', teamId)
   router.push(`/analyst/player/${playerId}/${teamId}`)
+}
+
+// Helper function to get player name from the players list
+const getPlayerNameById = (playerId) => {
+  const player = players.value.find(p => p.playerId === playerId || p.idPlayer === playerId)
+  if (player) {
+    return `${player.playerName} ${player.playerSurname}`
+  }
+  return `Player ${playerId}`
+}
+
+// Fetch season player averages
+const fetchSeasonAverages = async () => {
+  loadingSeasonAverages.value = true
+  seasonAveragesError.value = null
+  seasonAverages.value = []
+
+  try {
+    const jwt = localStorage.getItem('token')
+    //console.log('Fetching season averages for team:', teamId, 'from', seasonStartDate.value, 'to', seasonEndDate.value)
+    // Convert date strings to ISO format with time
+    const startDateISO = new Date(seasonStartDate.value + 'T00:00:00Z').toISOString()
+    const endDateISO = new Date(seasonEndDate.value + 'T23:59:59Z').toISOString()
+    //console.log('Using date range:', startDateISO, 'to', endDateISO)
+    
+    // Build URL with proper encoding
+    const url = `${MATCHES_URL}/ChronologicalEventInflux/season-averages`
+    const params = {
+      startDate: startDateISO,
+      endDate: endDateISO,
+      teamId: teamId,
+      minMatches: 1
+    }
+    
+    const response = await axios.get(url, {
+      params: params,
+      headers: {
+        Authorization: `Bearer ${jwt}`
+      }
+    })
+
+    // Handle CreateResponse wrapper - try to access .value first, fallback to direct data
+    const data = response.data.value || response.data
+    const rawPlayerAverages = data?.playerAverages || data || []
+    
+    // Map and enrich the data with proper field names and player names
+    seasonAverages.value = rawPlayerAverages.map(player => ({
+      playerId: player.playerId,
+      playerName: getPlayerNameById(player.playerId),
+      matchesPlayed: player.matchesPlayed || 0,
+      avgPoints: player.avgPoints || 0,
+      avgAssists: player.avgAssists || 0,
+      avgRebounds: (player.avgRebounds || 0), // Calculate total rebounds if separate off/def exist
+      avgFouls: player.avgFouls || 0,
+      avgEfficiency: player.avgEfficiency || 0,
+      totalPoints: player.totalPoints || 0,
+      // Add other available fields from the response
+      pointsStdDev: player.pointsStdDev || 0,
+      totalAssists: player.totalAssists || 0,
+      totalFouls: player.totalFouls || 0
+    }))
+    
+    console.log('Processed season averages:', seasonAverages.value)
+  } catch (err) {
+    console.error('Error fetching season averages:', err)
+    seasonAveragesError.value = err.message || 'Failed to fetch season averages'
+  } finally {
+    loadingSeasonAverages.value = false
+  }
 }
 
 onMounted(() => {
@@ -1077,6 +1240,204 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
+/* Season Statistics Section */
+.season-statistics-section {
+  background: white;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 3rem auto 0 auto;
+}
+
+.season-statistics-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.season-controls {
+  display: flex;
+  align-items: end;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.date-inputs {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.date-input-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.date-input {
+  padding: 0.5rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 140px;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.btn-fetch-season {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-fetch-season:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.btn-fetch-season:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-season, .error-season, .no-season-data {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+.error-season {
+  color: #dc3545;
+}
+
+.season-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-top: 1rem;
+}
+
+.season-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+  min-width: 800px;
+}
+
+.season-stats-table th {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 8px;
+  border-bottom: 2px solid #004494;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.player-col {
+  width: 200px;
+  text-align: left !important;
+}
+
+.matches-col {
+  width: 80px;
+}
+
+.avg-col {
+  width: 90px;
+}
+
+.efficiency-col {
+  width: 90px;
+}
+
+.total-col {
+  width: 100px;
+}
+
+.season-stats-table td {
+  padding: 10px 8px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  text-align: center;
+}
+
+.season-player-row:nth-child(even) {
+  background-color: #fbfbfb;
+}
+
+.season-player-row:hover {
+  background-color: #f1f5f9;
+}
+
+.player-name-cell {
+  text-align: left;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.matches-cell {
+  font-weight: 600;
+  color: #007bff;
+}
+
+.avg-cell {
+  font-weight: 500;
+  color: #333;
+}
+
+.efficiency-cell {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.efficiency-cell.positive-eff {
+  color: #28a745;
+}
+
+.efficiency-cell.negative-eff {
+  color: #dc3545;
+}
+
+.total-cell {
+  font-weight: 700;
+  color: #e67e22;
+  font-size: 15px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .team-detail {
@@ -1122,6 +1483,25 @@ onMounted(() => {
   .strengths-weaknesses {
     grid-template-columns: 1fr;
   }
+
+  .season-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .date-inputs {
+    justify-content: space-between;
+  }
+
+  .season-stats-table {
+    font-size: 12px;
+  }
+
+  .season-stats-table th,
+  .season-stats-table td {
+    padding: 8px 4px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1156,6 +1536,25 @@ onMounted(() => {
   .stat-values span, .stat-value-single, .stat-percentage, .stat-total {
     font-size: 10px;
     padding: 6px 2px;
+  }
+
+  .season-controls {
+    gap: 0.5rem;
+  }
+
+  .date-inputs {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .season-stats-table {
+    font-size: 11px;
+    min-width: 600px;
+  }
+
+  .season-stats-table th,
+  .season-stats-table td {
+    padding: 6px 3px;
   }
 }
 </style>

@@ -4,4 +4,5 @@ public class DeleteTeamMemberResponse
 {
     public bool IsDeleted { get; set; }
     public string Message { get; set; }
+    public Guid? CorrelationId { get; set; }
 }
