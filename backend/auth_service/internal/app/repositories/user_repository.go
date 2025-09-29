@@ -4,7 +4,6 @@ import (
 	"auth_service/internal/domain/interfaces"
 	"auth_service/internal/domain/models"
 	"database/sql"
-	"time"
 )
 
 type UserRepository struct {
@@ -17,17 +16,14 @@ func NewUserRepository(db *sql.DB) interfaces.UserRepositoryInterface {
 
 func (r *UserRepository) Create(user *models.User) (*models.User, error) {
 	query := `
-		INSERT INTO korisnici (ime_korisnika, prezime_korisnika, email_korisnika, telefon_korisnika, sifra_korisnika, tip_korisnika, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id_korisnika, created_at, updated_at
+		INSERT INTO "users" (name, surname, email, phone, password, type)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id_user
 	`
 
-	now := time.Now()
 	var id uint
-	var createdAt, updatedAt time.Time
-
-	err := r.db.QueryRow(query, user.Name, user.Surname, user.Email, user.Phone, user.Password, user.UserType, now, now).
-		Scan(&id, &createdAt, &updatedAt)
+	err := r.db.QueryRow(query, user.Name, user.Surname, user.Email, user.Phone, user.Password, user.UserType).
+		Scan(&id)
 
 	if err != nil {
 		return nil, err
@@ -40,9 +36,9 @@ func (r *UserRepository) Create(user *models.User) (*models.User, error) {
 
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id_korisnika, ime_korisnika, prezime_korisnika, email_korisnika, telefon_korisnika, sifra_korisnika, tip_korisnika, created_at, updated_at
-		FROM korisnici 
-		WHERE email_korisnika = $1
+		SELECT id_user, name, surname, email, phone, password, type
+		FROM "users" 
+		WHERE email = $1
 	`
 
 	user := &models.User{}
@@ -64,4 +60,24 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (r *UserRepository) Delete(id uint) error {
+	query := `DELETE FROM "users" WHERE id_user = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

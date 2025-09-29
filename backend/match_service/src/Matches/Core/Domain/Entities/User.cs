@@ -1,36 +1,23 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
 namespace match_service.src.Matches.Core.Domain.Entities;
 
-[Table("User")]
-public class User
+public partial class User
 {
-    [Key]
-    [Column("id_user")]
-    public int Id_User { get; set; }
-    
-    [Column("name")]
-    [MaxLength(20)]
-    public string? Name { get; set; }
-    
-    [Column("surname")]
-    [MaxLength(20)]
-    public string? Surname { get; set; }
-    
-    [Column("email")]
-    [MaxLength(50)]
-    public string? Email { get; set; }
-    
-    [Column("phone")]
-    [MaxLength(20)]
+    public int IdUser { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Surname { get; set; } = null!;
+
+    public string Email { get; set; } = null!;
+
     public string? Phone { get; set; }
-    
-    [Column("password")]
-    [MaxLength(50)]
-    public string? Password { get; set; }
-    
-    [Column("type")]
-    [MaxLength(50)]
-    public string? Type { get; set; }
+
+    public string Password { get; set; } = null!;
+
+    public string Type { get; set; } = null!;
+
+    public virtual ICollection<MatchTracking> MatchTrackings { get; set; } = new List<MatchTracking>();
 }

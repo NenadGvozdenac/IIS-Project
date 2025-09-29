@@ -4,6 +4,7 @@ import (
 	"auth_service/config"
 	"auth_service/internal/app/dtos"
 	"auth_service/internal/app/repositories"
+	"auth_service/internal/app/saga"
 	"auth_service/internal/app/utils"
 	"auth_service/internal/domain/models"
 	"net/http"
@@ -41,7 +42,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Create new user
+	// Create new user model
 	newUser := &models.User{
 		Name:     registerDTO.Name,
 		Surname:  registerDTO.Surname,
@@ -51,17 +52,33 @@ func Register(c *gin.Context) {
 		UserType: registerDTO.UserType,
 	}
 
-	// Save user to database
-	createdUser, err := userRepo.Create(newUser)
-	if err != nil {
-		utils.CreateGinResponse(c, "Failed to register user: "+err.Error(), http.StatusInternalServerError, nil)
+	// Initialize SAGA orchestrator
+	ticketServiceClient := saga.NewTicketServiceClient(config.TicketServiceURL)
+	sagaOrchestrator := saga.NewSagaOrchestrator(ticketServiceClient)
+
+	// Define user creation and deletion functions for SAGA
+	createUserFunc := func() (*models.User, error) {
+		return userRepo.Create(newUser)
+	}
+
+	deleteUserFunc := func(id uint) error {
+		return userRepo.Delete(id)
+	}
+
+	// Execute SAGA
+	sagaResult := sagaOrchestrator.ExecuteUserRegistrationSaga(newUser, createUserFunc, deleteUserFunc)
+
+	if !sagaResult.Success {
+		utils.CreateGinResponse(c, "Failed to register user: "+sagaResult.Error.Error(), http.StatusInternalServerError, nil)
 		return
 	}
 
-	// Generate access token
-	token, err := utils.GenerateToken(createdUser.ID, createdUser.Email, createdUser.UserType, createdUser.Name)
+	// Generate access token for the successfully created user
+	token, err := utils.GenerateToken(sagaResult.User.ID, sagaResult.User.Email, sagaResult.User.UserType, sagaResult.User.Name)
 	if err != nil {
-		utils.CreateGinResponse(c, "Failed to generate token", http.StatusInternalServerError, nil)
+		// User was created but token generation failed - this is a partial failure
+		// In a production system, you might want to handle this differently
+		utils.CreateGinResponse(c, "User registered but failed to generate token", http.StatusInternalServerError, nil)
 		return
 	}
 

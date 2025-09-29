@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MediatR;
-using match_service.src.Matches.BuildingBlocks.Infratructure.Database;
+using System.Reflection;
 using match_service.src.Matches.Core.Application.Interfaces;
 using match_service.src.Matches.Core.Infrastructure.Repositories;
-using System.Reflection;
+using match_service.src.Matches.Core.Infrastructure;
 
 namespace match_service.src.Matches.API.Startup;
 
@@ -14,6 +14,7 @@ public static class ApplicationStartup
         SetupDatabases(services, configuration);
         SetupRepositories(services);
         SetupMediatR(services);
+        services.ConfigureInfluxDB(configuration);
 
         return services;
     }
@@ -21,6 +22,17 @@ public static class ApplicationStartup
     private static void SetupRepositories(IServiceCollection services)
     {
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IPositionRepository, PositionRepository>();
+        services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
+        services.AddScoped<IMatchRepository, MatchRepository>();
+        services.AddScoped<IMatchTrackingRepository, MatchTrackingRepository>();
+        services.AddScoped<ITeamMemberMatchRepository, TeamMemberMatchRepository>();
+        services.AddScoped<IPersonalEventRepository, PersonalEventRepository>();
+        services.AddScoped<ITeamEventRepository, TeamEventRepository>();
+        services.AddScoped<IGeneralEventRepository, GeneralEventRepository>();
+        services.AddScoped<IAutomaticRecommendationRepository, AutomaticRecommendationRepository>();
     }
 
     private static void SetupMediatR(IServiceCollection services)

@@ -1,0 +1,15 @@
+using ticket_service.src.Tickets.Core.Domain.Entities.Relational;
+
+namespace ticket_service.src.Tickets.Core.Application.Interfaces.Relational;
+
+public interface ISeasonRepository
+{
+    Season? GetById(int id);
+    IEnumerable<Season> GetAll();
+    Season Create(Season season);
+    Season Update(Season season);
+    bool Delete(int id);
+    bool ExistsByName(string name);
+    bool ExistsByName(string name, int excludeId);
+    bool ReleaseSeasonCards(int seasonId);
+}

@@ -2,19 +2,19 @@ package dtos
 
 // DTO from the client to register a new user
 type RegisterDTO struct {
-	Name            string `json:"ime_korisnika" binding:"required"`
-	Surname         string `json:"prezime_korisnika" binding:"required"`
-	Email           string `json:"email_korisnika" binding:"required,email"`
-	Phone           string `json:"telefon_korisnika" binding:"required"`
-	Password        string `json:"sifra_korisnika" binding:"required"`
-	ConfirmPassword string `json:"potvrda_sifre" binding:"required,eqfield=Password"`
-	UserType        string `json:"tip_korisnika" binding:"required"`
+	Name            string `json:"name" binding:"required"`
+	Surname         string `json:"surname" binding:"required"`
+	Email           string `json:"email" binding:"required,email"`
+	Phone           string `json:"phone" binding:"required"`
+	Password        string `json:"password" binding:"required"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
+	UserType        string `json:"user_type" binding:"required"`
 }
 
 // DTO from the client to login a user
 type LoginDTO struct {
-	Email    string `json:"email_korisnika" binding:"required,email"`
-	Password string `json:"sifra_korisnika" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 // DTO to return a JWT to the client

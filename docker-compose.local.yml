@@ -1,0 +1,45 @@
+services:
+  match_service:
+    volumes:
+      - ./devcert.pfx:/https/devcert.pfx:ro
+      - ./backend/match_service/secrets.json:/home/app/.microsoft/usersecrets/secrets.json:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5000
+      - ASPNETCORE_HTTPS_PORTS=5001
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=wsl
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/devcert.pfx
+
+  scouting_service:
+    volumes:
+      - ./devcert.pfx:/https/devcert.pfx:ro
+      - ./backend/scouting_service/secrets.json:/home/app/.microsoft/usersecrets/secrets.json:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5002
+      - ASPNETCORE_HTTPS_PORTS=5003
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=wsl
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/devcert.pfx
+
+  ticket_service:
+    volumes:
+      - ./devcert.pfx:/https/devcert.pfx:ro
+      - ./backend/ticket_service/secrets.json:/home/app/.microsoft/usersecrets/secrets.json:ro
+      - ./database/graph_database:/database/graph_database:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5004
+      - ASPNETCORE_HTTPS_PORTS=5005
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=wsl
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/devcert.pfx
+
+  travel_service:
+    volumes:
+      - ./devcert.pfx:/https/devcert.pfx:ro
+      - ./backend/travel_service/secrets.json:/home/app/.microsoft/usersecrets/secrets.json:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5006
+      - ASPNETCORE_HTTPS_PORTS=5007
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=wsl
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/devcert.pfx
