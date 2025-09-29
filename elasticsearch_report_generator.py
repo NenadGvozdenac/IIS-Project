@@ -202,6 +202,131 @@ class ElasticsearchReportGenerator:
         print("❌ No playoff data found for any nationality")
         return None
     
+    def get_player_from_service(self, service_name: str, service_url: str, player_id: int) -> Optional[Dict]:
+        """Get player data from specific service with robust error handling"""
+        print(f"   🔍 Trying to connect to {service_name} at {service_url}...")
+        
+        try:
+            # First check if service is available at all
+            try:
+                health_response = requests.get(f"{service_url}/api/players?take=1", timeout=3)
+                if health_response.status_code not in [200, 404]:
+                    print(f"   ⚠️  {service_name} responded with status {health_response.status_code}")
+                    return None
+            except requests.exceptions.ConnectionError:
+                print(f"   ❌ Cannot connect to {service_name} at {service_url}")
+                return None
+            except requests.exceptions.Timeout:
+                print(f"   ❌ Timeout connecting to {service_name}")
+                return None
+            except Exception as e:
+                print(f"   ❌ Error checking {service_name} availability: {str(e)}")
+                return None
+            
+            print(f"   ✅ {service_name} is responding")
+            
+            # Try different possible endpoints for getting a player by ID
+            possible_endpoints = [
+                f"/api/players/{player_id}",
+                f"/api/player/{player_id}",
+                f"/players/{player_id}",
+                f"/player/{player_id}"
+            ]
+            
+            for endpoint in possible_endpoints:
+                try:
+                    response = requests.get(f"{service_url}{endpoint}", timeout=5)
+                    if response.status_code == 200:
+                        player_data = response.json()
+                        if player_data:  # Not empty
+                            print(f"   ✅ Found player via {endpoint}")
+                            return player_data
+                    elif response.status_code == 404:
+                        continue  # Try next endpoint
+                    else:
+                        print(f"   ⚠️  {endpoint} returned status {response.status_code}")
+                except requests.exceptions.Timeout:
+                    print(f"   ⚠️  Timeout on {endpoint}")
+                    continue
+                except Exception as e:
+                    print(f"   ⚠️  Error on {endpoint}: {str(e)}")
+                    continue
+            
+            # If individual player endpoint doesn't work, try to get from list
+            print(f"   🔍 Trying list endpoints to find player {player_id}...")
+            list_endpoints = [
+                f"/api/players?take=100",
+                f"/api/player?take=100", 
+                f"/players?take=100",
+                f"/player?take=100"
+            ]
+            
+            for endpoint in list_endpoints:
+                try:
+                    response = requests.get(f"{service_url}{endpoint}", timeout=8)
+                    if response.status_code == 200:
+                        players_data = response.json()
+                        if isinstance(players_data, list):
+                            # Find our player by ID
+                            for player in players_data:
+                                if player.get('idPlayer') == player_id or player.get('id') == player_id:
+                                    print(f"   ✅ Found player in list via {endpoint}")
+                                    return player
+                        elif isinstance(players_data, dict) and 'data' in players_data:
+                            # Handle paginated response
+                            for player in players_data['data']:
+                                if player.get('idPlayer') == player_id or player.get('id') == player_id:
+                                    print(f"   ✅ Found player in paginated list via {endpoint}")
+                                    return player
+                        print(f"   ⚠️  Player {player_id} not found in {len(players_data) if isinstance(players_data, list) else 'paginated'} results from {endpoint}")
+                    else:
+                        print(f"   ⚠️  {endpoint} returned status {response.status_code}")
+                except requests.exceptions.Timeout:
+                    print(f"   ⚠️  Timeout on {endpoint}")
+                    continue
+                except Exception as e:
+                    print(f"   ⚠️  Error on {endpoint}: {str(e)}")
+                    continue
+                    
+            print(f"   ❌ Player {player_id} not found in {service_name}")
+            return None
+            
+        except Exception as e:
+            print(f"   ❌ Unexpected error getting player from {service_name}: {str(e)}")
+            return None
+    
+    def display_player_data(self, player_data: Optional[Dict], service_name: str, when: str):
+        """Display player data in a formatted way"""
+        if not player_data:
+            print(f"\n❌ No player data available from {service_name} ({when})")
+            print(f"   Service may be unavailable or player doesn't exist")
+            return
+            
+        print(f"\n📊 Player Data from {service_name} ({when}):")
+        print(f"   ID: {player_data.get('idPlayer', player_data.get('id', 'N/A'))}")
+        print(f"   Name: {player_data.get('name', 'N/A')} {player_data.get('surname', 'N/A')}")
+        print(f"   Full Name: {player_data.get('fullName', 'N/A')}")
+        print(f"   Birthday: {player_data.get('birthday', 'N/A')}")
+        print(f"   Nationality: {player_data.get('nationality', 'N/A')}")
+        print(f"   Position: {player_data.get('position', 'N/A')}")
+        
+        # Display physical metrics if available
+        physical_metrics = player_data.get('physicalMetrics', [])
+        if physical_metrics and len(physical_metrics) > 0:
+            latest_metric = physical_metrics[-1]  # Get latest metric
+            print(f"   Physical Metrics:")
+            print(f"     Weight: {latest_metric.get('weight', 'N/A')}")
+            print(f"     Height: {latest_metric.get('height', 'N/A')}")
+            print(f"     Wingspan: {latest_metric.get('wingspan', 'N/A')}")
+            print(f"     Vertical Jump: {latest_metric.get('verticalJump', 'N/A')}")
+            print(f"     Fat %: {latest_metric.get('fatPercentage', 'N/A')}")
+            print(f"     Bench Press: {latest_metric.get('benchPressWeight', 'N/A')}")
+            print(f"     Squat: {latest_metric.get('squatWeight', 'N/A')}")
+            print(f"     Sprint Speed: {latest_metric.get('sprintSpeed', 'N/A')}")
+            print(f"     Measured: {latest_metric.get('dateOfMeasurement', 'N/A')}")
+        
+        print()  # Add spacing after each service
+    
     def step_7_saga_transaction_test(self) -> Optional[Dict]:
         """Test Elastic Orchestrator Service Player Update Transaction"""
         self.print_section("SAGA TRANSACTION TEST: Player Update via Orchestrator")
@@ -229,35 +354,47 @@ class ElasticsearchReportGenerator:
         
         print("✅ Elastic Orchestrator Service is available")
         
-        # Create a test player update request
+        # Player ID to test
+        test_player_id = 1
+        
+        # GET PLAYER BEFORE TRANSACTION
+        print("\n🔍 Getting player data BEFORE transaction...")
+        es_player_before = self.get_player_from_service("Elasticsearch Service", self.base_url, test_player_id)
+        self.display_player_data(es_player_before, "Elasticsearch Service", "BEFORE")
+        
+        # Create a test player update request with noticeable changes
         test_player_data = {
             "player": {
-                "idPlayer": 1,
-                "name": "Test",
-                "surname": "Player",
-                "fullName": "Test Player Updated",
-                "birthday": "1995-06-15T00:00:00Z",
-                "nationality": "USA",
-                "position": "Point Guard",
+                "idPlayer": test_player_id,
+                "name": "UpdatedTestName",
+                "surname": "UpdatedTestSurname",
+                "fullName": "UpdatedTestName UpdatedTestSurname",
+                "birthday": "1990-12-25T00:00:00Z",
+                "nationality": "Serbia",
+                "position": "Shooting Guard",
                 "physicalMetrics": [
                     {
-                        "verticalJump": 85,
-                        "fatPercentage": 8,
-                        "benchPressWeight": 120,
-                        "squatWeight": 180,
-                        "sprintSpeed": 95,
-                        "weight": 85,
-                        "height": 188,
-                        "wingspan": 195,
+                        "verticalJump": 95,
+                        "fatPercentage": 6,
+                        "benchPressWeight": 140,
+                        "squatWeight": 200,
+                        "sprintSpeed": 88,
+                        "weight": 90,
+                        "height": 198,
+                        "wingspan": 210,
                         "dateOfMeasurement": "2025-09-29T00:00:00Z"
                     }
                 ]
             }
         }
         
-        print("\n🔄 Starting player update saga transaction...")
+        print(f"\n🔄 Starting player update saga transaction...")
         print(f"   Player ID: {test_player_data['player']['idPlayer']}")
-        print(f"   Player Name: {test_player_data['player']['fullName']}")
+        print(f"   Updated Name: {test_player_data['player']['fullName']}")
+        print(f"   Updated Nationality: {test_player_data['player']['nationality']}")
+        print(f"   Updated Position: {test_player_data['player']['position']}")
+        print(f"   Updated Weight: {test_player_data['player']['physicalMetrics'][0]['weight']}")
+        print(f"   Updated Height: {test_player_data['player']['physicalMetrics'][0]['height']}")
         
         # Start the saga transaction
         try:
@@ -369,16 +506,58 @@ class ElasticsearchReportGenerator:
                                 else:
                                     print(f"⚠️  Transaction {transaction_id} not found in transactions list")
                                     print(f"   Available transactions: {len(all_transactions)}")
-                                    return transaction
+                                    updated_transaction = transaction
                             else:
                                 print(f"⚠️  Unexpected response format from all transactions endpoint")
-                                return transaction
+                                updated_transaction = transaction
                         else:
                             print(f"⚠️  Could not get all transactions: {all_transactions_response.status_code}")
-                            return transaction
+                            updated_transaction = transaction
                     except Exception as e:
                         print(f"⚠️  Error getting all transactions: {str(e)}")
-                        return transaction
+                        updated_transaction = transaction
+                
+                # GET PLAYER AFTER TRANSACTION
+                print(f"\n🔍 Getting player data AFTER transaction...")
+                time.sleep(2)  # Wait for changes to propagate
+                es_player_after = self.get_player_from_service("Elasticsearch Service", self.base_url, test_player_id)
+                self.display_player_data(es_player_after, "Elasticsearch Service", "AFTER")
+                
+                # COMPARISON
+                if es_player_before and es_player_after:
+                    print("📊 CHANGES DETECTED:")
+                    changes_found = False
+                    
+                    # Check main fields
+                    if es_player_before.get('fullName') != es_player_after.get('fullName'):
+                        print(f"   ✅ Full Name: '{es_player_before.get('fullName')}' → '{es_player_after.get('fullName')}'")
+                        changes_found = True
+                    if es_player_before.get('nationality') != es_player_after.get('nationality'):
+                        print(f"   ✅ Nationality: '{es_player_before.get('nationality')}' → '{es_player_after.get('nationality')}'")
+                        changes_found = True
+                    if es_player_before.get('position') != es_player_after.get('position'):
+                        print(f"   ✅ Position: '{es_player_before.get('position')}' → '{es_player_after.get('position')}'")
+                        changes_found = True
+                    
+                    # Check physical metrics
+                    before_metrics = es_player_before.get('physicalMetrics', [])
+                    after_metrics = es_player_after.get('physicalMetrics', [])
+                    if before_metrics and after_metrics:
+                        before_latest = before_metrics[-1]
+                        after_latest = after_metrics[-1]
+                        if before_latest.get('weight') != after_latest.get('weight'):
+                            print(f"   ✅ Weight: {before_latest.get('weight')} → {after_latest.get('weight')}")
+                            changes_found = True
+                        if before_latest.get('height') != after_latest.get('height'):
+                            print(f"   ✅ Height: {before_latest.get('height')} → {after_latest.get('height')}")
+                            changes_found = True
+                    
+                    if not changes_found:
+                        print("   ⚠️  No changes detected - transaction may have failed or completed too quickly")
+                else:
+                    print("   ⚠️  Cannot compare - missing before/after data")
+                
+                return updated_transaction
                     
             else:
                 print(f"❌ Failed to start saga transaction: {response.status_code}")
