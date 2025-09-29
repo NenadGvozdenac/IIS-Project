@@ -243,7 +243,6 @@
                         <th>Date</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Note</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -258,7 +257,6 @@
                             {{ session.sessionStatusName }}
                           </span>
                         </td>
-                        <td class="note-cell">{{ session.note }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -276,7 +274,7 @@
                 <div class="form-group">
                   <label>Start Date:</label>
                   <input 
-                    type="date" 
+                    type="datetime-local" 
                     v-model="newSession.startTime" 
                     required 
                   />
@@ -285,7 +283,7 @@
                 <div class="form-group">
                   <label>End Date:</label>
                   <input 
-                    type="date" 
+                    type="datetime-local" 
                     v-model="newSession.endTime" 
                   />
                 </div>
@@ -316,15 +314,6 @@
                       {{ status.name }}
                     </option>
                   </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Note:</label>
-                  <textarea 
-                    v-model="newSession.note" 
-                    rows="4"
-                    placeholder="Session notes..."
-                  ></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -393,8 +382,7 @@ const newSession = ref({
   startTime: '',
   endTime: '',
   idSessionType: '',
-  idSessionStatus: '',
-  note: ''
+  idSessionStatus: ''
 })
 
 // Computed
@@ -562,8 +550,7 @@ const resetForm = () => {
     startTime: '',
     endTime: '',
     idSessionType: '',
-    idSessionStatus: '',
-    note: ''
+    idSessionStatus: ''
   }
 }
 
@@ -576,17 +563,23 @@ const createSession = async () => {
   isCreating.value = true
   
   try {
-    // Get current user ID from localStorage or auth service
-    const currentUserId = localStorage.getItem('userId') || 1 // Default to 1 for now
-    
+    // Convert datetime-local format to proper ISO UTC format
+    const formatDateTimeForAPI = (dateTimeLocalString) => {
+      if (!dateTimeLocalString) return null
+      // datetime-local gives us format: "2023-12-25T14:30"
+      // We need to convert it to UTC ISO format
+      const date = new Date(dateTimeLocalString)
+      return date.toISOString()
+    }
+
+    // The backend will extract user ID from JWT, so we don't need to send it
     const sessionData = {
-      startTime: newSession.value.startTime,
-      endTime: newSession.value.endTime || null,
+      startTime: formatDateTimeForAPI(newSession.value.startTime),
+      endTime: formatDateTimeForAPI(newSession.value.endTime),
       idSessionType: parseInt(newSession.value.idSessionType),
       idSessionStatus: parseInt(newSession.value.idSessionStatus),
-      idUser: parseInt(currentUserId),
-      idPlayer: selectedPlayer.value.idPlayer,
-      note: newSession.value.note || ''
+      idUser: 0, // Will be overridden by backend from JWT
+      idPlayer: selectedPlayer.value.idPlayer
     }
 
     await createSessionAPI(sessionData)

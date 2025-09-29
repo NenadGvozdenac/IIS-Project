@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using scouting_service.src.Scoutings.BuildingBlocks.Core.Domain;
 using scouting_service.src.Scoutings.Core.Application.Features.Positions.GetAllPositions;
 using scouting_service.src.Scoutings.Core.Application.Features.Positions.CreatePosition;
+using scouting_service.src.Scoutings.Core.Application.Features.Positions.UpdatePosition;
 
 namespace scouting_service.src.Scoutings.API.Controllers;
 
@@ -27,6 +28,14 @@ public class PositionsController : BaseController
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] CreatePositionCommand command)
     {
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, [FromBody] UpdatePositionCommand command)
+    {
+        command.IdPosition = id;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }

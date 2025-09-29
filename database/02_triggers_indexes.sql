@@ -398,19 +398,38 @@ CREATE TRIGGER match_finished_aggregation_trigger
 
 ------------------------------------------------------------------
 -- NENAD GVOZDENAC - INDEXI ZA PERFORMANSE
-CREATE INDEX IF NOT EXISTS idx_seat_zone_direction ON seat (id_zone, direction);
+
+-- Kompozicioni indeks za pretragu sedišta po zoni i smeru sa sortiranjem po redu i broju
+-- Optimizuje glavnu pretragu u GetSeatsWithOffersForZoneAndDirection koja filtrira sedišta po zoni i smeru, 
+-- a zatim ih sortira po redu i broju sedišta
 CREATE INDEX IF NOT EXISTS idx_seat_zone_direction_row_number ON seat (id_zone, direction, "row", "number");
-CREATE INDEX IF NOT EXISTS idx_purchase_offer_seat_type ON purchase_offer (id_seat, type);
+-- EXPLAIN ANALYZE SELECT * FROM seat WHERE id_zone = 1 AND direction = 'north' ORDER BY "row", "number";
+
+-- Kompozicioni indeks za filtriranje ponuda po sedištu, tipu i statusu
+-- Bitan za pretragu individualnih ponuda i sezonskih karata u GetSeatsWithOffersForZoneAndDirection
+-- koji filtrira ponude po sedištu, zatim po tipu ('individual ticket', 'season ticket') i statusu ('enabled', 'bought')
 CREATE INDEX IF NOT EXISTS idx_purchase_offer_seat_type_status ON purchase_offer (id_seat, type, status);
-CREATE INDEX IF NOT EXISTS idx_individual_ticket_purchase_offer ON individual_ticket (id_purchase_offer);
+-- EXPLAIN ANALYZE SELECT * FROM purchase_offer WHERE id_seat > 1 and id_seat < 100 AND type = 'individual ticket' AND status = 'enabled';
+
+-- Indeks za pretragu individualnih karata po meču
+-- Omogućava dobavljanje svih individualnih karata za određeni meč u GetSeatsWithOffersForZoneAndDirection
 CREATE INDEX IF NOT EXISTS idx_individual_ticket_match ON individual_ticket (id_match);
+-- EXPLAIN ANALYZE SELECT * FROM individual_ticket WHERE id_match = 1;
+
+-- Indeks za filtriranje Korpa po statusu (potreban za sezonske karte)
+-- Optimizuje pretragu Korpa sa statusom 'bought' ili 'active' kada se proveravaju konflikti sezonskih karata
 CREATE INDEX IF NOT EXISTS idx_cart_status ON cart (status);
+-- EXPLAIN ANALYZE SELECT * FROM cart WHERE status IN ('bought', 'active');
+
+-- Indeks za povezivanje stavki Korpe sa ponudama
+-- Omogućava brzu pretragu stavki Korpe po ID ponude za proveru sezonskih karata
 CREATE INDEX IF NOT EXISTS idx_cart_item_purchase_offer ON cart_item (id_purchase_offer);
-CREATE INDEX IF NOT EXISTS idx_cart_user_status ON cart (id_user, status);
-CREATE INDEX IF NOT EXISTS idx_match_scheduled_at ON match (scheduled_at);
+-- EXPLAIN ANALYZE SELECT * FROM cart_item WHERE id_purchase_offer IN (1, 2, 3);
+
+-- Indeks za kalkulaciju cene karte po meču i zoni
+-- Koristi se za dinamičko izračunavanje cene karte u TicketPriceCalculationService
 CREATE INDEX IF NOT EXISTS idx_ticket_price_parameter_match_zone ON ticket_price_parameter (id_match, id_zone);
-CREATE INDEX IF NOT EXISTS idx_zone_status ON zone (status);
-CREATE INDEX IF NOT EXISTS idx_cart_item_cart_offer ON cart_item (id_cart, id_purchase_offer);
+-- EXPLAIN ANALYZE SELECT * FROM ticket_price_parameter WHERE id_match = 1 AND id_zone = 2;
 
 -- KRAJ INDEXA NENAD GVOZDENAC
 

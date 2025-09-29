@@ -319,7 +319,7 @@ const routes = [
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
   },
   {
-    path: '/scout/analysis',
+    path: '/scout/analysis/:id',
     name: 'PlayerAnalysis',
     component: PlayerAnalysis,
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
@@ -328,18 +328,6 @@ const routes = [
     path: '/scout/recommendations',
     name: 'PlayerRecommendations',
     component: PlayerRecommendations,
-    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
-  },
-  {
-    path: '/scout/player/:id',
-    name: 'PlayerProfile',
-    component: PlayerProfile,
-    meta: { requiresAuth: true, requiresRole: 'scouting manager' }
-  },
-  {
-    path: '/scout/player/:id/edit',
-    name: 'EditPlayer',
-    component: EditPlayer,
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
   },
   {
@@ -372,7 +360,7 @@ router.beforeEach((to, _, next) => {
       next('/scout')
       return
     } else if (userData.userRole === 'customer') {
-      next('/customer-dashboard')
+      next('/customer/dashboard')
       return
     } else if (userData.userRole === 'team manager') {
       next('/team-manager/matches')
@@ -404,16 +392,11 @@ router.beforeEach((to, _, next) => {
   else if (to.meta.requiresRole) {
     const userData = getUserData()
     if (!userData || userData.userRole !== to.meta.requiresRole) {
-      next('/dashboard')
-    } else {
-      next()
-    }
-    if (!userData || userData.userRole !== to.meta.requiresRole) {
       // Redirect to appropriate dashboard based on user role
       if (userData && userData.userRole === 'scouting manager') {
         next('/scout')
       } else if (userData && userData.userRole === 'customer') {
-        next('/customer-dashboard')
+        next('/customer/dashboard')
       } else if (userData && userData.userRole === 'team manager') {
         next('/team-manager/matches')
       } else if (userData && userData.userRole === 'club manager') {

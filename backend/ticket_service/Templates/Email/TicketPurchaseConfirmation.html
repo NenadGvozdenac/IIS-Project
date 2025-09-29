@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 3px solid #007bff; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { color: #007bff; margin: 0; font-size: 28px; }
+        .user-info { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .tickets-section { margin: 20px 0; }
+        .ticket-item { border: 1px solid #e0e0e0; margin-bottom: 15px; padding: 15px; border-radius: 5px; background-color: #fafafa; }
+        .ticket-header { font-weight: bold; color: #007bff; font-size: 16px; margin-bottom: 10px; }
+        .ticket-details { margin-left: 15px; }
+        .ticket-details p { margin: 5px 0; }
+        .summary { background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin-top: 20px; text-align: center; }
+        .total-amount { font-size: 24px; font-weight: bold; color: #28a745; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Ticket Purchase Confirmation</h1>
+        </div>
+        
+        <div class="user-info">
+            <h3>Hello {{UserName}} {{UserSurname}}!</h3>
+            <p>Thank you for your purchase. Your order has been confirmed.</p>
+            <p><strong>Order ID:</strong> #{{CartId}}</p>
+            <p><strong>Purchase Date:</strong> {{PurchaseDate}}</p>
+        </div>
+
+        <div class="tickets-section">
+            <h3>📋 Your Tickets:</h3>
+            {{TicketItems}}
+        </div>
+
+        <div class="summary">
+            <h3>💰 Order Summary</h3>
+            <p>Total Items: {{TotalItems}}</p>
+            <p class="total-amount">Total Amount: {{TotalAmount}} RSD</p>
+            <p style="color: #28a745; font-weight: bold;">Status: {{Status}}</p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing our ticket service!</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <p style="font-size: 12px; color: #999;">This is an automated email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -41,7 +41,19 @@
                 class="filter-input"
               />
             </div>
-            <button @click="clearFilters" class="btn btn-secondary">Clear Filters</button>
+            <div class="action-buttons">
+              <button @click="clearFilters" class="btn btn-secondary">Clear Filters</button>
+              <button @click="generateScoutingReportPDF" class="btn btn-primary" :disabled="generatingReport">
+                <svg v-if="generatingReport" class="btn-spinner" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
+                  <path d="M4,12a8,8 0 0,1 8,-8" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+                </svg>
+                <svg v-else class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                {{ generatingReport ? 'Generating...' : 'Generate PDF Report' }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -86,12 +98,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getAllPlayers } from '../../services/player_service.js'
+import { getAllPlayers, generateScoutingReport } from '../../services/player_service.js'
 
 const router = useRouter()
 
 const players = ref([])
 const loading = ref(true)
+const generatingReport = ref(false)
 
 // Sample data for demonstration - replace with API call
 const samplePlayers = [
@@ -191,6 +204,48 @@ const viewPlayer = (player) => {
 const editPlayer = (player) => {
   router.push(`/scout/player/${player.id}/edit`)
 }
+
+// Generate PDF scouting report
+const generateScoutingReportPDF = async () => {
+  try {
+    generatingReport.value = true
+    
+    // Call the scouting service through the player service
+    const blob = await generateScoutingReport({
+      seasonId: null, // NULL means all seasons - general summary
+      position: filters.value.position || null,
+      nationality: filters.value.nationality || null,
+      playerName: filters.value.name || null
+    })
+    
+    // Create a download link
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    
+    // Generate filename with current date
+    const now = new Date()
+    const dateStr = now.toISOString().split('T')[0]
+    link.download = `scouting-report-${dateStr}.pdf`
+    
+    // Trigger download
+    document.body.appendChild(link)
+    link.click()
+    
+    // Cleanup
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(link)
+    
+    // Show success message
+    alert('Scouting report generated successfully!')
+    
+  } catch (error) {
+    console.error('Error generating scouting report:', error)
+    alert('Failed to generate scouting report. Please try again.')
+  } finally {
+    generatingReport.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -273,6 +328,77 @@ const editPlayer = (player) => {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: end;
+  margin-left: auto;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-icon,
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.btn-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-primary {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  border: 1px solid var(--color-primary) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark) !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary) !important;
+  color: white !important;
+  border: 1px solid var(--color-secondary) !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark) !important;
+  border-color: var(--color-secondary-dark) !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
 .table-container {
   background: white;
   border-radius: var(--border-radius);
@@ -305,37 +431,6 @@ const editPlayer = (player) => {
 
 .players-table tbody tr:hover {
   background-color: var(--color-surface);
-}
-
-.btn {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
-}
-
-.btn-primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.btn-secondary {
-  background-color: var(--color-secondary);
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-secondary-dark);
 }
 
 .btn-sm {
