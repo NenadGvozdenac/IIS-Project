@@ -46,7 +46,7 @@
                 <div class="modal-header">
                     <h3>Set Pricing Parameters</h3>
                     <div class="header-actions">
-                        <button @click="setDefaultValues" class="default-btn" :disabled="!canEnableTickets || enableLoading">Set Default Values</button>
+                        <button @click="setDefaultValues" class="default-btn" :disabled="!(!canCreateParameters || createLoading)">Set Default Values</button>
                         <button @click="closePricingModal" class="close-btn">&times;</button>
                     </div>
                 </div>
@@ -65,26 +65,26 @@
                             <div class="parameter-inputs">
                                 <div class="input-group">
                                     <label>Price Factor:</label>
-                                    <input type="number" step="1" min="0" v-model.number="priceFactors[zone.idZone]"
+                                    <input type="number" step="1" min="0" v-model.number="priceFactors[zone.idZone]"  :disabled="createLoading"
                                         placeholder="e.g., 800" />
                                 </div>
 
                                 <div class="input-group">
                                     <label>Time Factor:</label>
-                                    <input type="number" step="1" min="0" v-model.number="timeFactors[zone.idZone]"
+                                    <input type="number" step="1" min="0" v-model.number="timeFactors[zone.idZone]"  :disabled="createLoading"
                                         placeholder="e.g., 70" />
                                 </div>
 
                                 <div class="input-group">
                                     <label>Minimum Seat Price:</label>
                                     <input type="number" step="1" min="0"
-                                        v-model.number="minimumSeatPrices[zone.idZone]" placeholder="e.g., 1000" />
+                                        v-model.number="minimumSeatPrices[zone.idZone]" placeholder="e.g., 1000" :disabled="createLoading" />
                                 </div>
 
                                 <div class="input-group">
                                     <label>Maximum Seat Price:</label>
                                     <input type="number" step="1" min="0"
-                                        v-model.number="maximumSeatPrices[zone.idZone]" placeholder="e.g., 10000" />
+                                        v-model.number="maximumSeatPrices[zone.idZone]" placeholder="e.g., 10000"  :disabled="createLoading" />
                                 </div>
                             </div>
                         </div>
