@@ -1,5 +1,6 @@
 using elastic_orchestrator_service.src.Models;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace elastic_orchestrator_service.src.Services
 {
@@ -65,6 +66,9 @@ namespace elastic_orchestrator_service.src.Services
                 transaction.Status = SagaStatuses.InProgress;
                 _logger.LogInformation("Executing saga transaction {TransactionId}", transaction.TransactionId);
 
+                // Get original states before making any changes
+                await StoreOriginalStatesAsync(transaction);
+
                 // Step 1: Update Scouting Service
                 var scoutingStep = transaction.Steps.First(s => s.StepName == "UpdateScoutingService");
                 var scoutingSuccess = await ExecuteStepAsync(scoutingStep, () => 
@@ -97,6 +101,46 @@ namespace elastic_orchestrator_service.src.Services
                 _logger.LogError(ex, "Error executing saga transaction {TransactionId}", transaction.TransactionId);
                 transaction.Status = SagaStatuses.Failed;
                 transaction.ErrorMessage = ex.Message;
+            }
+        }
+
+        private async Task StoreOriginalStatesAsync(SagaTransaction transaction)
+        {
+            try
+            {
+                _logger.LogInformation("Storing original states for transaction {TransactionId}", transaction.TransactionId);
+
+                // Get original state from scouting service
+                var originalScoutingPlayer = await _scoutingServiceClient.GetPlayerAsync(transaction.Player.IdPlayer);
+                if (originalScoutingPlayer != null)
+                {
+                    var scoutingJson = JsonSerializer.Serialize(originalScoutingPlayer, new JsonSerializerOptions 
+                    { 
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                    });
+                    transaction.OriginalStates["ScoutingService"] = scoutingJson;
+                    _logger.LogDebug("Stored original scouting service state for player {PlayerId}", transaction.Player.IdPlayer);
+                }
+
+                // Get original state from elasticsearch service
+                var originalElasticsearchPlayer = await _elasticsearchServiceClient.GetPlayerAsync(transaction.Player.IdPlayer);
+                if (originalElasticsearchPlayer != null)
+                {
+                    var elasticsearchJson = JsonSerializer.Serialize(originalElasticsearchPlayer, new JsonSerializerOptions 
+                    { 
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                    });
+                    transaction.OriginalStates["ElasticsearchService"] = elasticsearchJson;
+                    _logger.LogDebug("Stored original elasticsearch service state for player {PlayerId}", transaction.Player.IdPlayer);
+                }
+
+                _logger.LogInformation("Successfully stored original states for transaction {TransactionId}", transaction.TransactionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing original states for transaction {TransactionId}", transaction.TransactionId);
+                // Don't throw here - we still want to proceed with the transaction
+                // The compensation might not work perfectly, but the transaction can continue
             }
         }
 
@@ -147,7 +191,7 @@ namespace elastic_orchestrator_service.src.Services
 
                 foreach (var step in completedSteps)
                 {
-                    await CompensateStepAsync(step, transaction.Player);
+                    await CompensateStepAsync(step, transaction.Player, transaction);
                 }
 
                 transaction.Status = SagaStatuses.Compensated;
@@ -162,7 +206,7 @@ namespace elastic_orchestrator_service.src.Services
             }
         }
 
-        private async Task CompensateStepAsync(SagaStep step, Player player)
+        private async Task CompensateStepAsync(SagaStep step, Player player, SagaTransaction transaction)
         {
             try
             {
@@ -173,10 +217,43 @@ namespace elastic_orchestrator_service.src.Services
                 switch (step.StepName)
                 {
                     case "UpdateScoutingService":
-                        compensationSuccess = await _scoutingServiceClient.CompensatePlayerUpdateAsync(player);
+                        if (transaction.OriginalStates.TryGetValue("ScoutingService", out var scoutingJson))
+                        {
+                            var originalPlayer = JsonSerializer.Deserialize<Player>(scoutingJson, new JsonSerializerOptions 
+                            { 
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                                PropertyNameCaseInsensitive = true
+                            });
+                            if (originalPlayer != null)
+                            {
+                                compensationSuccess = await _scoutingServiceClient.CompensatePlayerUpdateAsync(originalPlayer);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning("No original scouting service state found for compensation");
+                        }
                         break;
                     case "UpdateElasticsearchService":
-                        compensationSuccess = await _elasticsearchServiceClient.CompensatePlayerUpdateAsync(player);
+                        if (transaction.OriginalStates.TryGetValue("ElasticsearchService", out var elasticsearchJson))
+                        {
+                            var originalPlayer = JsonSerializer.Deserialize<Player>(elasticsearchJson, new JsonSerializerOptions 
+                            { 
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                                PropertyNameCaseInsensitive = true
+                            });
+                            if (originalPlayer != null)
+                            {
+                                compensationSuccess = await _elasticsearchServiceClient.CompensatePlayerUpdateAsync(originalPlayer);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning("No original elasticsearch service state found for compensation");
+                        }
+                        break;
+                    default:
+                        _logger.LogWarning("Unknown step name for compensation: {StepName}", step.StepName);
                         break;
                 }
 
