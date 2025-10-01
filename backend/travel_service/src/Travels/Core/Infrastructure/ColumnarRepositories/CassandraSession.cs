@@ -79,7 +79,6 @@ public class CassandraSession : ICassandraSession, IDisposable
 
     private void CreateTablesIfNotExist()
     {
-        // Tabela za mečeve - particionisanje po gradu i tipu, klasterovanje po scheduled_at
         var createMatchTable = @"
             CREATE TABLE IF NOT EXISTS match (
                 city TEXT,
@@ -95,7 +94,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY ((city, type), scheduled_at, id_match)
             ) WITH CLUSTERING ORDER BY (scheduled_at DESC, id_match ASC)";
 
-        // Tabela za ponude - particionisanje po id_match, klasterovanje po type i price
         var createOfferTable = @"
             CREATE TABLE IF NOT EXISTS offer (
                 id_match INT,
@@ -109,7 +107,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (id_match, type, chosen, price, id_offer)
             ) WITH CLUSTERING ORDER BY (type ASC, chosen ASC, price ASC, id_offer ASC)";
 
-        // Tabela za zahteve za smeštaj - particionisanje po accommodation_type, klasterovanje po check_in_date
         var createAccommodationRequestTable = @"
             CREATE TABLE IF NOT EXISTS accommodation_request (
                 accommodation_type TEXT,
@@ -121,7 +118,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (accommodation_type, check_in_date, id_request)
             ) WITH CLUSTERING ORDER BY (check_in_date DESC, id_request ASC)";
 
-        // Tabela za zahteve za transport - particionisanje po vehicle_type, klasterovanje po start_date
         var createTransportationRequestTable = @"
             CREATE TABLE IF NOT EXISTS transportation_request (
                 vehicle_type TEXT,
@@ -132,7 +128,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (vehicle_type, start_date, id_request)
             ) WITH CLUSTERING ORDER BY (start_date DESC, id_request ASC)";
 
-        // Tabela za ponude za smeštaj - particionisanje po accommodation_type, klasterovanje po capacity
         var createAccommodationOfferTable = @"
             CREATE TABLE IF NOT EXISTS accommodation_offer (
                 accommodation_type TEXT,
@@ -151,7 +146,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (accommodation_type, capacity, id_offer)
             ) WITH CLUSTERING ORDER BY (capacity DESC, id_offer ASC)";
 
-        // Tabela za ponude za transport - particionisanje po type, klasterovanje po capacity
         var createTransportationOfferTable = @"
             CREATE TABLE IF NOT EXISTS transportation_offer (
                 type TEXT,
@@ -167,7 +161,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (type, capacity, id_offer)
             ) WITH CLUSTERING ORDER BY (capacity DESC, id_offer ASC)";
 
-        // Tabela za putovanja - particionisanje po match_id_match
         var createTripTable = @"
             CREATE TABLE IF NOT EXISTS trip (
                 match_id_match INT,
@@ -180,7 +173,6 @@ public class CassandraSession : ICassandraSession, IDisposable
                 PRIMARY KEY (match_id_match, id_trip)
             ) WITH CLUSTERING ORDER BY (id_trip ASC)";
 
-        // Tabela za opšte zahteve - particionisanje po id_match, klasterovanje po type i budget
         var createRequestTable = @"
             CREATE TABLE IF NOT EXISTS request (
                 id_match INT,

@@ -78,8 +78,6 @@ public abstract class BaseColumnarRepository<T> : IColumnarRepository<T> where T
     {
         try
         {
-            // Temporarily disable find-then-update for testing
-            // TODO: Re-enable after debugging
             await _mapper.UpdateAsync(entity);
             return true;
         }
@@ -93,8 +91,6 @@ public abstract class BaseColumnarRepository<T> : IColumnarRepository<T> where T
     {
         try
         {
-            // Temporarily disable find-then-delete for testing
-            // TODO: Re-enable after debugging
             var query = $"DELETE FROM {_tableName} WHERE {GetWhereClause(keys.Length)}";
             Console.WriteLine($"Executing query: {query} with keys: {string.Join(", ", keys)}");
             await _session.ExecuteAsync(new SimpleStatement(query, keys));

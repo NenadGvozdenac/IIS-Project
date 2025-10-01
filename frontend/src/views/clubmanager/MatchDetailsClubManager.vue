@@ -472,7 +472,6 @@ const createTravel = async () => {
     if (response.data.isSuccess) {
       // Refresh trip data after creation
       await fetchTrip()
-      alert('Travel created successfully!')
       closeCreateTravelModal()
     } else {
       alert(response.data.error || 'Failed to create travel')

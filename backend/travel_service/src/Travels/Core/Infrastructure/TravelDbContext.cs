@@ -240,11 +240,7 @@ public partial class TravelDbContext : DbContext
 
             entity.ToTable("offer");
 
-            entity.HasIndex(e => e.Type, "idx_offer_type");
-
             entity.HasIndex(e => new { e.Type, e.IdMatch }, "idx_offer_type_match");
-
-            entity.HasIndex(e => new { e.Type, e.IdMatch, e.Chosen }, "idx_offer_type_match_chosen");
 
             entity.Property(e => e.IdOffer).HasColumnName("id_offer");
             entity.Property(e => e.IdAgency).HasColumnName("id_agency");
@@ -351,8 +347,6 @@ public partial class TravelDbContext : DbContext
             entity.HasKey(e => e.IdRequest).HasName("request_pkey");
 
             entity.ToTable("request");
-
-            entity.HasIndex(e => new { e.IdMatch, e.Type }, "idx_request_match_type");
 
             entity.Property(e => e.IdRequest).HasColumnName("id_request");
             entity.Property(e => e.Budget).HasColumnName("budget");

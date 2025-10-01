@@ -41,7 +41,7 @@ public class CassandraCrudController : ControllerBase
         _session = session;
     }
 
-    // ===================== HEALTH CHECK =====================
+    
     [HttpGet("health")]
     public async Task<IActionResult> Health()
     {
@@ -64,8 +64,6 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== MATCH CRUD OPERATIONS =====================
-    // Match ID: id_match
     [HttpPost("matches")]
     public async Task<IActionResult> CreateMatch([FromBody] Match match)
     {
@@ -155,8 +153,6 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== OFFER CRUD OPERATIONS =====================
-    // Offer ID: id_match + id_offer + id_request
     [HttpPost("offers")]
     public async Task<IActionResult> CreateOffer([FromBody] Offer offer)
     {
@@ -254,7 +250,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== REQUEST CRUD OPERATIONS =====================
+    
     [HttpPost("requests")]
     public async Task<IActionResult> CreateRequest([FromBody] Request request)
     {
@@ -347,8 +343,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== TRIP CRUD OPERATIONS =====================
-    // Trip ID: id_trip
+    
     [HttpPost("trips")]
     public async Task<IActionResult> CreateTrip([FromBody] Trip trip)
     {
@@ -432,8 +427,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== ACCOMMODATION REQUEST CRUD OPERATIONS =====================
-    // AccommodationRequest ID: id_request
+    
     [HttpPost("accommodation-requests")]
     public async Task<IActionResult> CreateAccommodationRequest([FromBody] AccommodationRequest accommodationRequest)
     {
@@ -522,8 +516,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== TRANSPORTATION REQUEST CRUD OPERATIONS =====================
-    // TransportationRequest ID: id_request
+    
     [HttpPost("transportation-requests")]
     public async Task<IActionResult> CreateTransportationRequest([FromBody] TransportationRequest transportationRequest)
     {
@@ -611,8 +604,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== ACCOMMODATION OFFER CRUD OPERATIONS =====================
-    // AccommodationOffer ID: id_offer + id_request
+   
     [HttpPost("accommodation-offers")]
     public async Task<IActionResult> CreateAccommodationOffer([FromBody] AccommodationOffer accommodationOffer)
     {
@@ -707,8 +699,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== TRANSPORTATION OFFER CRUD OPERATIONS =====================
-    // TransportationOffer ID: id_offer + id_request
+    
     [HttpPost("transportation-offers")]
     public async Task<IActionResult> CreateTransportationOffer([FromBody] TransportationOffer transportationOffer)
     {
@@ -800,9 +791,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // ===================== ANALYTICAL QUERIES =====================
-
-    // 1. Prosečna cena ponuda po tipu za određeni meč
+    
     [HttpGet("analytics/average-price-by-type/{matchId}")]
     public async Task<IActionResult> GetAveragePriceByTypeForMatch(int matchId)
     {
@@ -828,7 +817,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // 2. Broj transportnih zahteva po datumu za određeni tip vozila
+   
     [HttpGet("analytics/transportation-requests-by-date/{vehicleType}")]
     public async Task<IActionResult> GetTransportationRequestsCountByDate(string vehicleType)
     {
@@ -854,7 +843,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // 3. Minimalni kapacitet ponude po tipu smeštaja
+    
     [HttpGet("analytics/min-capacity-by-accommodation-type")]
     public async Task<IActionResult> GetMinCapacityByAccommodationType()
     {
@@ -879,7 +868,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // 4. Sva putovanja za određeni meč
+    
     [HttpGet("analytics/trips-for-match/{matchId}")]
     public async Task<IActionResult> GetTripsForMatch(int matchId)
     {
@@ -906,7 +895,7 @@ public class CassandraCrudController : ControllerBase
         }
     }
 
-    // 5. Tri najjeftinije ponude za prevoz ili smeštaj za određeni meč
+    
     [HttpGet("analytics/cheapest-transportation-offers/{matchId}/{type}")]
     public async Task<IActionResult> GetCheapestTransportationOffers(int matchId, string type, bool chosen)
     {

@@ -473,20 +473,15 @@ CREATE INDEX IF NOT EXISTS idx_cart_item_cart_offer ON cart_item (id_cart, id_pu
 
 -- SANJA RADIC - INDEXI 
 -- Dobavljanje podataka o zahtevima i ponudama stalno iziskuju pretragu po type i id_match
+-- Ako se prvo navede type u indeksu znatno se smanjuje broj stranica koje je potrebno pretražiti
+-- jer se time prvo suzi pretraga na samo jedan tip ponude (smestaj, prevoz), a mečeva ima mnogo više
+-- nego tipova ponuda
 CREATE INDEX IF NOT EXISTS idx_offer_type_match ON offer (type, id_match);
 
--- Na 2 stranice za prikaz detalja meca moram ukupno 4 puta da pristupam 
--- bazi za pretragu bas te izabrane ponude za taj mec i odvojeno za prevoz i za smestaj
--- Uvek su samo 2 polja za chosen TRUE, a ostale FALSE
-CREATE INDEX IF NOT EXISTS idx_offer_type_match_chosen ON offer (type, id_match, chosen);
+-- CREATE INDEX IF NOT EXISTS idx_offer_type ON offer (type);
 
--- Ovo je samo rezervni indeks jer se cesto pretrazuje ponuda po tipu
-CREATE INDEX IF NOT EXISTS idx_offer_type ON offer (type);
-
--- Svaki put kad se kreira nova ponuda, mora da se prodje kroz sve agencije
--- i da se uzmu samo one koje su bile cekirane u tom request-u
-CREATE INDEX IF NOT EXISTS idx_request_match_type ON request (id_match, type);
-
+-- docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN ANALYZE SELECT * FROM offer WHERE type='accommodation'; SET enable_indexscan = on; SET enable_bitmapscan = on;"
+-- docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "EXPLAIN ANALYZE SELECT * FROM offer WHERE type='accommodation';"
 
 -- KRAJ SEKCIJE SA INDEKSIMA SANJA RADIC
 
@@ -523,11 +518,13 @@ DECLARE
     v_player_count INTEGER;
     v_capacity_adequacy_score NUMERIC;
 BEGIN
+-- Da ne bi doslo do beskonacne petlje jer trigger sam sebe pozove kad se desi chosen=true
     IF current_setting('auto_select.in_progress', true) = '1' THEN
         RETURN NEW;
     END IF;
     PERFORM set_config('auto_select.in_progress', '1', true);
-
+-- Reaguje i na unos u offer i na unos u accommodation_offer ili transportation_offer
+-- Ako je za offer gleda to, ako je za child, onda prvo uzima id_match i type iz offer tabele
     IF (TG_TABLE_NAME = 'offer') THEN
         p_match_id := NEW.id_match;
         p_offer_type := NEW.type;
@@ -537,6 +534,8 @@ BEGIN
         WHERE id_offer = NEW.id_offer AND id_agency = NEW.id_agency AND id_request = NEW.id_request;
     END IF;
 
+-- Gleda koliko ima ponuda za taj mec i tip, ako je nula izlazi
+-- Ako je jedna, automatski bira tu ponudu
     SELECT COUNT(*) INTO v_total_offers
     FROM offer 
     WHERE id_match = p_match_id AND type = p_offer_type;
@@ -571,6 +570,8 @@ BEGIN
     END IF;
 
     v_player_count := 25;
+
+-- Da bi se izvrsila normalizacija, potrebno je znati min i max vrednosti za price i capacity
 
     SELECT MIN(price), MAX(price) INTO v_min_price, v_max_price
     FROM offer 
@@ -698,6 +699,7 @@ CREATE OR REPLACE FUNCTION calculate_advanced_offer_score(
     p_offer_id INTEGER,
     p_agency_id INTEGER, 
     p_request_id INTEGER,
+-- Ponderisani score na osnovu ova 4 kriterijuma
     p_weight_price NUMERIC DEFAULT 0.3,
     p_weight_capacity NUMERIC DEFAULT 0.2,
     p_weight_amenities NUMERIC DEFAULT 0.25,
@@ -736,7 +738,8 @@ BEGIN
     WHERE type = v_offer_type 
     AND id_match = v_match_id 
     AND price IS NOT NULL;
-    
+-- Najjeftinija ponuda dobija 100, najskuplja 0, ostale proporcionalno
+-- Ako su sve ponude iste cene, sve dobijaju 50
     IF v_offer_price IS NOT NULL AND v_max_price > v_min_price THEN
         v_price_score := 100 * (1 - ((v_offer_price - v_min_price) / (v_max_price - v_min_price)));
     ELSE
@@ -755,6 +758,8 @@ BEGIN
         WHERE id_offer = p_offer_id AND id_agency = p_agency_id AND id_request = p_request_id;
     END IF;
     
+-- Ako je kapacitet manji od potrebnog score je 0, ako je veci, eksponencijalno raste ka 100
+-- Ako se desi da nema kapaciteta (ne postoji), score je 50
     IF v_offer_capacity IS NOT NULL AND v_required_capacity > 0 THEN
         IF v_offer_capacity >= v_required_capacity THEN
             v_capacity_score := 100 * (1 - EXP(-2.0 * v_offer_capacity::NUMERIC / v_required_capacity::NUMERIC));
@@ -1110,7 +1115,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- Pomocna funkcija za brzo dobijanje samo sumarnih troskova
+-- Pomocna funkcija za brzo dobijanje samo sumiranih troskova
 CREATE OR REPLACE FUNCTION get_travel_cost_summary(
     p_season_id INTEGER DEFAULT NULL
 ) RETURNS travel_cost_summary AS $$

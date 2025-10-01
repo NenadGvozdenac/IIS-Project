@@ -431,16 +431,16 @@ INSERT INTO agency (name, email, type) VALUES
 
 -- Clanovi strucnog staba (10 unosa)
 INSERT INTO management (member_name, member_surname, member_role) VALUES
-('Marko', 'Petrović', 'coach'),
-('Ivan', 'Jovanović', 'assistant coach'),
-('Nemanja', 'Ilić', 'doctor'),
+('Marko', 'Petrovic', 'coach'),
+('Ivan', 'Jovanovic', 'assistant coach'),
+('Nemanja', 'Ilic', 'doctor'),
 ('Milan', 'Stojanov', 'therapist'),
-('Nikola', 'Kovačević', 'other'),
-('Aleksandar', 'Milinković', 'assistant coach'),
-('Stefan', 'Đorđević', 'therapist'),
-('Bogdan', 'Radonjić', 'doctor'),
-('Uroš', 'Lukić', 'coach'),
-('Lazar', 'Mihajlović', 'other');
+('Nikola', 'Kovacevic', 'other'),
+('Aleksandar', 'Milinkovic', 'assistant coach'),
+('Stefan', 'Djordjevic', 'therapist'),
+('Bogdan', 'Radonjic', 'doctor'),
+('Uros', 'Lukic', 'coach'),
+('Lazar', 'Mihajlovic', 'other');
 
 -- =====================================================
 -- PRIMER KORIŠĆENJA DINAMIČKIH CENA:
@@ -462,3 +462,289 @@ INSERT INTO management (member_name, member_surname, member_role) VALUES
 -- - Min: 2000, Max: 6000 dinara
 -- SELECT calculate_ticket_price(3, 1);
 -- =====================================================
+
+-- ZA TESTIRANJE INDEKSA SANJA RADIC
+-- INSERT INTO request (state, city, hall, budget, id_match, type) VALUES 
+--     ('Serbia', 'Belgrade', 'Stark Arena', 50000, 1, 'accommodation'),
+--     ('Serbia', 'Belgrade', 'Stark Arena', 30000, 1, 'transportation');
+
+-- INSERT INTO request (state, city, hall, budget, id_match, type) VALUES 
+--     ('Serbia', 'Belgrade', 'Stark Arena', 45000, 2, 'accommodation'),
+--     ('Serbia', 'Belgrade', 'Stark Arena', 25000, 2, 'transportation');
+
+-- INSERT INTO request (state, city, hall, budget, id_match, type) VALUES 
+--     ('Serbia', 'Belgrade', 'Stark Arena', 40000, 3, 'accommodation'),
+--     ('Serbia', 'Belgrade', 'Stark Arena', 20000, 3, 'transportation');
+
+-- INSERT INTO sent_request (id_agency, id_request)
+-- SELECT a.id_agency, r.id_request
+-- FROM agency a
+-- CROSS JOIN request r
+-- WHERE a.type = 'accommodation' AND r.type = 'accommodation';
+
+-- INSERT INTO sent_request (id_agency, id_request)
+-- SELECT a.id_agency, r.id_request
+-- FROM agency a
+-- CROSS JOIN request r
+-- WHERE a.type = 'transportation' AND r.type = 'transportation';
+
+-- INSERT INTO accommodation_request (id_request, number_of_guests, number_of_rooms, check_in_date, check_out_date, accommodation_type)
+-- SELECT id_request, 25, 15, '2025-09-04', '2025-09-06', 'hotel'
+-- FROM request WHERE id_match = 1 AND type = 'accommodation';
+
+-- INSERT INTO accommodation_request (id_request, number_of_guests, number_of_rooms, check_in_date, check_out_date, accommodation_type)
+-- SELECT id_request, 25, 15, '2025-09-14', '2025-09-16', 'hotel'
+-- FROM request WHERE id_match = 2 AND type = 'accommodation';
+
+-- INSERT INTO accommodation_request (id_request, number_of_guests, number_of_rooms, check_in_date, check_out_date, accommodation_type)
+-- SELECT id_request, 25, 15, '2025-09-24', '2025-09-26', 'hotel'
+-- FROM request WHERE id_match = 3 AND type = 'accommodation';
+
+-- INSERT INTO transportation_request (id_request, number_of_passengers, start_date, end_date, vehicle_type)
+-- SELECT id_request, 25, '2025-09-04', '2025-09-06', 'autobus'
+-- FROM request WHERE id_match = 1 AND type = 'transportation';
+
+-- INSERT INTO transportation_request (id_request, number_of_passengers, start_date, end_date, vehicle_type)
+-- SELECT id_request, 25, '2025-09-14', '2025-09-16', 'autobus'
+-- FROM request WHERE id_match = 2 AND type = 'transportation';
+
+-- INSERT INTO transportation_request (id_request, number_of_passengers, start_date, end_date, vehicle_type)
+-- SELECT id_request, 25, '2025-09-24', '2025-09-26', 'autobus'
+-- FROM request WHERE id_match = 3 AND type = 'transportation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n),
+--     35000 + (RANDOM() * 25000)::INTEGER, 
+--     NULL,
+--     1,
+--     a.id_agency,
+--     1,
+--     CASE WHEN a.id_agency = 1 AND gs.n = 1 THEN TRUE ELSE FALSE END, 
+--     'accommodation',
+--     (RANDOM() * 5)::NUMERIC(5,2) 
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n) 
+-- WHERE a.type = 'accommodation';
+
+-- INSERT INTO accommodation_offer (id_offer, name, capacity, accommodation_type, id_agency, id_request, double_room, triple_room, quadruple_room, breakfast, fitness_center, pool, wifi, spa)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' - Offer ' || o.id_offer,
+--     25 + (RANDOM() * 15)::INTEGER,
+--     'hotel',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.4,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.5,
+--     RANDOM() < 0.95,
+--     RANDOM() < 0.4
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 1 AND o.type = 'accommodation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n) + 80,
+--     15000 + (RANDOM() * 20000)::INTEGER,
+--     NULL,
+--     1,
+--     a.id_agency,
+--     2,
+--     CASE WHEN a.id_agency = 11 AND gs.n = 1 THEN TRUE ELSE FALSE END,
+--     'transportation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n) 
+-- WHERE a.type = 'transportation';
+
+-- INSERT INTO transportation_offer (id_offer, company_name, capacity, type, id_agency, id_request, equipment_space, air_conditioning, tv, wifi, restroom)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' Transport',
+--     30 + (RANDOM() * 20)::INTEGER,
+--     'autobus',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.8
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 1 AND o.type = 'transportation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n) + 160,
+--     32000 + (RANDOM() * 23000)::INTEGER,
+--     NULL,
+--     2,
+--     a.id_agency,
+--     3,
+--     CASE WHEN a.id_agency = 2 AND gs.n = 1 THEN TRUE ELSE FALSE END,
+--     'accommodation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n)
+-- WHERE a.type = 'accommodation';
+
+-- INSERT INTO accommodation_offer (id_offer, name, capacity, accommodation_type, id_agency, id_request, double_room, triple_room, quadruple_room, breakfast, fitness_center, pool, wifi, spa)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' - Offer ' || o.id_offer,
+--     25 + (RANDOM() * 15)::INTEGER,
+--     'hotel',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.4,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.5,
+--     RANDOM() < 0.95,
+--     RANDOM() < 0.4
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 2 AND o.type = 'accommodation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n) + 240,
+--     14000 + (RANDOM() * 18000)::INTEGER,
+--     NULL,
+--     2,
+--     a.id_agency,
+--     4,
+--     CASE WHEN a.id_agency = 12 AND gs.n = 1 THEN TRUE ELSE FALSE END,
+--     'transportation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n)
+-- WHERE a.type = 'transportation';
+
+-- INSERT INTO transportation_offer (id_offer, company_name, capacity, type, id_agency, id_request, equipment_space, air_conditioning, tv, wifi, restroom)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' Transport',
+--     30 + (RANDOM() * 20)::INTEGER,
+--     'autobus',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.8
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 2 AND o.type = 'transportation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n) + 320,
+--     30000 + (RANDOM() * 20000)::INTEGER,
+--     NULL,
+--     3,
+--     a.id_agency,
+--     5,
+--     CASE WHEN a.id_agency = 3 AND gs.n = 1 THEN TRUE ELSE FALSE END,
+--     'accommodation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n)
+-- WHERE a.type = 'accommodation';
+
+-- INSERT INTO accommodation_offer (id_offer, name, capacity, accommodation_type, id_agency, id_request, double_room, triple_room, quadruple_room, breakfast, fitness_center, pool, wifi, spa)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' - Offer ' || o.id_offer,
+--     25 + (RANDOM() * 15)::INTEGER,
+--     'hotel',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.4,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.5,
+--     RANDOM() < 0.95,
+--     RANDOM() < 0.4
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 3 AND o.type = 'accommodation';
+
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     ROW_NUMBER() OVER (ORDER BY a.id_agency, gs.n) + 400,
+--     13000 + (RANDOM() * 17000)::INTEGER,
+--     NULL,
+--     3,
+--     a.id_agency,
+--     6,
+--     CASE WHEN a.id_agency = 13 AND gs.n = 1 THEN TRUE ELSE FALSE END,
+--     'transportation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM agency a
+-- CROSS JOIN generate_series(1, 8) gs(n)
+-- WHERE a.type = 'transportation';
+
+-- INSERT INTO transportation_offer (id_offer, company_name, capacity, type, id_agency, id_request, equipment_space, air_conditioning, tv, wifi, restroom)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' Transport',
+--     30 + (RANDOM() * 20)::INTEGER,
+--     'autobus',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.8
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_match = 3 AND o.type = 'transportation';
+-- INSERT INTO offer (id_offer, price, user_id_user, id_match, id_agency, id_request, chosen, type, score)
+-- SELECT 
+--     480 + ROW_NUMBER() OVER (ORDER BY RANDOM()),
+--     20000 + (RANDOM() * 30000)::INTEGER,
+--     NULL,
+--     ((ROW_NUMBER() OVER (ORDER BY RANDOM()) - 1) % 3) + 1,
+--     ((ROW_NUMBER() OVER (ORDER BY RANDOM()) - 1) % 10) + 1, 
+--     CASE 
+--         WHEN ((ROW_NUMBER() OVER (ORDER BY RANDOM()) - 1) % 3) + 1 = 1 THEN 1
+--         WHEN ((ROW_NUMBER() OVER (ORDER BY RANDOM()) - 1) % 3) + 1 = 2 THEN 3
+--         ELSE 5
+--     END,
+--     FALSE, 
+--     'accommodation',
+--     (RANDOM() * 5)::NUMERIC(5,2)
+-- FROM generate_series(1, 20);
+
+-- INSERT INTO accommodation_offer (id_offer, name, capacity, accommodation_type, id_agency, id_request, double_room, triple_room, quadruple_room, breakfast, fitness_center, pool, wifi, spa)
+-- SELECT 
+--     o.id_offer,
+--     ag.name || ' - Additional Offer ' || o.id_offer,
+--     25 + (RANDOM() * 15)::INTEGER,
+--     'hotel',
+--     o.id_agency,
+--     o.id_request,
+--     RANDOM() < 0.8,
+--     RANDOM() < 0.6,
+--     RANDOM() < 0.4,
+--     RANDOM() < 0.9,
+--     RANDOM() < 0.7,
+--     RANDOM() < 0.5,
+--     RANDOM() < 0.95,
+--     RANDOM() < 0.4
+-- FROM offer o
+-- JOIN agency ag ON o.id_agency = ag.id_agency
+-- WHERE o.id_offer >= 480 AND o.type = 'accommodation';

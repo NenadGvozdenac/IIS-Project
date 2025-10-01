@@ -395,7 +395,6 @@ export default {
         const response = await axios.post(`https://localhost:5007/api/requests/accommodation/${this.userId}`, requestData)
         console.log('Response:', response.data.isSuccess); // Debug log
         if (response.data.isSuccess) {
-          alert('Accommodation request created successfully')
           this.closeAgencyModal()
           this.resetForm()
           this.$router.push({
