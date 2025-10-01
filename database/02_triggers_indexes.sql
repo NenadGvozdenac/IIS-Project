@@ -640,61 +640,20 @@ SELECT * FROM generate_match_summary_report();
 -- KRAJ KOMPLEKSNIH TIPOVA, KURSORA I IZVESTAJA NENAD GVOZDENAC
 
 -- Indexes for event tables (ensure present): speed up queries by match id, team, and player
--- This block is idempotent: it checks for existing index names before creating
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_match'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_personal_event_id_match ON personal_event (id_match)';
-    END IF;
+CREATE INDEX IF NOT EXISTS idx_personal_event_id_match ON personal_event (id_match);
+CREATE INDEX IF NOT EXISTS idx_team_event_id_match ON team_event (id_match);
+CREATE INDEX IF NOT EXISTS idx_general_event_id_match ON general_event (id_match);
+CREATE INDEX IF NOT EXISTS idx_personal_event_id_player ON personal_event (id_player);
+--TESTIRANJE INDEKSA
+--BEZ INDEKSA
+    --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2; SET enable_indexscan = on; SET enable_bitmapscan = on;"
 
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_team_event_id_match'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_team_event_id_match ON team_event (id_match)';
-    END IF;
+--SA INDEKSOM
+    --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2;"
 
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_general_event_id_match'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_general_event_id_match ON general_event (id_match)';
-    END IF;
-
-    -- Player and team statistics indexes for personal_event
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_player'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_personal_event_id_player ON personal_event (id_player)';
-    END IF;
-    --TESTIRANJE INDEKSA
-    --BEZ INDEKSA
-        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2; SET enable_indexscan = on; SET enable_bitmapscan = on;"
-
-    --SA INDEKSOM
-        --docker exec -i iis-project-postgres_db-1 psql -U postgres -d sportsdb -c "EXPLAIN ANALYZE SELECT * FROM personal_event WHERE id_player = 2;"
-
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_id_team'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_personal_event_id_team ON personal_event (id_team)';
-    END IF;
-
-    -- Optional: player statistics across all matches for a team
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_team_player'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_personal_event_team_player ON personal_event (id_team, id_player)';
-    END IF;
-
-    -- Performance optimization: index on event type for quick filtering by action type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c WHERE c.relkind = 'i' AND c.relname = 'idx_personal_event_type'
-    ) THEN
-        EXECUTE 'CREATE INDEX idx_personal_event_type ON personal_event (type)';
-    END IF;
-END
-$$;
+CREATE INDEX IF NOT EXISTS idx_personal_event_id_team ON personal_event (id_team);
+CREATE INDEX IF NOT EXISTS idx_personal_event_team_player ON personal_event (id_team, id_player);
+CREATE INDEX IF NOT EXISTS idx_personal_event_type ON personal_event (type);
 
 -- SANJA RADIC - INDEXI 
 -- Dobavljanje podataka o zahtevima i ponudama stalno iziskuju pretragu po type i id_match
@@ -1432,6 +1391,35 @@ BEGIN
             WHEN '+ft' THEN points_to_add := -1;
             ELSE points_to_add := 0;
         END CASE;
+
+    ELSIF TG_OP = 'UPDATE' THEN
+        target_match_id := NEW.id_match;
+        target_team_id := NEW.id_team;
+
+        CASE OLD.type
+            WHEN '+2p' THEN 
+                CASE NEW.type
+                    WHEN '+2p' THEN points_to_add := 0;
+                    WHEN '+3p' THEN points_to_add := 1;
+                    WHEN '+ft' THEN points_to_add := -1;
+                    ELSE points_to_add := 0;
+                END CASE;
+            WHEN '+3p' THEN
+                CASE NEW.type
+                    WHEN '+2p' THEN points_to_add := -1;
+                    WHEN '+3p' THEN points_to_add := 0;
+                    WHEN '+ft' THEN points_to_add := -2;
+                    ELSE points_to_add := 0;
+                END CASE;
+            WHEN '+ft' THEN
+                CASE NEW.type
+                    WHEN '+2p' THEN points_to_add := 1;
+                    WHEN '+3p' THEN points_to_add := 2;
+                    WHEN '+ft' THEN points_to_add := 0;
+                    ELSE points_to_add := 0;
+                END CASE;
+            ELSE points_to_add := 0;
+        END CASE;
     END IF;
     
     IF points_to_add != 0 THEN
@@ -1461,7 +1449,7 @@ $$ LANGUAGE plpgsql;
 
 -- Kreiranje triggera koji poziva funkciju kada se upisuje ili briše personal event
 CREATE TRIGGER trigger_update_match_score_on_personal_event
-    AFTER INSERT OR DELETE ON personal_event
+    AFTER INSERT OR DELETE OR UPDATE ON personal_event
     FOR EACH ROW
     EXECUTE FUNCTION update_match_score_on_personal_event();
 
@@ -1667,7 +1655,7 @@ BEGIN
         v_grade := 'D';
     END IF;
     
-    -- Računanje plus/minus (aproksimacija - razlika poena dok je igrao)
+    -- Računanje plus/minus
     SELECT 
         COALESCE(mt.our_points, 0) - COALESCE(mt.opponent_points, 0)
     INTO v_team_points_when_playing
@@ -1728,7 +1716,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- FUNKCIJA ZA DOBIJANJE STATISTIKA SVIH IGRAČA NA UTAKMICI
+-- FUNKCIJA ZA DOBIJANJE STATISTIKA SVIH IGRAČA NA UTAKMICI -> PREVIOUS MATCH DETAIL, u MatchControlleru za player-statistics
 CREATE OR REPLACE FUNCTION get_match_player_statistics(
     p_match_id INTEGER
 ) RETURNS SETOF player_efficiency_stats AS $$
@@ -2016,17 +2004,14 @@ BEGIN
     WHERE m.id_match = p_match_id
     LIMIT 1;
     
-    -- Naš tim je uvek tim sa ID = 1 (KK Partizan), ostali su protivnici
-    SELECT 
-        CASE WHEN EXISTS(SELECT 1 FROM team_member_match WHERE id_match = p_match_id AND id_team = 1) 
-             THEN 1 
-             ELSE (SELECT MIN(id_team) FROM team_member_match WHERE id_match = p_match_id) 
-        END as our_team,
-        CASE WHEN EXISTS(SELECT 1 FROM team_member_match WHERE id_match = p_match_id AND id_team = 1) 
-             THEN (SELECT MIN(id_team) FROM team_member_match WHERE id_match = p_match_id AND id_team != 1)
-             ELSE (SELECT MAX(id_team) FROM team_member_match WHERE id_match = p_match_id) 
-        END as opponent_team
-    INTO v_our_team_id, v_opponent_team_id;
+    -- Naš tim je uvek ID = 1 (KK Partizan)
+    v_our_team_id := 1;
+    
+    -- Protivnički tim je bilo koji drugi tim na utakmici
+    SELECT id_team INTO v_opponent_team_id
+    FROM team_member_match 
+    WHERE id_match = p_match_id AND id_team != 1
+    LIMIT 1;
     
     -- Računanje statistika za oba tima
     SELECT * INTO v_our_stats FROM calculate_team_match_stats(v_our_team_id, p_match_id);

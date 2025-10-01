@@ -749,3 +749,633 @@ INSERT INTO session_metrics (value, id_session, id_metrics) VALUES
 
 -- Player 22 training (session 19)
 ('12', 19, 1), ('4', 19, 2), ('10', 19, 3), ('40.0', 19, 4), ('7.6', 19, 21), ('8.4', 19, 25);
+
+
+
+
+
+
+-- Insert 5 new teams
+INSERT INTO team (name, state, city, hall, founded_date, coach, playing_style, key_strengths, key_weaknesses) VALUES 
+    ('KK Igokea', 'Bosnia and Herzegovina', 'Aleksandrovac', 'Igokea Arena', '1947-01-01', 'Dragan Bajic', 'Balanced', 'Team chemistry, disciplined play', 'Limited depth, size issues'),
+    ('KK Cedevita Olimpija', 'Slovenia', 'Ljubljana', 'Stozice Arena', '2019-07-01', 'Jurica Golemac', 'Fast-paced', 'Speed, three-point shooting', 'Defensive consistency'),
+    ('KK Mornar', 'Montenegro', 'Bar', 'Topolica Sports Center', '1979-01-01', 'Marko Jankovic', 'Physical', 'Rebounding, inside game', 'Perimeter shooting'),
+    ('KK Mega Soccerbet', 'Serbia', 'Belgrade', 'Mega Factory Hall', '2006-01-01', 'Vladimir Jovanovic', 'Developmental', 'Young talent, athleticism', 'Experience, consistency'),
+    ('KK Spartak', 'Serbia', 'Subotica', 'Spartak Hall', '1945-01-01', 'Aleksandar Nikolic', 'Traditional', 'Fundamentals, team play', 'Modern game adaptation');
+
+-- Insert 50 new players (10 per team)
+-- Players for KK Igokea
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+    ('Marko', 'Petrovic', '1995-03-15', 85, 190, 1, 1), -- Point Guard
+    ('Nikola', 'Jovanovic', '1994-07-22', 90, 195, 1, 2), -- Shooting Guard
+    ('Stefan', 'Milic', '1996-11-08', 95, 200, 1, 3), -- Small Forward
+    ('Aleksandar', 'Stojanovic', '1993-05-12', 100, 205, 1, 4), -- Power Forward
+    ('Milan', 'Radovic', '1992-09-30', 105, 210, 1, 5), -- Center
+    ('Luka', 'Nikolic', '1997-01-18', 88, 188, 1, 1), -- Point Guard
+    ('Milos', 'Dimitrijevic', '1995-12-03', 92, 193, 1, 2), -- Shooting Guard
+    ('Nemanja', 'Stankovic', '1994-04-25', 97, 198, 1, 3), -- Small Forward
+    ('Vladimir', 'Popovic', '1993-08-14', 102, 207, 1, 4), -- Power Forward
+    ('Dusan', 'Matic', '1991-02-07', 108, 212, 1, 5); -- Center
+
+-- Players for KK Cedevita Olimpija
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+    ('Zoran', 'Dragic', '1994-06-10', 87, 185, 1, 1), -- Point Guard
+    ('Bojan', 'Bogdanovic', '1993-03-28', 93, 196, 1, 2), -- Shooting Guard
+    ('Goran', 'Novakovic', '1995-09-17', 96, 201, 1, 3), -- Small Forward
+    ('Predrag', 'Milosevic', '1992-12-05', 101, 206, 1, 4), -- Power Forward
+    ('Vlade', 'Marjanovic', '1990-11-21', 110, 215, 1, 5), -- Center
+    ('Darko', 'Radic', '1996-04-09', 89, 190, 1, 1), -- Point Guard
+    ('Igor', 'Stamenkovic', '1994-08-16', 94, 194, 1, 2), -- Shooting Guard
+    ('Miodrag', 'Andric', '1995-01-12', 98, 203, 1, 3), -- Small Forward
+    ('Dejan', 'Savic', '1993-07-30', 103, 208, 1, 4), -- Power Forward
+    ('Branko', 'Lazic', '1991-10-23', 107, 211, 1, 5); -- Center
+
+-- Players for KK Mornar
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+    ('Petar', 'Vukcevic', '1995-05-20', 86, 187, 1, 1), -- Point Guard
+    ('Marko', 'Simonovic', '1994-02-14', 91, 192, 1, 2), -- Shooting Guard
+    ('Veljko', 'Petkovic', '1996-08-07', 94, 199, 1, 3), -- Small Forward
+    ('Danilo', 'Andjusic', '1993-11-19', 99, 204, 1, 4), -- Power Forward
+    ('Boban', 'Marjanovic', '1988-08-15', 125, 220, 1, 5), -- Center
+    ('Filip', 'Petrusev', '1997-12-27', 88, 189, 1, 1), -- Point Guard
+    ('Aleksa', 'Avramovic', '1995-06-03', 93, 195, 1, 2), -- Shooting Guard
+    ('Ognjen', 'Dobric', '1994-10-11', 97, 202, 1, 3), -- Small Forward
+    ('Uros', 'Plavsic', '1992-04-26', 104, 209, 1, 4), -- Power Forward
+    ('Nikola', 'Milutinov', '1989-01-08', 112, 213, 1, 5); -- Center
+
+-- Players for KK Mega Soccerbet
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+    ('Luka', 'Doncic', '1999-02-28', 84, 186, 1, 1), -- Point Guard
+    ('Bogdan', 'Bogdanovic', '1998-08-18', 89, 191, 1, 2), -- Shooting Guard
+    ('Nikola', 'Jokic', '1999-05-15', 92, 197, 1, 3), -- Small Forward
+    ('Marko', 'Gudurić', '1997-11-30', 96, 203, 1, 4), -- Power Forward
+    ('Alperen', 'Sengun', '2000-07-25', 100, 208, 1, 5), -- Center
+    ('Vasilije', 'Micic', '1998-01-13', 85, 183, 1, 1), -- Point Guard
+    ('Aleksej', 'Pokusevski', '2001-12-26', 87, 188, 1, 2), -- Shooting Guard
+    ('Stefan', 'Jovic', '1999-09-04', 91, 194, 1, 3), -- Small Forward
+    ('Nikola', 'Kalinic', '1997-03-22', 95, 200, 1, 4), -- Power Forward
+    ('Marko', 'Simonovic', '2000-06-17', 98, 205, 1, 5); -- Center
+
+-- Players for KK Spartak
+INSERT INTO player (name, surname, birthday, weight, height, id_nationality, id_position) VALUES
+    ('Milos', 'Teodosic', '1987-03-19', 86, 185, 1, 1), -- Point Guard
+    ('Nemanja', 'Bjelica', '1988-05-09', 90, 193, 1, 2), -- Shooting Guard
+    ('Boban', 'Marjanovic', '1988-08-15', 94, 198, 1, 3), -- Small Forward
+    ('Miroslav', 'Raduljica', '1988-01-05', 99, 205, 1, 4), -- Power Forward
+    ('Nenad', 'Krstic', '1983-07-25', 107, 213, 1, 5), -- Center
+    ('Stefan', 'Markovic', '1994-10-11', 88, 190, 1, 1), -- Point Guard
+    ('Marko', 'Keselj', '1995-04-28', 92, 196, 1, 2), -- Shooting Guard
+    ('Danilo', 'Ostojic', '1996-07-15', 96, 201, 1, 3), -- Small Forward
+    ('Milenko', 'Tepic', '1993-12-02', 101, 207, 1, 4), -- Power Forward
+    ('Dusan', 'Ristic', '1991-08-20', 105, 210, 1, 5); -- Center
+
+-- Insert team_member relationships for all new players
+-- Using specific values instead of subqueries for better compatibility
+
+-- KK Igokea team_members
+INSERT INTO team_member (jersey_number, status, id_player, id_team) 
+SELECT 1, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Marko' AND p.surname = 'Petrovic' AND p.birthday = '1995-03-15' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 2, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nikola' AND p.surname = 'Jovanovic' AND p.birthday = '1994-07-22' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 3, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Stefan' AND p.surname = 'Milic' AND p.birthday = '1996-11-08' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 4, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Aleksandar' AND p.surname = 'Stojanovic' AND p.birthday = '1993-05-12' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 5, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Milan' AND p.surname = 'Radovic' AND p.birthday = '1992-09-30' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 6, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Luka' AND p.surname = 'Nikolic' AND p.birthday = '1997-01-18' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 7, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Milos' AND p.surname = 'Dimitrijevic' AND p.birthday = '1995-12-03' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 8, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nemanja' AND p.surname = 'Stankovic' AND p.birthday = '1994-04-25' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 9, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Vladimir' AND p.surname = 'Popovic' AND p.birthday = '1993-08-14' AND t.name = 'KK Igokea'
+UNION ALL
+SELECT 10, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Dusan' AND p.surname = 'Matic' AND p.birthday = '1991-02-07' AND t.name = 'KK Igokea';
+
+-- KK Cedevita Olimpija team_members
+INSERT INTO team_member (jersey_number, status, id_player, id_team) 
+SELECT 1, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Zoran' AND p.surname = 'Dragic' AND p.birthday = '1994-06-10' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 2, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Bojan' AND p.surname = 'Bogdanovic' AND p.birthday = '1993-03-28' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 3, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Goran' AND p.surname = 'Novakovic' AND p.birthday = '1995-09-17' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 4, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Predrag' AND p.surname = 'Milosevic' AND p.birthday = '1992-12-05' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 5, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Vlade' AND p.surname = 'Marjanovic' AND p.birthday = '1990-11-21' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 6, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Darko' AND p.surname = 'Radic' AND p.birthday = '1996-04-09' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 7, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Igor' AND p.surname = 'Stamenkovic' AND p.birthday = '1994-08-16' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 8, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Miodrag' AND p.surname = 'Andric' AND p.birthday = '1995-01-12' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 9, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Dejan' AND p.surname = 'Savic' AND p.birthday = '1993-07-30' AND t.name = 'KK Cedevita Olimpija'
+UNION ALL
+SELECT 10, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Branko' AND p.surname = 'Lazic' AND p.birthday = '1991-10-23' AND t.name = 'KK Cedevita Olimpija';
+
+-- KK Mornar team_members
+INSERT INTO team_member (jersey_number, status, id_player, id_team) 
+SELECT 1, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Petar' AND p.surname = 'Vukcevic' AND p.birthday = '1995-05-20' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 2, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Marko' AND p.surname = 'Simonovic' AND p.birthday = '1994-02-14' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 3, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Veljko' AND p.surname = 'Petkovic' AND p.birthday = '1996-08-07' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 4, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Danilo' AND p.surname = 'Andjusic' AND p.birthday = '1993-11-19' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 5, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Boban' AND p.surname = 'Marjanovic' AND p.birthday = '1988-08-15' AND p.weight = 125 AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 6, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Filip' AND p.surname = 'Petrusev' AND p.birthday = '1997-12-27' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 7, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Aleksa' AND p.surname = 'Avramovic' AND p.birthday = '1995-06-03' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 8, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Ognjen' AND p.surname = 'Dobric' AND p.birthday = '1994-10-11' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 9, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Uros' AND p.surname = 'Plavsic' AND p.birthday = '1992-04-26' AND t.name = 'KK Mornar'
+UNION ALL
+SELECT 10, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nikola' AND p.surname = 'Milutinov' AND p.birthday = '1989-01-08' AND t.name = 'KK Mornar';
+
+-- KK Mega Soccerbet team_members
+INSERT INTO team_member (jersey_number, status, id_player, id_team) 
+SELECT 1, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Luka' AND p.surname = 'Doncic' AND p.birthday = '1999-02-28' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 2, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Bogdan' AND p.surname = 'Bogdanovic' AND p.birthday = '1998-08-18' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 3, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nikola' AND p.surname = 'Jokic' AND p.birthday = '1999-05-15' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 4, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Marko' AND p.surname = 'Gudurić' AND p.birthday = '1997-11-30' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 5, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Alperen' AND p.surname = 'Sengun' AND p.birthday = '2000-07-25' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 6, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Vasilije' AND p.surname = 'Micic' AND p.birthday = '1998-01-13' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 7, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Aleksej' AND p.surname = 'Pokusevski' AND p.birthday = '2001-12-26' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 8, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Stefan' AND p.surname = 'Jovic' AND p.birthday = '1999-09-04' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 9, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nikola' AND p.surname = 'Kalinic' AND p.birthday = '1997-03-22' AND t.name = 'KK Mega Soccerbet'
+UNION ALL
+SELECT 10, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Marko' AND p.surname = 'Simonovic' AND p.birthday = '2000-06-17' AND t.name = 'KK Mega Soccerbet';
+
+-- KK Spartak team_members
+INSERT INTO team_member (jersey_number, status, id_player, id_team) 
+SELECT 1, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Milos' AND p.surname = 'Teodosic' AND p.birthday = '1987-03-19' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 2, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nemanja' AND p.surname = 'Bjelica' AND p.birthday = '1988-05-09' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 3, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Boban' AND p.surname = 'Marjanovic' AND p.birthday = '1988-08-15' AND p.weight = 94 AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 4, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Miroslav' AND p.surname = 'Raduljica' AND p.birthday = '1988-01-05' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 5, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Nenad' AND p.surname = 'Krstic' AND p.birthday = '1983-07-25' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 6, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Stefan' AND p.surname = 'Markovic' AND p.birthday = '1994-10-11' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 7, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Marko' AND p.surname = 'Keselj' AND p.birthday = '1995-04-28' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 8, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Danilo' AND p.surname = 'Ostojic' AND p.birthday = '1996-07-15' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 9, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Milenko' AND p.surname = 'Tepic' AND p.birthday = '1993-12-02' AND t.name = 'KK Spartak'
+UNION ALL
+SELECT 10, 'active', p.id_player, t.id_team FROM player p, team t WHERE p.name = 'Dusan' AND p.surname = 'Ristic' AND p.birthday = '1991-08-20' AND t.name = 'KK Spartak';
+
+-- Insert 5 new matches against the new teams we created
+-- Assuming these will be away matches since they are against new teams
+INSERT INTO match (name, scheduled_at, type, state, city, hall, is_in_our_hall, transportation_required, accommodation_required, tickets_for_sale, tickets_went_on_sale, id_competition, id_season, id_team) VALUES 
+    ('Partizan vs Igokea', '2025-11-15 19:00:00+01', 'away', 'Bosnia and Herzegovina', 'Aleksandrovac', 'Igokea Arena', FALSE, TRUE, TRUE, FALSE, NULL, 1, 1, (SELECT id_team FROM team WHERE name = 'KK Igokea')),
+    ('Partizan vs Cedevita Olimpija', '2025-11-22 20:00:00+01', 'away', 'Slovenia', 'Ljubljana', 'Stozice Arena', FALSE, TRUE, TRUE, FALSE, NULL, 1, 1, (SELECT id_team FROM team WHERE name = 'KK Cedevita Olimpija')),
+    ('Partizan vs Mornar', '2025-11-29 18:30:00+01', 'away', 'Montenegro', 'Bar', 'Topolica Sports Center', FALSE, TRUE, TRUE, FALSE, NULL, 1, 1, (SELECT id_team FROM team WHERE name = 'KK Mornar')),
+    ('Partizan vs Mega Soccerbet', '2025-12-05 19:30:00+01', 'away', 'Serbia', 'Belgrade', 'Mega Factory Hall', FALSE, TRUE, FALSE, FALSE, NULL, 1, 1, (SELECT id_team FROM team WHERE name = 'KK Mega Soccerbet')),
+    ('Partizan vs Spartak', '2025-12-12 20:00:00+01', 'away', 'Serbia', 'Subotica', 'Spartak Hall', FALSE, TRUE, FALSE, FALSE, NULL, 1, 1, (SELECT id_team FROM team WHERE name = 'KK Spartak'));
+
+-- Update match_tracking records only for the newly created matches
+-- Set them as finished with 0-0 score for testing purposes
+UPDATE match_tracking 
+SET 
+    tracking_status = 'finished',
+    period_status = 'finished',
+    current_period = 'end',
+    start_time = NOW() - INTERVAL '2 hours', -- Started 2 hours ago
+    end_time = NOW(), -- Ended now
+    last_update_time = NOW(),
+    our_points = 0,
+    opponent_points = 0,
+    elapsed_period_time = 2400000, -- 40 minutes total (4 periods x 10 minutes x 60 seconds x 1000 ms)
+    total_pause_time_in_period = 0
+WHERE id_match IN (
+    SELECT m.id_match 
+    FROM match m 
+    INNER JOIN team t ON m.id_team = t.id_team 
+    WHERE t.name IN ('KK Igokea', 'KK Cedevita Olimpija', 'KK Mornar', 'KK Mega Soccerbet', 'KK Spartak')
+    AND m.name LIKE 'Partizan vs %'
+);
+
+-- Insert team_member_match records for all new matches
+-- Each match needs our players (id 1-10) + opponent team players
+
+-- Match 1: Partizan vs Igokea
+-- Our players (Partizan players with id 1-10)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END, -- First 5 players in starting lineup
+    TRUE, -- All players are in game
+    1, -- Partizan team id = 1
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Igokea')
+FROM player p 
+WHERE p.id_player BETWEEN 1 AND 10;
+
+-- Opponent players (Igokea players)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END, -- First 5 players in starting lineup
+    TRUE, -- All players are in game
+    t.id_team,
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Igokea')
+FROM player p 
+INNER JOIN team_member tm ON p.id_player = tm.id_player
+INNER JOIN team t ON tm.id_team = t.id_team
+WHERE t.name = 'KK Igokea';
+
+-- Match 2: Partizan vs Cedevita Olimpija
+-- Our players (Partizan players with id 1-10)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    1, -- Partizan team id = 1
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Cedevita Olimpija')
+FROM player p 
+WHERE p.id_player BETWEEN 1 AND 10;
+
+-- Opponent players (Cedevita Olimpija players)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    t.id_team,
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Cedevita Olimpija')
+FROM player p 
+INNER JOIN team_member tm ON p.id_player = tm.id_player
+INNER JOIN team t ON tm.id_team = t.id_team
+WHERE t.name = 'KK Cedevita Olimpija';
+
+-- Match 3: Partizan vs Mornar
+-- Our players (Partizan players with id 1-10)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    1, -- Partizan team id = 1
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Mornar')
+FROM player p 
+WHERE p.id_player BETWEEN 1 AND 10;
+
+-- Opponent players (Mornar players)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    t.id_team,
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Mornar')
+FROM player p 
+INNER JOIN team_member tm ON p.id_player = tm.id_player
+INNER JOIN team t ON tm.id_team = t.id_team
+WHERE t.name = 'KK Mornar';
+
+-- Match 4: Partizan vs Mega Soccerbet
+-- Our players (Partizan players with id 1-10)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    1, -- Partizan team id = 1
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Mega Soccerbet')
+FROM player p 
+WHERE p.id_player BETWEEN 1 AND 10;
+
+-- Opponent players (Mega Soccerbet players)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    t.id_team,
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Mega Soccerbet')
+FROM player p 
+INNER JOIN team_member tm ON p.id_player = tm.id_player
+INNER JOIN team t ON tm.id_team = t.id_team
+WHERE t.name = 'KK Mega Soccerbet';
+
+-- Match 5: Partizan vs Spartak
+-- Our players (Partizan players with id 1-10)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    1, -- Partizan team id = 1
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Spartak')
+FROM player p 
+WHERE p.id_player BETWEEN 1 AND 10;
+
+-- Opponent players (Spartak players)
+INSERT INTO team_member_match (starting_lineup, in_game, id_team, id_player, id_match)
+SELECT 
+    CASE WHEN ROW_NUMBER() OVER (ORDER BY p.id_player) <= 5 THEN TRUE ELSE FALSE END,
+    TRUE,
+    t.id_team,
+    p.id_player,
+    (SELECT id_match FROM match WHERE name = 'Partizan vs Spartak')
+FROM player p 
+INNER JOIN team_member tm ON p.id_player = tm.id_player
+INNER JOIN team t ON tm.id_team = t.id_team
+WHERE t.name = 'KK Spartak';
+
+-- Insert 200 personal events for each match (1000 total events)
+-- Match 1: Partizan vs Igokea
+DO $$ 
+DECLARE 
+    match_id INTEGER;
+    player_ids INTEGER[];
+    team_ids INTEGER[];
+    i INTEGER;
+    current_player_id INTEGER;
+    current_team_id INTEGER;
+    period_num INTEGER;
+    event_types TEXT[] := ARRAY['+2p', '+3p', '+ft', '2p', '3p', 'ft', 'assist', 'reb def', 'reb of', 'steal', 'block', 'foul', 'substitution in', 'substitution out', 'other'];
+    event_type TEXT;
+    base_time TIMESTAMP := '2025-11-15 19:00:00';
+BEGIN
+    -- Get match ID
+    SELECT id_match INTO match_id FROM match WHERE name = 'Partizan vs Igokea';
+    
+    -- Get all players and teams for this match
+    SELECT ARRAY_AGG(tmm.id_player), ARRAY_AGG(tmm.id_team) 
+    INTO player_ids, team_ids
+    FROM team_member_match tmm 
+    WHERE tmm.id_match = match_id;
+    
+    -- Insert 200 events
+    FOR i IN 1..200 LOOP
+        -- Calculate period (1-4, cycling every 50 events)
+        period_num := ((i - 1) / 50) + 1;
+        IF period_num > 4 THEN period_num := 4; END IF;
+        
+        -- Select player/team cyclically
+        current_player_id := player_ids[((i - 1) % array_length(player_ids, 1)) + 1];
+        current_team_id := team_ids[((i - 1) % array_length(team_ids, 1)) + 1];
+        
+        -- Select event type cyclically
+        event_type := event_types[((i - 1) % array_length(event_types, 1)) + 1];
+        
+        INSERT INTO personal_event (creation_time, notes, type, period, period_time, id_team, id_player, id_match)
+        VALUES (
+            base_time + INTERVAL '1 second' * (i * 30 + FLOOR(RANDOM() * 100)),
+            CASE 
+                WHEN event_type IN ('+2p', '+3p', '+ft') THEN 'Successful shot'
+                WHEN event_type IN ('2p', '3p', 'ft') THEN 'Missed shot'
+                WHEN event_type = 'assist' THEN 'Great pass'
+                WHEN event_type = 'foul' THEN 'Personal foul'
+                ELSE ''
+            END,
+            event_type,
+            period_num::VARCHAR(20),
+            (i * 30000) + FLOOR(RANDOM() * 100000)::INTEGER,
+            current_team_id,
+            current_player_id,
+            match_id
+        );
+    END LOOP;
+END $$;
+
+-- Match 2: Partizan vs Cedevita Olimpija
+DO $$ 
+DECLARE 
+    match_id INTEGER;
+    player_ids INTEGER[];
+    team_ids INTEGER[];
+    i INTEGER;
+    current_player_id INTEGER;
+    current_team_id INTEGER;
+    period_num INTEGER;
+    event_types TEXT[] := ARRAY['+2p', '+3p', '+ft', '2p', '3p', 'ft', 'assist', 'reb def', 'reb of', 'steal', 'block', 'foul', 'substitution in', 'substitution out', 'other'];
+    event_type TEXT;
+    base_time TIMESTAMP := '2025-11-22 20:00:00';
+BEGIN
+    -- Get match ID
+    SELECT id_match INTO match_id FROM match WHERE name = 'Partizan vs Cedevita Olimpija';
+    
+    -- Get all players and teams for this match
+    SELECT ARRAY_AGG(tmm.id_player), ARRAY_AGG(tmm.id_team) 
+    INTO player_ids, team_ids
+    FROM team_member_match tmm 
+    WHERE tmm.id_match = match_id;
+    
+    -- Insert 200 events
+    FOR i IN 1..200 LOOP
+        -- Calculate period (1-4, cycling every 50 events)
+        period_num := ((i - 1) / 50) + 1;
+        IF period_num > 4 THEN period_num := 4; END IF;
+        
+        -- Select player/team cyclically
+        current_player_id := player_ids[((i - 1) % array_length(player_ids, 1)) + 1];
+        current_team_id := team_ids[((i - 1) % array_length(team_ids, 1)) + 1];
+        
+        -- Select event type cyclically
+        event_type := event_types[((i - 1) % array_length(event_types, 1)) + 1];
+        
+        INSERT INTO personal_event (creation_time, notes, type, period, period_time, id_team, id_player, id_match)
+        VALUES (
+            base_time + INTERVAL '1 second' * (i * 30 + FLOOR(RANDOM() * 100)),
+            CASE 
+                WHEN event_type IN ('+2p', '+3p', '+ft') THEN 'Successful shot'
+                WHEN event_type IN ('2p', '3p', 'ft') THEN 'Missed shot'
+                WHEN event_type = 'assist' THEN 'Great pass'
+                WHEN event_type = 'foul' THEN 'Personal foul'
+                ELSE ''
+            END,
+            event_type,
+            period_num::VARCHAR(20),
+            (i * 30000) + FLOOR(RANDOM() * 100000)::INTEGER,
+            current_team_id,
+            current_player_id,
+            match_id
+        );
+    END LOOP;
+END $$;-- Match 3: Partizan vs Mornar
+DO $$ 
+DECLARE 
+    match_id INTEGER;
+    player_ids INTEGER[];
+    team_ids INTEGER[];
+    i INTEGER;
+    current_player_id INTEGER;
+    current_team_id INTEGER;
+    period_num INTEGER;
+    event_types TEXT[] := ARRAY['+2p', '+3p', '+ft', '2p', '3p', 'ft', 'assist', 'reb def', 'reb of', 'steal', 'block', 'foul', 'substitution in', 'substitution out', 'other'];
+    event_type TEXT;
+    base_time TIMESTAMP := '2025-11-29 18:30:00';
+BEGIN
+    -- Get match ID
+    SELECT id_match INTO match_id FROM match WHERE name = 'Partizan vs Mornar';
+    
+    -- Get all players and teams for this match
+    SELECT ARRAY_AGG(tmm.id_player), ARRAY_AGG(tmm.id_team) 
+    INTO player_ids, team_ids
+    FROM team_member_match tmm 
+    WHERE tmm.id_match = match_id;
+    
+    -- Insert 200 events
+    FOR i IN 1..200 LOOP
+        -- Calculate period (1-4, cycling every 50 events)
+        period_num := ((i - 1) / 50) + 1;
+        IF period_num > 4 THEN period_num := 4; END IF;
+        
+        -- Select player/team cyclically
+        current_player_id := player_ids[((i - 1) % array_length(player_ids, 1)) + 1];
+        current_team_id := team_ids[((i - 1) % array_length(team_ids, 1)) + 1];
+        
+        -- Select event type cyclically
+        event_type := event_types[((i - 1) % array_length(event_types, 1)) + 1];
+        
+        INSERT INTO personal_event (creation_time, notes, type, period, period_time, id_team, id_player, id_match)
+        VALUES (
+            base_time + INTERVAL '1 second' * (i * 30 + FLOOR(RANDOM() * 100)),
+            CASE 
+                WHEN event_type IN ('+2p', '+3p', '+ft') THEN 'Successful shot'
+                WHEN event_type IN ('2p', '3p', 'ft') THEN 'Missed shot'
+                WHEN event_type = 'assist' THEN 'Great pass'
+                WHEN event_type = 'foul' THEN 'Personal foul'
+                ELSE ''
+            END,
+            event_type,
+            period_num::VARCHAR(20),
+            (i * 30000) + FLOOR(RANDOM() * 100000)::INTEGER,
+            current_team_id,
+            current_player_id,
+            match_id
+        );
+    END LOOP;
+END $$;
+
+-- Match 4: Partizan vs Mega Soccerbet
+DO $$ 
+DECLARE 
+    match_id INTEGER;
+    player_ids INTEGER[];
+    team_ids INTEGER[];
+    i INTEGER;
+    current_player_id INTEGER;
+    current_team_id INTEGER;
+    period_num INTEGER;
+    event_types TEXT[] := ARRAY['+2p', '+3p', '+ft', '2p', '3p', 'ft', 'assist', 'reb def', 'reb of', 'steal', 'block', 'foul', 'substitution in', 'substitution out', 'other'];
+    event_type TEXT;
+    base_time TIMESTAMP := '2025-12-05 19:30:00';
+BEGIN
+    -- Get match ID
+    SELECT id_match INTO match_id FROM match WHERE name = 'Partizan vs Mega Soccerbet';
+    
+    -- Get all players and teams for this match
+    SELECT ARRAY_AGG(tmm.id_player), ARRAY_AGG(tmm.id_team) 
+    INTO player_ids, team_ids
+    FROM team_member_match tmm 
+    WHERE tmm.id_match = match_id;
+    
+    -- Insert 200 events
+    FOR i IN 1..200 LOOP
+        -- Calculate period (1-4, cycling every 50 events)
+        period_num := ((i - 1) / 50) + 1;
+        IF period_num > 4 THEN period_num := 4; END IF;
+        
+        -- Select player/team cyclically
+        current_player_id := player_ids[((i - 1) % array_length(player_ids, 1)) + 1];
+        current_team_id := team_ids[((i - 1) % array_length(team_ids, 1)) + 1];
+        
+        -- Select event type cyclically
+        event_type := event_types[((i - 1) % array_length(event_types, 1)) + 1];
+        
+        INSERT INTO personal_event (creation_time, notes, type, period, period_time, id_team, id_player, id_match)
+        VALUES (
+            base_time + INTERVAL '1 second' * (i * 30 + FLOOR(RANDOM() * 100)),
+            CASE 
+                WHEN event_type IN ('+2p', '+3p', '+ft') THEN 'Successful shot'
+                WHEN event_type IN ('2p', '3p', 'ft') THEN 'Missed shot'
+                WHEN event_type = 'assist' THEN 'Great pass'
+                WHEN event_type = 'foul' THEN 'Personal foul'
+                ELSE ''
+            END,
+            event_type,
+            period_num::VARCHAR(20),
+            (i * 30000) + FLOOR(RANDOM() * 100000)::INTEGER,
+            current_team_id,
+            current_player_id,
+            match_id
+        );
+    END LOOP;
+END $$;
+
+-- Match 5: Partizan vs Spartak
+DO $$ 
+DECLARE 
+    match_id INTEGER;
+    player_ids INTEGER[];
+    team_ids INTEGER[];
+    i INTEGER;
+    current_player_id INTEGER;
+    current_team_id INTEGER;
+    period_num INTEGER;
+    event_types TEXT[] := ARRAY['+2p', '+3p', '+ft', '2p', '3p', 'ft', 'assist', 'reb def', 'reb of', 'steal', 'block', 'foul', 'substitution in', 'substitution out', 'other'];
+    event_type TEXT;
+    base_time TIMESTAMP := '2025-12-12 20:00:00';
+BEGIN
+    -- Get match ID
+    SELECT id_match INTO match_id FROM match WHERE name = 'Partizan vs Spartak';
+    
+    -- Get all players and teams for this match
+    SELECT ARRAY_AGG(tmm.id_player), ARRAY_AGG(tmm.id_team) 
+    INTO player_ids, team_ids
+    FROM team_member_match tmm 
+    WHERE tmm.id_match = match_id;
+    
+    -- Insert 200 events
+    FOR i IN 1..200 LOOP
+        -- Calculate period (1-4, cycling every 50 events)
+        period_num := ((i - 1) / 50) + 1;
+        IF period_num > 4 THEN period_num := 4; END IF;
+        
+        -- Select player/team cyclically
+        current_player_id := player_ids[((i - 1) % array_length(player_ids, 1)) + 1];
+        current_team_id := team_ids[((i - 1) % array_length(team_ids, 1)) + 1];
+        
+        -- Select event type cyclically
+        event_type := event_types[((i - 1) % array_length(event_types, 1)) + 1];
+        
+        INSERT INTO personal_event (creation_time, notes, type, period, period_time, id_team, id_player, id_match)
+        VALUES (
+            base_time + INTERVAL '1 second' * (i * 30 + FLOOR(RANDOM() * 100)),
+            CASE 
+                WHEN event_type IN ('+2p', '+3p', '+ft') THEN 'Successful shot'
+                WHEN event_type IN ('2p', '3p', 'ft') THEN 'Missed shot'
+                WHEN event_type = 'assist' THEN 'Great pass'
+                WHEN event_type = 'foul' THEN 'Personal foul'
+                ELSE ''
+            END,
+            event_type,
+            period_num::VARCHAR(20),
+            (i * 30000) + FLOOR(RANDOM() * 100000)::INTEGER,
+            current_team_id,
+            current_player_id,
+            match_id
+        );
+    END LOOP;
+END $$;

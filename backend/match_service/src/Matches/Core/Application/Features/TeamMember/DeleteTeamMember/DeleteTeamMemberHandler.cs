@@ -22,7 +22,7 @@ namespace match_service.src.Matches.Core.Application.Features.TeamMember.DeleteT
 
         public async Task<Result<DeleteTeamMemberResponse>> Handle(DeleteTeamMemberCommand request, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("🚀 DeleteTeamMemberHandler called with Player ID: {PlayerId}, Team ID: {TeamId}", request.IdPlayer, request.IdTeam);
+            _logger.LogInformation("DeleteTeamMemberHandler called with Player ID: {PlayerId}, Team ID: {TeamId}", request.IdPlayer, request.IdTeam);
             
             try
             {
@@ -49,8 +49,8 @@ namespace match_service.src.Matches.Core.Application.Features.TeamMember.DeleteT
 
                 var response = new DeleteTeamMemberResponse
                 {
-                    IsDeleted = false, //Changed to false - deletion is in progress!
-                    Message = $"Team member deletion saga initiated with ID: {correlationId}. Use this ID to track the deletion status.",
+                    IsDeleted = false,
+                    Message = $"Team member deletion saga initiated with ID: {correlationId}.",
                     CorrelationId = correlationId // Return the ID for status tracking
                 };
 

@@ -58,7 +58,7 @@ public class DeleteTeamMemberSaga : MassTransitStateMachine<DeleteTeamMemberSaga
                     CorrelationId = context.Saga.CorrelationId,
                     PlayerId = context.Saga.PlayerId,
                     TeamId = context.Saga.TeamId,
-                    ForceError = context.Saga.PlayerId == 999 // 🔥 TEST: Forsira grešku za PlayerId 999
+                    ForceError = context.Saga.PlayerId == 999 // TEST: Forsira grešku za PlayerId 999
                 }))
                 .TransitionTo(DeletingTravelData),
             When(MatchDataDeleteFailed)
