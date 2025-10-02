@@ -208,7 +208,7 @@ DECLARE
     v_gamma NUMERIC; -- Vremenski faktor multiplikator
     v_t NUMERIC; -- Maksimalni broj dana za vremenski faktor
     
-    -- Rezultati izračuna
+    -- Rezultati
     v_zone_ratio NUMERIC;
     v_stadium_ratio NUMERIC;
     v_exponential_factor NUMERIC;
@@ -270,7 +270,7 @@ BEGIN
     WHERE it.id_match = p_match_id
       AND po.status = 'bought';
     
-    -- Dohvatanje datuma utakmice
+    -- Datum utakmice
     SELECT m.scheduled_at
     INTO v_match_date
     FROM match m
@@ -341,7 +341,7 @@ BEGIN
     -- što označava da je prodaja karata završena za meč
     IF OLD.tickets_for_sale = TRUE AND NEW.tickets_for_sale = FALSE THEN
 
-        -- Briše postojeće podatke za ovaj meč ako postoje
+        -- Brise postojeće podatke za ovaj meč ako postoje
         DELETE FROM match_zone_sales_summary WHERE id_match = NEW.id_match;
 
         -- Kreira unose za sve zone sa parametrima cena
@@ -357,7 +357,7 @@ BEGIN
         WHERE z.status = 'enabled'
         ORDER BY z.id_zone;
 
-        -- Priprema podatke o prodaji po zonama
+        -- Priprema podataka o prodaji po zonama
         WITH zone_sales AS (
             SELECT 
                 s.id_zone,
@@ -374,7 +374,7 @@ BEGIN
             GROUP BY s.id_zone
         )
 
-        -- Ažurira podatke o prodaji za zone koje imaju prodane karte
+        -- Azuriranje podataka o prodaji za zone koje imaju prodate karte
         UPDATE match_zone_sales_summary 
         SET 
             total_tickets_sold = zone_sales.ticket_count,
@@ -403,7 +403,7 @@ CREATE TRIGGER match_finished_aggregation_trigger
 -- Optimizuje glavnu pretragu u GetSeatsWithOffersForZoneAndDirection koja filtrira sedišta po zoni i smeru, 
 -- a zatim ih sortira po redu i broju sedišta
 CREATE INDEX IF NOT EXISTS idx_seat_zone_direction_row_number ON seat (id_zone, direction, "row", "number");
--- EXPLAIN ANALYZE SELECT * FROM seat WHERE id_zone = 1 AND direction = 'north' ORDER BY "row", "number";
+-- EXPLAIN ANALYZE SELECT * FROM seat WHERE id_zone = 1 AND direction = 'north' AND "row" = 1 AND "number" = 1;
 
 -- Kompozicioni indeks za filtriranje ponuda po sedištu, tipu i statusu
 -- Bitan za pretragu individualnih ponuda i sezonskih karata u GetSeatsWithOffersForZoneAndDirection
@@ -505,10 +505,10 @@ DECLARE
         zone_details AS (
             SELECT 
                 mzss.id_match,
-                -- VIP zone podatci (Zone 100 je VIP)
+                -- (Zona 100 je VIP)
                 SUM(CASE WHEN z.rank = 100 THEN mzss.total_tickets_sold ELSE 0 END) as vip_tickets,
                 SUM(CASE WHEN z.rank = 100 THEN mzss.total_revenue ELSE 0 END) as vip_revenue,
-                -- Regularni zone podatci (rank > 100)
+                -- (Regularni podaci)
                 SUM(CASE WHEN z.rank > 100 THEN mzss.total_tickets_sold ELSE 0 END) as regular_tickets,
                 SUM(CASE WHEN z.rank > 100 THEN mzss.total_revenue ELSE 0 END) as regular_revenue
             FROM match_zone_sales_summary mzss
@@ -516,7 +516,6 @@ DECLARE
             GROUP BY mzss.id_match
         ),
         zone_rankings AS (
-            -- Poseban CTE za rangiranje zona po prodaji
             SELECT 
                 mzss.id_match,
                 -- Zona sa najviše prodanih karata (samo ako ima prodaje)
@@ -527,7 +526,7 @@ DECLARE
                    AND mzss2.total_tickets_sold > 0
                  ORDER BY mzss2.total_tickets_sold DESC 
                  LIMIT 1) as highest_selling_zone,
-                -- Zona sa najmanje prodanih karata (samo ako ima više od jedne zone sa prodajom)
+                -- Zona sa najmanje prodatih karata (samo ako ima više od jedne zone sa prodajom)
                 (SELECT z3.name 
                  FROM match_zone_sales_summary mzss3 
                  JOIN zone z3 ON mzss3.id_zone = z3.id_zone
