@@ -1,15 +1,27 @@
+
+INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, sprint_speed, weight, height, wingspan, date_of_measurement, id_player)
+SELECT
+    80 + (random() * 15)::int,         -- vertical_jump: 80-95 cm
+    7 + (random() * 6)::int,           -- fat_percentage: 7-13%
+    100 + (random() * 40)::int,        -- bench_press_weight: 100-140 kg
+    150 + (random() * 70)::int,        -- squat_weight: 150-220 kg
+    16 + (random() * 6)::int,          -- sprint_speed: 16-22 sec
+    98,                                -- weight: fixed for player 1
+    208,                               -- height: fixed for player 1
+    215,                               -- wingspan: fixed for player 1
+    ('2025-09-01'::date + (gs - 1)),   -- date_of_measurement: sequential days
+    1                                  -- id_player: player 1
+FROM generate_series(1, 2000) AS gs;
+
+
 -- I. Indexes for Scouting Performance
 
--- Index 1: Optimizes session retrieval for a specific player, optionally filtered by time or type
-CREATE INDEX IF NOT EXISTS idx_session_player_time_type ON session (id_player, start_time DESC, id_session_type);
+-- Index : Efficiently retrieves a player's physical history
 
--- Index 2: Optimizes join between session and its metrics
-CREATE INDEX IF NOT EXISTS idx_session_metrics_session_metric ON session_metrics (id_session, id_metrics);
-
--- Index 3: Speeds up filtering of metrics for season averages
-CREATE INDEX IF NOT EXISTS idx_metrics_type_permanent ON metrics (id_metric_type, is_permanent);
-
--- Index 4: Efficiently retrieves a player's physical history
+-- SET enable_indexscan = off; SET enable_bitmapscan = off;
+-- EXPLAIN ANALYZE SELECT id_player,date_of_measurement FROM physical_metrics WHERE id_player = 1 ORDER BY date_of_measurement DESC LIMIT 1;
+-- SET enable_indexscan = on; SET enable_bitmapscan = on;
+-- EXPLAIN ANALYZE SELECT id_player,date_of_measurement FROM physical_metrics WHERE id_player = 1 ORDER BY date_of_measurement DESC LIMIT 1;
 CREATE INDEX IF NOT EXISTS idx_physical_metrics_player_date ON physical_metrics (id_player, date_of_measurement DESC);
 
 -- Function to get player metric averages for a season
@@ -78,6 +90,9 @@ BEGIN
     ORDER BY sm.metric_weight DESC, sm.name;
 END;
 $$ LANGUAGE plpgsql;
+
+
+
 
 -- Function to get all sessions for a player with filters
 CREATE OR REPLACE FUNCTION get_player_sessions(
@@ -496,3 +511,58 @@ BEGIN
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Materialized View: Season Player Performance Averages
+-- This materialized view aggregates all ended seasons' player performance
+DROP MATERIALIZED VIEW IF EXISTS mv_season_player_performance CASCADE;
+CREATE MATERIALIZED VIEW mv_season_player_performance AS
+SELECT 
+    se.id_season,
+    s.id_player,
+    sm.id_metrics,
+    m.name as metric_name,
+    ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as average_value,
+    COUNT(DISTINCT s.id_session) as session_count,
+    CURRENT_TIMESTAMP as calculated_at
+FROM season se
+INNER JOIN session s ON s.start_time >= se.started_at 
+    AND (se.ended_at IS NULL OR s.start_time <= se.ended_at)
+INNER JOIN session_metrics sm ON s.id_session = sm.id_session
+INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
+WHERE m.id_metric_type = 1 -- Only quantitative metrics
+    AND sm.value ~ '^[0-9]+\.?[0-9]*$' -- Only numeric values
+    AND se.ended_at IS NOT NULL 
+    AND se.ended_at <= CURRENT_DATE -- Only ended seasons
+GROUP BY se.id_season, s.id_player, sm.id_metrics, m.name
+HAVING COUNT(sm.value) > 0; -- Only include metrics with values
+
+CREATE UNIQUE INDEX idx_mv_season_player_perf 
+ON mv_season_player_performance (id_season, id_player, id_metrics);
+
+
+-- Trigger function to refresh performance view when season ends
+CREATE OR REPLACE FUNCTION trigger_refresh_season_performance()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the season has ended (end date is on or before current date)
+    IF NEW.ended_at IS NOT NULL AND NEW.ended_at <= CURRENT_DATE THEN
+        -- Check if this is an update that sets or changes the end date
+        IF OLD.ended_at IS NULL OR OLD.ended_at <> NEW.ended_at THEN
+            -- Refresh the entire materialized view
+            -- Using CONCURRENTLY to avoid locking (requires unique index)
+            REFRESH MATERIALIZED VIEW mv_season_player_performance;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Trigger: Automatically refresh season performance view when season ends
+DROP TRIGGER IF EXISTS trg_season_end_performance ON season;
+CREATE TRIGGER trg_season_end_performance
+    AFTER UPDATE ON season
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_refresh_season_performance();
