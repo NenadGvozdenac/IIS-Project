@@ -51,6 +51,7 @@ namespace elastic_orchestrator_service.src.Models
         public DateTime? CompletedAt { get; set; }
         public List<SagaStep> Steps { get; set; } = new();
         public string? ErrorMessage { get; set; }
+        public Dictionary<string, string> OriginalStates { get; set; } = new();
     }
 
     public class SagaStep
