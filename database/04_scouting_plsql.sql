@@ -1,98 +1,28 @@
-
 -- =====================================================================
--- PERFORMANCE TESTING: Index Demonstration for Scouting System
+-- PHYSICAL METRICS INDEX PERFORMANCE TEST
 -- =====================================================================
 
--- Generate substantial test data for performance comparison
--- This creates realistic scouting data for 50 players over 100 sessions each
-
--- Step 1: Insert test data for sessions (5000 sessions total)
-INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player)
+-- Generate 10,000 physical metrics for players 1-5
+INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, 
+                              sprint_speed, weight, height, wingspan, date_of_measurement, id_player)
 SELECT
-    ('2024-01-01'::timestamp + (gs || ' days')::interval + (random() * 12 || ' hours')::interval) as start_time,
-    ('2024-01-01'::timestamp + (gs || ' days')::interval + (random() * 12 || ' hours')::interval + '2 hours'::interval) as end_time,
-    1 + (random() * 2)::int as id_session_status,  -- Status 1-3
-    1 + (random() * 2)::int as id_session_type,     -- Type 1-3
-    1 as id_user,                                    -- Scout user
-    1 + (gs % 50)::int as id_player                 -- Rotate through 50 players
-FROM generate_series(1, 5000) AS gs
+    80 + (random() * 20)::int as vertical_jump,
+    7 + (random() * 8)::int as fat_percentage,
+    100 + (random() * 50)::int as bench_press_weight,
+    150 + (random() * 80)::int as squat_weight,
+    16 + (random() * 8)::int as sprint_speed,
+    85 + (random() * 30)::int as weight,
+    190 + (random() * 30)::int as height,
+    200 + (random() * 30)::int as wingspan,
+    ('2020-01-01'::date + (gs || ' days')::interval) as date_of_measurement,
+    1 + (gs % 5)::int as id_player  -- Players 1-5
+FROM generate_series(1, 10000) AS gs
 ON CONFLICT DO NOTHING;
 
--- Step 2: Insert session metrics (20 metrics per session = 100,000 rows)
-INSERT INTO session_metrics (value, id_session, id_metrics)
-SELECT
-    (50 + random() * 50)::int::text as value,  -- Random values 50-100
-    s.id_session,
-    1 + (gs % 20)::int as id_metrics           -- Rotate through 20 metrics
-FROM session s
-CROSS JOIN generate_series(1, 20) AS gs
-WHERE s.id_session > (SELECT COALESCE(MAX(id_session), 0) FROM session) - 5000
-ON CONFLICT DO NOTHING;
+CREATE INDEX idx_physical_metrics_player_date ON physical_metrics (id_player, date_of_measurement DESC);
 
+-- EXPLAIN ANALYZE SELECT id_player, date_of_measurement, vertical_jump, weight, height FROM physical_metrics WHERE id_player = 1 ORDER BY date_of_measurement DESC LIMIT 1;
 
--- =====================================================================
--- INDEX PERFORMANCE COMPARISON - Session Metrics Aggregation
--- =====================================================================
-
--- This is the MOST COMMON and CRITICAL query in the scouting system
--- Used for: Calculating average metrics per player for scouting reports
-
--- TEST WITHOUT INDEX
--- Expected: Sequential Scan on session and session_metrics (SLOW)
-EXPLAIN (ANALYZE, BUFFERS, TIMING)
-SELECT sm.id_metrics, m.name, 
-       ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as avg_value,
-       COUNT(DISTINCT sm.id_session) as session_count
-FROM session s
-INNER JOIN session_metrics sm ON s.id_session = sm.id_session
-INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
-WHERE s.id_player = 25
-  AND m.id_metric_type = 1
-  AND sm.value ~ '^[0-9]+\.?[0-9]*$'
-GROUP BY sm.id_metrics, m.name
-ORDER BY sm.id_metrics;
-
--- Create composite indexes for optimal performance
-CREATE INDEX idx_session_player ON session (id_player);
-CREATE INDEX idx_session_metrics_session ON session_metrics (id_session, id_metrics, value);
-
--- TEST WITH INDEX
--- Expected: Index Scan - dramatically faster (10-100x improvement)
-EXPLAIN (ANALYZE, BUFFERS, TIMING)
-SELECT sm.id_metrics, m.name, 
-       ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as avg_value,
-       COUNT(DISTINCT sm.id_session) as session_count
-FROM session s
-INNER JOIN session_metrics sm ON s.id_session = sm.id_session
-INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
-WHERE s.id_player = 25
-  AND m.id_metric_type = 1
-  AND sm.value ~ '^[0-9]+\.?[0-9]*$'
-GROUP BY sm.id_metrics, m.name
-ORDER BY sm.id_metrics;
-
-
--- =====================================================================
--- SUMMARY OF INDEXES CREATED
--- =====================================================================
-/*
-INDEX 1: idx_session_player 
-   - Purpose: Fast filtering of sessions by player
-   - Column: id_player
-   - Use case: Finding all sessions for a specific player
-
-INDEX 2: idx_session_metrics_session
-   - Purpose: Covering index for metric lookups and aggregations
-   - Columns: id_session, id_metrics, value
-   - Use case: Efficiently joining sessions with metrics and aggregating values
-
-Performance Improvement Expected:
-   - Execution time: 50-100x faster
-   - Buffer usage: Significantly reduced
-   - Scan type: Sequential Scan → Index Scan
-*/
-
--- =====================================================================
 
 -- Function to get player metric averages for a season
 -- This function returns all quantitative metrics with their average values for a specific player and season
