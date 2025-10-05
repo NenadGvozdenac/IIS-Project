@@ -1,28 +1,98 @@
 
-INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, sprint_speed, weight, height, wingspan, date_of_measurement, id_player)
+-- =====================================================================
+-- PERFORMANCE TESTING: Index Demonstration for Scouting System
+-- =====================================================================
+
+-- Generate substantial test data for performance comparison
+-- This creates realistic scouting data for 50 players over 100 sessions each
+
+-- Step 1: Insert test data for sessions (5000 sessions total)
+INSERT INTO session (start_time, end_time, id_session_status, id_session_type, id_user, id_player)
 SELECT
-    80 + (random() * 15)::int,         -- vertical_jump: 80-95 cm
-    7 + (random() * 6)::int,           -- fat_percentage: 7-13%
-    100 + (random() * 40)::int,        -- bench_press_weight: 100-140 kg
-    150 + (random() * 70)::int,        -- squat_weight: 150-220 kg
-    16 + (random() * 6)::int,          -- sprint_speed: 16-22 sec
-    98,                                -- weight: fixed for player 1
-    208,                               -- height: fixed for player 1
-    215,                               -- wingspan: fixed for player 1
-    ('2025-09-01'::date + (gs - 1)),   -- date_of_measurement: sequential days
-    1                                  -- id_player: player 1
-FROM generate_series(1, 2000) AS gs;
+    ('2024-01-01'::timestamp + (gs || ' days')::interval + (random() * 12 || ' hours')::interval) as start_time,
+    ('2024-01-01'::timestamp + (gs || ' days')::interval + (random() * 12 || ' hours')::interval + '2 hours'::interval) as end_time,
+    1 + (random() * 2)::int as id_session_status,  -- Status 1-3
+    1 + (random() * 2)::int as id_session_type,     -- Type 1-3
+    1 as id_user,                                    -- Scout user
+    1 + (gs % 50)::int as id_player                 -- Rotate through 50 players
+FROM generate_series(1, 5000) AS gs
+ON CONFLICT DO NOTHING;
+
+-- Step 2: Insert session metrics (20 metrics per session = 100,000 rows)
+INSERT INTO session_metrics (value, id_session, id_metrics)
+SELECT
+    (50 + random() * 50)::int::text as value,  -- Random values 50-100
+    s.id_session,
+    1 + (gs % 20)::int as id_metrics           -- Rotate through 20 metrics
+FROM session s
+CROSS JOIN generate_series(1, 20) AS gs
+WHERE s.id_session > (SELECT COALESCE(MAX(id_session), 0) FROM session) - 5000
+ON CONFLICT DO NOTHING;
 
 
--- I. Indexes for Scouting Performance
+-- =====================================================================
+-- INDEX PERFORMANCE COMPARISON - Session Metrics Aggregation
+-- =====================================================================
 
--- Index : Efficiently retrieves a player's physical history
+-- This is the MOST COMMON and CRITICAL query in the scouting system
+-- Used for: Calculating average metrics per player for scouting reports
 
--- SET enable_indexscan = off; SET enable_bitmapscan = off;
--- EXPLAIN ANALYZE SELECT id_player,date_of_measurement FROM physical_metrics WHERE id_player = 1 ORDER BY date_of_measurement DESC LIMIT 1;
--- SET enable_indexscan = on; SET enable_bitmapscan = on;
--- EXPLAIN ANALYZE SELECT id_player,date_of_measurement FROM physical_metrics WHERE id_player = 1 ORDER BY date_of_measurement DESC LIMIT 1;
-CREATE INDEX IF NOT EXISTS idx_physical_metrics_player_date ON physical_metrics (id_player, date_of_measurement DESC);
+-- TEST WITHOUT INDEX
+-- Expected: Sequential Scan on session and session_metrics (SLOW)
+EXPLAIN (ANALYZE, BUFFERS, TIMING)
+SELECT sm.id_metrics, m.name, 
+       ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as avg_value,
+       COUNT(DISTINCT sm.id_session) as session_count
+FROM session s
+INNER JOIN session_metrics sm ON s.id_session = sm.id_session
+INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
+WHERE s.id_player = 25
+  AND m.id_metric_type = 1
+  AND sm.value ~ '^[0-9]+\.?[0-9]*$'
+GROUP BY sm.id_metrics, m.name
+ORDER BY sm.id_metrics;
+
+-- Create composite indexes for optimal performance
+CREATE INDEX idx_session_player ON session (id_player);
+CREATE INDEX idx_session_metrics_session ON session_metrics (id_session, id_metrics, value);
+
+-- TEST WITH INDEX
+-- Expected: Index Scan - dramatically faster (10-100x improvement)
+EXPLAIN (ANALYZE, BUFFERS, TIMING)
+SELECT sm.id_metrics, m.name, 
+       ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as avg_value,
+       COUNT(DISTINCT sm.id_session) as session_count
+FROM session s
+INNER JOIN session_metrics sm ON s.id_session = sm.id_session
+INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
+WHERE s.id_player = 25
+  AND m.id_metric_type = 1
+  AND sm.value ~ '^[0-9]+\.?[0-9]*$'
+GROUP BY sm.id_metrics, m.name
+ORDER BY sm.id_metrics;
+
+
+-- =====================================================================
+-- SUMMARY OF INDEXES CREATED
+-- =====================================================================
+/*
+INDEX 1: idx_session_player 
+   - Purpose: Fast filtering of sessions by player
+   - Column: id_player
+   - Use case: Finding all sessions for a specific player
+
+INDEX 2: idx_session_metrics_session
+   - Purpose: Covering index for metric lookups and aggregations
+   - Columns: id_session, id_metrics, value
+   - Use case: Efficiently joining sessions with metrics and aggregating values
+
+Performance Improvement Expected:
+   - Execution time: 50-100x faster
+   - Buffer usage: Significantly reduced
+   - Scan type: Sequential Scan → Index Scan
+*/
+
+-- =====================================================================
 
 -- Function to get player metric averages for a season
 -- This function returns all quantitative metrics with their average values for a specific player and season
@@ -417,6 +487,7 @@ FROM player p;
 
 -- FUNCTION: Generate relative normalized scouting scores
 -- This function calculates scores for all players and normalizes them so the highest score = 100%
+-- Uses CURSORS for efficient row-by-row processing
 CREATE OR REPLACE FUNCTION generate_relative_scouting_summary(
     p_season_id INTEGER DEFAULT NULL, -- NULL means ALL seasons
     p_position_filter VARCHAR DEFAULT NULL,
@@ -441,17 +512,33 @@ DECLARE
     v_max_raw_score NUMERIC := 0;
     v_current_player RECORD;
     v_player_report player_scouting_report;
-BEGIN
-    -- First pass: Find the maximum raw score among all filtered players
-    FOR v_current_player IN 
+    
+    -- CURSOR 1: For finding maximum score (first pass)
+    player_cursor_max CURSOR FOR
         SELECT p.id_player, p.name, p.surname, pos.name as position, nat.state as nationality
         FROM player p
         JOIN position pos ON p.id_position = pos.id_position
         JOIN nationality nat ON p.id_nationality = nat.id_nationality
         WHERE (p_position_filter IS NULL OR pos.name ILIKE '%' || p_position_filter || '%')
           AND (p_nationality_filter IS NULL OR nat.state ILIKE '%' || p_nationality_filter || '%')
-          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%')
+          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%');
+    
+    -- CURSOR 2: For generating normalized results (second pass)
+    player_cursor_results CURSOR FOR
+        SELECT p.id_player, p.name, p.surname, pos.name as position, nat.state as nationality
+        FROM player p
+        JOIN position pos ON p.id_position = pos.id_position
+        JOIN nationality nat ON p.id_nationality = nat.id_nationality
+        WHERE (p_position_filter IS NULL OR pos.name ILIKE '%' || p_position_filter || '%')
+          AND (p_nationality_filter IS NULL OR nat.state ILIKE '%' || p_nationality_filter || '%')
+          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%');
+BEGIN
+    -- First pass: Find the maximum raw score using CURSOR
+    OPEN player_cursor_max;
     LOOP
+        FETCH player_cursor_max INTO v_current_player;
+        EXIT WHEN NOT FOUND;
+        
         BEGIN
             -- Get the raw score for this player
             v_player_report := generate_player_scouting_summary(v_current_player.id_player, p_season_id);
@@ -465,17 +552,14 @@ BEGIN
             CONTINUE;
         END;
     END LOOP;
+    CLOSE player_cursor_max;
 
-    -- Second pass: Generate normalized results
-    FOR v_current_player IN 
-        SELECT p.id_player, p.name, p.surname, pos.name as position, nat.state as nationality
-        FROM player p
-        JOIN position pos ON p.id_position = pos.id_position
-        JOIN nationality nat ON p.id_nationality = nat.id_nationality
-        WHERE (p_position_filter IS NULL OR pos.name ILIKE '%' || p_position_filter || '%')
-          AND (p_nationality_filter IS NULL OR nat.state ILIKE '%' || p_nationality_filter || '%')
-          AND (p_player_name_filter IS NULL OR (p.name || ' ' || p.surname) ILIKE '%' || p_player_name_filter || '%')
+    -- Second pass: Generate normalized results using CURSOR
+    OPEN player_cursor_results;
     LOOP
+        FETCH player_cursor_results INTO v_current_player;
+        EXIT WHEN NOT FOUND;
+        
         BEGIN
             -- Get the full report for this player
             v_player_report := generate_player_scouting_summary(v_current_player.id_player, p_season_id);
@@ -507,6 +591,7 @@ BEGIN
             CONTINUE;
         END;
     END LOOP;
+    CLOSE player_cursor_results;
 
     RETURN;
 END;
@@ -515,30 +600,36 @@ $$ LANGUAGE plpgsql;
 
 -- Materialized View: Season Player Performance Averages
 -- This materialized view aggregates all ended seasons' player performance
+-- Shows names instead of IDs for better readability
 DROP MATERIALIZED VIEW IF EXISTS mv_season_player_performance CASCADE;
 CREATE MATERIALIZED VIEW mv_season_player_performance AS
 SELECT 
-    se.id_season,
-    s.id_player,
-    sm.id_metrics,
+    se.name as season_name,
+    se.started_at as season_start,
+    se.ended_at as season_end,
+    (p.name || ' ' || p.surname) as player_name,
     m.name as metric_name,
     ROUND(AVG(CAST(sm.value AS DECIMAL)), 2) as average_value,
     COUNT(DISTINCT s.id_session) as session_count,
-    CURRENT_TIMESTAMP as calculated_at
+    CURRENT_TIMESTAMP as calculated_at,
+    se.id_season,
+    s.id_player,
+    sm.id_metrics
 FROM season se
 INNER JOIN session s ON s.start_time >= se.started_at 
     AND (se.ended_at IS NULL OR s.start_time <= se.ended_at)
+INNER JOIN player p ON s.id_player = p.id_player
 INNER JOIN session_metrics sm ON s.id_session = sm.id_session
 INNER JOIN metrics m ON sm.id_metrics = m.id_metrics
 WHERE m.id_metric_type = 1 -- Only quantitative metrics
     AND sm.value ~ '^[0-9]+\.?[0-9]*$' -- Only numeric values
     AND se.ended_at IS NOT NULL 
     AND se.ended_at <= CURRENT_DATE -- Only ended seasons
-GROUP BY se.id_season, s.id_player, sm.id_metrics, m.name
+GROUP BY se.id_season, se.name, se.started_at, se.ended_at, s.id_player, p.name, p.surname, sm.id_metrics, m.name
 HAVING COUNT(sm.value) > 0; -- Only include metrics with values
 
-CREATE UNIQUE INDEX idx_mv_season_player_perf 
-ON mv_season_player_performance (id_season, id_player, id_metrics);
+--CREATE UNIQUE INDEX idx_mv_season_player_perf 
+--ON mv_season_player_performance (id_season, id_player, id_metrics);
 
 
 -- Trigger function to refresh performance view when season ends
@@ -550,7 +641,6 @@ BEGIN
         -- Check if this is an update that sets or changes the end date
         IF OLD.ended_at IS NULL OR OLD.ended_at <> NEW.ended_at THEN
             -- Refresh the entire materialized view
-            -- Using CONCURRENTLY to avoid locking (requires unique index)
             REFRESH MATERIALIZED VIEW mv_season_player_performance;
         END IF;
     END IF;
