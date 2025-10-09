@@ -7,6 +7,7 @@ using match_service.src.Matches.Core.Application.Features.TeamMember.CreateTeamM
 using match_service.src.Matches.Core.Application.Features.TeamMember.UpdateTeamMember;
 using match_service.src.Matches.Core.Application.Features.TeamMember.DeleteTeamMember;
 using match_service.src.Matches.Core.Application.Features.TeamMember.GetTeamPlayersByTeamId;
+using match_service.src.Matches.Core.Application.Features.TeamMember.UpdateTeamMemberStatus;
 
 namespace match_service.src.Matches.API.Controllers;
 
@@ -44,6 +45,13 @@ public class TeamMemberController : BaseController
         var result = await _mediator.Send(query);
         return CreateResponse(result);
     }
+    [HttpGet("active-members/team/{teamId}")]
+    public async Task<ActionResult> GetActiveTeamMembersByTeamId(int teamId)
+    {
+        //var query = new GetActiveTeamMembersByTeamIdQuery(teamId);
+        //var result = await _mediator.Send(query);
+        return CreateResponse(Result<List<match_service.src.Matches.Core.Domain.Entities.TeamMember>>.Success(new List<match_service.src.Matches.Core.Domain.Entities.TeamMember>()));
+    }
 
     [HttpPost]
     public async Task<ActionResult> CreateTeamMember([FromBody] CreateTeamMemberCommand command)
@@ -65,6 +73,15 @@ public class TeamMemberController : BaseController
     public async Task<ActionResult> DeleteTeamMember(int idPlayer, int idTeam)
     {
         var command = new DeleteTeamMemberCommand(idPlayer, idTeam);
+        var result = await _mediator.Send(command);
+        return CreateResponse(result);
+    }
+
+    [HttpPut("status/{idPlayer}/{idTeam}")]
+    public async Task<ActionResult> UpdateTeamMemberStatus(int idPlayer, int idTeam, [FromBody] UpdateTeamMemberStatusCommand command)
+    {
+        command.IdPlayer = idPlayer;
+        command.IdTeam = idTeam;
         var result = await _mediator.Send(command);
         return CreateResponse(result);
     }
