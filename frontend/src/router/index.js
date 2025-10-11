@@ -52,6 +52,8 @@ import EditPlayer from '../views/scout/EditPlayer.vue'
 import CoachTeam from '../views/coach/CoachTeam.vue'
 import CoachPlayerDetail from '../views/coach/CoachPlayerDetail.vue'
 import CoachMatches from '../views/coach/CoachMatches.vue'
+import CoachPreviousMatches from '../views/coach/CoachPreviousMatches.vue'
+import CoachMatchDetail from '../views/coach/CoachMatchDetail.vue'
 
 const routes = [
   {
@@ -361,6 +363,18 @@ const routes = [
     path: '/coach/matches',
     name: 'CoachMatches',
     component: CoachMatches,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/previous-matches',
+    name: 'CoachPreviousMatches',
+    component: CoachPreviousMatches,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/matches/:id/previous',
+    name: 'CoachMatchDetail',
+    component: CoachMatchDetail,
     meta: { requiresAuth: true, requiresRole: 'coach' }
   }
 ]

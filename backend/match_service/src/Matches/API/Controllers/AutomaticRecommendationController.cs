@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using match_service.src.Matches.BuildingBlocks.Core.Domain;
 using match_service.src.Matches.Core.Application.Features.AutomaticRecommendation.CreateRecommendation;
 using match_service.src.Matches.Core.Application.Features.AutomaticRecommendation.GetRecommendations;
+using match_service.src.Matches.Core.Application.Features.AutomaticRecommendation.GetAllRecommendations;
 using match_service.src.Matches.Core.Application.Features.AutomaticRecommendation.AcceptRecommendation;
 using match_service.src.Matches.Core.Application.Features.AutomaticRecommendation.RejectRecommendation;
 
@@ -37,6 +38,14 @@ public class AutomaticRecommendationController : BaseController
     public ActionResult GetRecommendationsByMatch(int matchId)
     {
         var query = new GetRecommendationsQuery(matchId);
+        var result = _mediator.Send(query).Result;
+        return CreateResponse(result);
+    }
+
+    [HttpGet("match/{matchId}/all")]
+    public ActionResult GetAllRecommendationsByMatch(int matchId)
+    {
+        var query = new GetAllRecommendationsQuery(matchId);
         var result = _mediator.Send(query).Result;
         return CreateResponse(result);
     }

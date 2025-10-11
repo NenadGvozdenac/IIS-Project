@@ -207,7 +207,7 @@
             <table class="stats-table modern-stats">
               <thead>
                 <tr>
-                  <th class="player-header"># IGRAČ</th>
+                  <th class="player-header"># PLAYER</th>
                   <th class="eff-header">EFF</th>
                   <th class="fg-header">FG</th>
                   <th class="twoP-header">2P</th>
@@ -273,7 +273,7 @@
             <table class="stats-table modern-stats">
               <thead>
                 <tr>
-                  <th class="player-header"># IGRAČ</th>
+                  <th class="player-header"># PLAYER</th>
                   <th class="eff-header">EFF</th>
                   <th class="fg-header">FG</th>
                   <th class="twoP-header">2P</th>
@@ -337,110 +337,62 @@
       <div v-if="advancedAnalyticsLoading" class="advanced-analytics-loading">
         <div class="loading-content">
           <div class="spinner"></div>
-          <p>Učitavanje naprednih analitika...</p>
+          <p>Loading advanced analytics...</p>
         </div>
       </div>
 
-      <!-- Top 3 Players Section -->
-      <div v-else-if="topPlayers.length > 0" class="top-players-section">
-        <h2>🏆 Top 3 Match Players</h2>
-        <div class="top-players-grid">
+      <!-- Automatic Recommendations Section -->
+      <section class="recommendations-section">
+        <h2>Automatic Recommendations</h2>
+        
+        <div v-if="loadingRecommendations" class="loading-recommendations">
+          <p>Loading recommendations...</p>
+        </div>
+
+        <div v-else-if="recommendations.length === 0" class="no-recommendations">
+          <p>No recommendations for this match.</p>
+        </div>
+
+        <div v-else class="recommendations-list">
           <div 
-            v-for="(player, index) in topPlayers" 
-            :key="player.playerId"
-            class="top-player-card"
-            :class="{ 'first-place': index === 0, 'second-place': index === 1, 'third-place': index === 2 }"
+            v-for="recommendation in recommendations" 
+            :key="recommendation.idRecommendation"
+            class="recommendation-card"
+            :class="[
+              `priority-${recommendation.priority.toLowerCase()}`,
+              `status-${recommendation.status.toLowerCase()}`
+            ]"
           >
-            <div class="rank-badge">
-              <span class="rank-number">{{ index + 1 }}</span>
-              <span class="rank-icon">{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}</span>
-            </div>
-            
-            <div class="player-info">
-              <h3 class="player-name">{{ getPlayerName(player.playerId) }}</h3>
-            </div>
-            
-            <div class="player-stats-summary">
-              <div class="stat-row">
-                <span class="stat-label">Total Points:</span>
-                <span class="stat-value points">{{ player.totalPoints }}</span>
+            <div class="recommendation-header">
+              <div class="recommendation-type">
+                <span class="type-icon">{{ getRecommendationIcon(recommendation.type) }}</span>
+                <span class="type-label">{{ recommendation.type }}</span>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">Total Events:</span>
-                <span class="stat-value">{{ player.totalEvents }}</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">Performance:</span>
-                <span class="stat-value performance">{{ player.performanceScore }}</span>
+              <div class="recommendation-meta">
+                <span class="priority-badge" :class="`priority-${recommendation.priority.toLowerCase()}`">
+                  {{ recommendation.priority }}
+                </span>
+                <span class="status-badge" :class="`status-${recommendation.status.toLowerCase()}`">
+                  {{ recommendation.status }}
+                </span>
               </div>
             </div>
             
-            <div class="event-breakdown">
-              <h4>Event Breakdown:</h4>
-              <div class="breakdown-grid">
-                <div v-for="(count, eventType) in player.eventTypeBreakdown" :key="eventType" 
-                     v-show="['+2p', '+3p', '+ft', 'assist', 'block', 'steal', 'reb def', 'reb of'].includes(eventType)"
-                     class="breakdown-item positive-event">
-                  <span class="event-name">{{ eventType }}</span>
-                  <span class="event-count">{{ count }}</span>
-                </div>
-              </div>
+            <div class="recommendation-body">
+              <p class="recommendation-description">{{ recommendation.description }}</p>
+            </div>
+
+            <div class="recommendation-footer">
+              <span class="recommendation-time">
+                {{ recommendation.period }} - {{ formatPeriodTime(recommendation.periodTime) }}
+              </span>
+              <span class="recommendation-created">
+                {{ formatCreationTime(recommendation.creationTime) }}
+              </span>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Period Statistics Table Section -->
-      <div v-if="formattedPeriodStats.length > 0" class="period-statistics-section">
-        <h2>📊 Period Statistics</h2>
-        <div class="period-table-container">
-          <table class="period-stats-table">
-            <thead>
-              <tr>
-                <th class="team-header">Team</th>
-                <th class="period-header">1st Quarter</th>
-                <th class="period-header">2nd Quarter</th>
-                <th class="period-header">3rd Quarter</th>
-                <th class="period-header">4th Quarter</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="teamRow in formattedPeriodStats" :key="teamRow.teamId" :class="teamRow.teamClass">
-                <td class="team-name-cell">
-                  <div class="team-name-content">
-                    <span class="team-indicator" :class="teamRow.teamClass"></span>
-                    {{ teamRow.teamName }}
-                  </div>
-                </td>
-                <td v-for="period in ['1', '2', '3', '4']" :key="period" class="period-data-cell">
-                  <div class="period-stats-grid">
-                    <div class="stat-item positive">
-                      <span class="stat-label">+2p:</span>
-                      <span class="stat-count">{{ teamRow.periods[period]['+2p'] }}</span>
-                    </div>
-                    <div class="stat-item positive">
-                      <span class="stat-label">+3p:</span>
-                      <span class="stat-count">{{ teamRow.periods[period]['+3p'] }}</span>
-                    </div>
-                    <div class="stat-item positive">
-                      <span class="stat-label">+ft:</span>
-                      <span class="stat-count">{{ teamRow.periods[period]['+ft'] }}</span>
-                    </div>
-                    <div class="stat-item neutral">
-                      <span class="stat-label">assist:</span>
-                      <span class="stat-count">{{ teamRow.periods[period]['assist'] }}</span>
-                    </div>
-                    <div class="stat-item negative">
-                      <span class="stat-label">foul:</span>
-                      <span class="stat-count">{{ teamRow.periods[period]['foul'] }}</span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -462,6 +414,8 @@ const match = ref(null)
 const opponentTeam = ref('Unknown Opponent')
 const ourTeamPlayers = ref([])
 const opponentTeamPlayers = ref([])
+const recommendations = ref([])
+const loadingRecommendations = ref(false)
 
 // Advanced analytics data
 const topPlayers = ref([])
@@ -652,6 +606,8 @@ const fetchMatchDetails = async () => {
       
       // Fetch advanced analytics after basic data
       await fetchAdvancedAnalytics(matchId)
+      
+      await fetchRecommendations(matchId)
     }
     
   } catch (err) {
@@ -659,6 +615,66 @@ const fetchMatchDetails = async () => {
     error.value = err.response?.data?.message || err.message || 'Failed to fetch match details'
   } finally {
     loading.value = false
+  }
+}
+// Get recommendation icon based on type
+const getRecommendationIcon = (type) => {
+  const icons = {
+    'substitution': '🔄',
+    'timeout': '⏸️',
+    'strategy': '📋',
+    'defense': '🛡️',
+    'offense': '⚡',
+    'foul_trouble': '⚠️'
+  }
+  return icons[type] || '💡'
+}
+// Format period time (milliseconds to MM:SS)
+const formatPeriodTime = (milliseconds) => {
+  const totalSeconds = Math.floor(milliseconds / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const secs = totalSeconds % 60
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+// const formattedTime = computed(() => {
+//   // Ensure we never show negative time
+//   const timeMs = Math.max(0, matchTrackingState.value.remainingTime)
+//   const totalSeconds = Math.floor(timeMs / 1000)
+//   const minutes = Math.floor(totalSeconds / 60)
+//   const seconds = totalSeconds % 60
+//   if(minutes === 0 && seconds === 0) {
+//     return '0:00'
+//   }
+//   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+// })
+// Format creation time
+const formatCreationTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('sr-RS', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+// Fetch all recommendations for the match
+const fetchRecommendations = async (matchId) => {
+  loadingRecommendations.value = true
+  
+  try {
+    const jwt = localStorage.getItem('token')
+    const response = await axios.get(`${MATCHES_URL}/AutomaticRecommendation/match/${matchId}/all`, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    })
+    
+    recommendations.value = response.data.value?.recommendations || response.data?.recommendations || []
+    console.log('Recommendations loaded:', recommendations.value)
+    
+  } catch (err) {
+    console.error('Error fetching recommendations:', err)
+  } finally {
+    loadingRecommendations.value = false
   }
 }
 
@@ -1376,6 +1392,9 @@ onMounted(() => {
   font-size: 1.5rem;
   font-weight: 600;
   color: #333;
+  text-align: center;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .score {
@@ -2226,6 +2245,244 @@ onMounted(() => {
   .period-stats-grid {
     grid-template-columns: 1fr;
     gap: 0.25rem;
+  }
+}
+
+/* Recommendations Section Styles */
+.recommendations-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recommendations-section h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #007bff;
+}
+
+.loading-recommendations {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.no-recommendations {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.recommendation-card {
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendation-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  transition: width 0.3s ease;
+}
+
+.recommendation-card.priority-high::before {
+  background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
+}
+
+.recommendation-card.priority-medium::before {
+  background: linear-gradient(180deg, #ffc107 0%, #e0a800 100%);
+}
+
+.recommendation-card.priority-low::before {
+  background: linear-gradient(180deg, #28a745 0%, #218838 100%);
+}
+
+.recommendation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+.recommendation-card:hover::before {
+  width: 8px;
+}
+
+.recommendation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.recommendation-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.type-icon {
+  font-size: 1.5rem;
+}
+
+.type-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-transform: capitalize;
+}
+
+.recommendation-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.priority-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.priority-badge.priority-high {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.priority-badge.priority-medium {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+}
+
+.priority-badge.priority-low {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+}
+
+.status-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.status-pending {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.status-badge.status-accepted {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #28a745;
+}
+
+.status-badge.status-rejected {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #dc3545;
+}
+
+.recommendation-body {
+  margin: 1rem 0;
+}
+
+.recommendation-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #495057;
+  margin: 0;
+}
+
+.recommendation-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.85rem;
+  color: #6c757d;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recommendation-time {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.recommendation-time::before {
+  content: '⏱️';
+}
+
+.recommendation-created {
+  font-style: italic;
+}
+
+/* Responsive Design for Recommendations */
+@media (max-width: 768px) {
+  .recommendations-section {
+    padding: 1.5rem;
+  }
+  
+  .recommendations-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .recommendation-card {
+    padding: 1rem;
+  }
+  
+  .recommendation-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .recommendation-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .priority-badge,
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
   }
 }
 </style>
