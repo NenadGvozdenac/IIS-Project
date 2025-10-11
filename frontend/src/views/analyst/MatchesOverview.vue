@@ -4,14 +4,14 @@
     <main class="main-content">
       <div class="content-header">
         <h1>Partizan profile</h1>
-        <button 
+        <!-- <button INFLUX REPORT BUTTON
           class="influx-report-btn" 
           @click="openInfluxReportModal"
           title="Generate InfluxDB Analytics Report"
         >
           <span class="btn-icon">📊</span>
           InfluxDB Report
-        </button>
+        </button> -->
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -204,8 +204,8 @@
       </div>
     </div>
 
-    <!-- InfluxDB Report Modal -->
-    <InfluxReportModal 
+    <!-- InfluxDB Report Modal --> 
+    <InfluxReportModal
       :visible="showInfluxReportModal" 
       @close="closeInfluxReportModal" 
     />

@@ -53,6 +53,14 @@
             class="nav-link scout-link">
             Recommendations
           </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'coach'" to="/coach/team"
+            class="nav-link coach-link">
+            My Team
+          </router-link>
+          <router-link v-if="userInfo && userInfo.userRole === 'coach'" to="/coach/previous-matches"
+            class="nav-link coach-link">
+            Previous Matches
+          </router-link>
         </div>
 
         <div class="navbar-auth">
@@ -250,6 +258,33 @@ const isCustomer = () => {
   background-color: #f5f5f5;
   color: #333;
   border-color: #d0d0d0;
+}
+
+.coach-link {
+  /* same style as analyst */
+  background-color: rgba(2,119,189,0.06);
+  color: #0277bd;
+  font-weight: 600;
+  border: 1px solid rgba(2,119,189,0.12);
+  border-radius: 10px;
+  padding: 6px 14px;
+  transition: all 0.25s ease;
+}
+
+.coach-link:hover {
+  background-color: rgba(2,119,189,0.12);
+  color: #014f86;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2,119,189,0.08);
+}
+
+.coach-link.router-link-exact-active,
+.coach-link.router-link-exact-active:visited {
+  background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(2,119,189,0.18);
+  transform: translateY(-2px);
 }
 
 .navbar-auth {

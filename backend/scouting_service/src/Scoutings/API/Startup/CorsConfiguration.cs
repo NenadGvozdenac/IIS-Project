@@ -23,7 +23,12 @@ public static class CorsConfiguration
     private static string[] ParseCorsOrigins()
     {
         var corsOrigins = new[] {
-            "http://localhost:5173",
+            "http://localhost:5173",   // Frontend Vite dev server  
+            "https://localhost:5173",  // Frontend Vite dev server (HTTPS)
+            "http://localhost:5002",   // Scouting service HTTP
+            "https://localhost:5003",  // Scouting service HTTPS
+            "http://localhost:3000",   // Common frontend port
+            "https://localhost:3000"   // Common frontend port (HTTPS)
         };
         var corsOriginsPath = Environment.GetEnvironmentVariable("EXPLORER_CORS_ORIGINS");
         if (File.Exists(corsOriginsPath))

@@ -49,6 +49,11 @@ import PlayerAnalysis from '../views/scout/PlayerAnalysis.vue'
 import PlayerRecommendations from '../views/scout/PlayerRecommendations.vue'
 import PlayerProfile from '../views/scout/PlayerProfile.vue'
 import EditPlayer from '../views/scout/EditPlayer.vue'
+import CoachTeam from '../views/coach/CoachTeam.vue'
+import CoachPlayerDetail from '../views/coach/CoachPlayerDetail.vue'
+import CoachMatches from '../views/coach/CoachMatches.vue'
+import CoachPreviousMatches from '../views/coach/CoachPreviousMatches.vue'
+import CoachMatchDetail from '../views/coach/CoachMatchDetail.vue'
 
 const routes = [
   {
@@ -341,6 +346,36 @@ const routes = [
     name: 'EditPlayer',
     component: EditPlayer,
     meta: { requiresAuth: true, requiresRole: 'scouting manager' }
+  },
+  {
+    path: '/coach/team',
+    name: 'CoachTeam',
+    component: CoachTeam,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/player/:playerId',
+    name: 'CoachPlayerDetail',
+    component: CoachPlayerDetail,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/matches',
+    name: 'CoachMatches',
+    component: CoachMatches,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/previous-matches',
+    name: 'CoachPreviousMatches',
+    component: CoachPreviousMatches,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
+  },
+  {
+    path: '/coach/matches/:id/previous',
+    name: 'CoachMatchDetail',
+    component: CoachMatchDetail,
+    meta: { requiresAuth: true, requiresRole: 'coach' }
   }
 ]
 
@@ -368,6 +403,9 @@ router.beforeEach((to, _, next) => {
     } else if (userData.userRole === 'club manager') {
       next('/club-manager/matches')
       return
+    } else if (userData.userRole === 'coach') {
+      next('/coach/team')
+      return
     } else {
       next('/dashboard')
       return
@@ -377,6 +415,12 @@ router.beforeEach((to, _, next) => {
   // If scout tries to access general dashboard, redirect to scout dashboard
   if (to.path === '/dashboard' && token && userData && userData.userRole === 'scouting manager') {
     next('/scout')
+    return
+  }
+  
+  // If coach tries to access general dashboard, redirect to coach team page
+  if (to.path === '/dashboard' && token && userData && userData.userRole === 'coach') {
+    next('/coach/team')
     return
   }
   

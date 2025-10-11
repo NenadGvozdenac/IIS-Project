@@ -505,7 +505,7 @@ CREATE TABLE users (
     email    VARCHAR(50) NOT NULL,
     phone    VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analyst', 'scouting manager', 'team manager')),
+    type     VARCHAR(50) NOT NULL CHECK (type IN ('customer', 'admin', 'club manager', 'club owner', 'analyst', 'scouting manager', 'team manager', 'coach')),
     PRIMARY KEY (id_user)
 );
 

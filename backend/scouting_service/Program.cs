@@ -44,7 +44,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseCors(corsPolicy);
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -15,6 +15,36 @@ namespace elastic_orchestrator_service.src.Services
             _logger = logger;
         }
 
+        public async Task<Player?> GetPlayerAsync(int playerId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/players/{playerId}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonContent = await response.Content.ReadAsStringAsync();
+                    var player = JsonSerializer.Deserialize<Player>(jsonContent, new JsonSerializerOptions 
+                    { 
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    });
+                    
+                    _logger.LogInformation("Successfully retrieved player {PlayerId} from scouting service", playerId);
+                    return player;
+                }
+
+                _logger.LogWarning("Failed to retrieve player {PlayerId} from scouting service. Status: {StatusCode}", 
+                    playerId, response.StatusCode);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving player {PlayerId} from scouting service", playerId);
+                return null;
+            }
+        }
+
         public async Task<bool> UpdatePlayerAsync(Player player)
         {
             try
@@ -82,24 +112,49 @@ namespace elastic_orchestrator_service.src.Services
             };
         }
 
-        public Task<bool> CompensatePlayerUpdateAsync(Player player)
+        public async Task<bool> CompensatePlayerUpdateAsync(Player originalPlayer)
         {
             try
             {
-                // For compensation, we would need to restore the previous state
-                // For simplicity, we'll just log this action
-                // In a real scenario, you might need to store the original state before updating
-                _logger.LogInformation("Compensating player update for {PlayerId} in scouting service", player.IdPlayer);
+                _logger.LogInformation("Compensating player update for {PlayerId} in scouting service", originalPlayer.IdPlayer);
                 
-                // Here you would implement the actual compensation logic
-                // This might involve restoring the previous player state
+                // Transform the original player data to match scouting service expectations
+                var command = new ScoutingUpdatePlayerCommand
+                {
+                    IdPlayer = originalPlayer.IdPlayer,
+                    Name = originalPlayer.Name,
+                    Surname = originalPlayer.Surname,
+                    Birthday = originalPlayer.Birthday?.ToString("yyyy-MM-dd"),
+                    Weight = originalPlayer.PhysicalMetrics.FirstOrDefault()?.Weight,
+                    Height = originalPlayer.PhysicalMetrics.FirstOrDefault()?.Height,
+                    IdNationality = GetNationalityId(originalPlayer.Nationality),
+                    IdPosition = GetPositionId(originalPlayer.Position)
+                };
+
+                var json = JsonSerializer.Serialize(command, new JsonSerializerOptions 
+                { 
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                });
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Restore the original player state
+                var response = await _httpClient.PutAsync($"/api/players/{originalPlayer.IdPlayer}", content);
                 
-                return Task.FromResult(true);
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Successfully compensated player {PlayerId} in scouting service", originalPlayer.IdPlayer);
+                    return true;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Failed to compensate player {PlayerId} in scouting service. Status: {StatusCode}, Response: {Response}", 
+                    originalPlayer.IdPlayer, response.StatusCode, responseContent);
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error compensating player update for {PlayerId} in scouting service", player.IdPlayer);
-                return Task.FromResult(false);
+                _logger.LogError(ex, "Error compensating player update for {PlayerId} in scouting service", originalPlayer.IdPlayer);
+                return false;
             }
         }
     }
@@ -113,6 +168,36 @@ namespace elastic_orchestrator_service.src.Services
         {
             _httpClient = httpClient;
             _logger = logger;
+        }
+
+        public async Task<Player?> GetPlayerAsync(int playerId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/players/{playerId}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonContent = await response.Content.ReadAsStringAsync();
+                    var player = JsonSerializer.Deserialize<Player>(jsonContent, new JsonSerializerOptions 
+                    { 
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    });
+                    
+                    _logger.LogInformation("Successfully retrieved player {PlayerId} from elasticsearch service", playerId);
+                    return player;
+                }
+
+                _logger.LogWarning("Failed to retrieve player {PlayerId} from elasticsearch service. Status: {StatusCode}", 
+                    playerId, response.StatusCode);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving player {PlayerId} from elasticsearch service", playerId);
+                return null;
+            }
         }
 
         public async Task<bool> UpdatePlayerAsync(Player player)
@@ -144,22 +229,36 @@ namespace elastic_orchestrator_service.src.Services
             }
         }
 
-        public Task<bool> CompensatePlayerUpdateAsync(Player player)
+        public async Task<bool> CompensatePlayerUpdateAsync(Player originalPlayer)
         {
             try
             {
-                // For compensation, we might need to delete the record or restore previous state
-                _logger.LogInformation("Compensating player update for {PlayerId} in elasticsearch service", player.IdPlayer);
+                _logger.LogInformation("Compensating player update for {PlayerId} in elasticsearch service", originalPlayer.IdPlayer);
                 
-                // Here you would implement the actual compensation logic
-                // This might involve deleting the updated record or restoring the previous state
+                // Restore the original player state in Elasticsearch
+                var json = JsonSerializer.Serialize(originalPlayer, new JsonSerializerOptions 
+                { 
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                });
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync($"/api/players/{originalPlayer.IdPlayer}", content);
                 
-                return Task.FromResult(true);
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Successfully compensated player {PlayerId} in elasticsearch service", originalPlayer.IdPlayer);
+                    return true;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Failed to compensate player {PlayerId} in elasticsearch service. Status: {StatusCode}, Response: {Response}", 
+                    originalPlayer.IdPlayer, response.StatusCode, responseContent);
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error compensating player update for {PlayerId} in elasticsearch service", player.IdPlayer);
-                return Task.FromResult(false);
+                _logger.LogError(ex, "Error compensating player update for {PlayerId} in elasticsearch service", originalPlayer.IdPlayer);
+                return false;
             }
         }
     }
