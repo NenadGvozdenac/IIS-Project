@@ -575,6 +575,22 @@ INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight,
 (76, 7, 96, 148, 21, 87, 191, 197, '2025-09-14', 24), -- Player 24
 (91, 10, 128, 195, 16, 102, 211, 217, '2025-09-14', 25); -- Player 25
 
+-- Generate thousands of physical metrics for player 1 using UNWIND-like approach in PostgreSQL
+-- (PostgreSQL does not have UNWIND, but we use generate_series for bulk inserts)
+
+-- INSERT INTO physical_metrics (vertical_jump, fat_percentage, bench_press_weight, squat_weight, sprint_speed, weight, height, wingspan, date_of_measurement, id_player)
+-- SELECT
+--     80 + (random() * 15)::int,         -- vertical_jump: 80-95 cm
+--     7 + (random() * 6)::int,           -- fat_percentage: 7-13%
+--     100 + (random() * 40)::int,        -- bench_press_weight: 100-140 kg
+--     150 + (random() * 70)::int,        -- squat_weight: 150-220 kg
+--     16 + (random() * 6)::int,          -- sprint_speed: 16-22 sec
+--     98,                                -- weight: fixed for player 1
+--     208,                               -- height: fixed for player 1
+--     215,                               -- wingspan: fixed for player 1
+--     ('2025-09-01'::date + (gs - 1)),   -- date_of_measurement: sequential days
+--     1                                  -- id_player: player 1
+-- FROM generate_series(1, 2000) AS gs;
 -- ===============================================================
 -- SESSION METRICS DATA (Evaluation Scores)
 -- ===============================================================
